@@ -14,6 +14,15 @@
   flex-direction: column;
 }
 
+.new-service-button {
+  background-color: #388e3c; /* Example button color */
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
 .form-group label {
   margin-bottom: 5px;
   font-weight: bold;
@@ -43,15 +52,15 @@
 }
 
 .save-button {
-  background-color: #4caf50;
+  background-color: #1976d2; /* Example save button color */
 }
 
 .update-button {
-  background-color: #008cba;
+  background-color: #ffa000; /* Example update button color */
 }
 
 .delete-button {
-  background-color: #f44336;
+  background-color: #d32f2f; /* Example delete button color */
 }
 
 .message {

@@ -23,6 +23,12 @@ function generatePatientID($conn)
     return 'P' . str_pad($newNumPart, 4, '0', STR_PAD_LEFT);
 }
 
+// Validation checks
+$validate_email = "";
+$validate_phone = "";
+$errors = '';
+$message = '';
+
 // Check if form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Sanitize and validate input
@@ -34,36 +40,40 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $dob = mysqli_real_escape_string($conn, $_POST['dob']);
     $address = mysqli_real_escape_string($conn, $_POST['address']);
 
-    // Validation checks
-    $errors = [];
-
-    // Check email uniqueness
-    $email_check = "SELECT * FROM patient WHERE email = '$email'";
-    $email_result = mysqli_query($conn, $email_check);
-    if (mysqli_num_rows($email_result) > 0) {
-        $errors[] = "Email already exists.";
-    }
-
-    // Check phone uniqueness
-    $phone_check = "SELECT * FROM patient WHERE phone = '$phone'";
-    $phone_result = mysqli_query($conn, $phone_check);
-    if (mysqli_num_rows($phone_result) > 0) {
-        $errors[] = "Phone number already exists.";
-    }
 
     // Action based on button click
-    if (isset($_POST['save_button']) && empty($errors)) {
-        // Generate new patient ID
-        $patient_id = generatePatientID($conn);
+    if (isset($_POST['save_button'])) {
 
-        // Prepare INSERT query
-        $insert_query = "INSERT INTO patient (patient_id, first_name, last_name, gender, email, phone, dob, address) 
+        // Check email uniqueness
+        $email_check = "SELECT * FROM patient WHERE email = '$email'";
+        $email_result = mysqli_query($conn, $email_check);
+        if (mysqli_num_rows($email_result) > 0) {
+            $errors = "Email already exists.";
+        }
+
+        // Check phone uniqueness
+        $phone_check = "SELECT * FROM patient WHERE phone = '$phone'";
+        $phone_result = mysqli_query($conn, $phone_check);
+        if (mysqli_num_rows($phone_result) > 0) {
+            $errors = "Phone number already exists.";
+        }
+
+        if (empty($errors)) {
+            // Generate new patient ID
+            $patient_id = generatePatientID($conn);
+
+            // Prepare INSERT query
+            $insert_query = "INSERT INTO patient (patient_id, first_name, last_name, gender, email, phone, dob, address) 
                          VALUES ('$patient_id', '$first_name', '$last_name', '$gender', '$email', '$phone', '$dob', '$address')";
 
-        if (mysqli_query($conn, $insert_query)) {
-            echo "<script>alert('Patient added successfully!');</script>";
-        } else {
-            echo "<script>alert('Error adding patient: " . mysqli_error($conn) . "');</script>";
+            if (mysqli_query($conn, $insert_query)) {
+                $message = "Patient added successfully!";
+                // echo "<script>alert('Patient added successfully!');</script>";
+                $patient_id = $first_name = $last_name = $gender = $email = $phone = $dob = $address = '';
+            } else {
+                // echo "<script>alert('Error adding patient: " . mysqli_error($conn) . "');</script>";
+                $errors = "Error adding patient: " . mysqli_error($conn);
+            }
         }
     }
 
@@ -71,21 +81,40 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (isset($_POST['update_button']) && !empty($_POST['patient_id'])) {
         $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id']);
 
-        // Prepare UPDATE query
-        $update_query = "UPDATE patient 
-                         SET first_name = '$first_name', 
-                             last_name = '$last_name', 
-                             gender = '$gender', 
-                             email = '$email', 
-                             phone = '$phone', 
-                             dob = '$dob', 
-                             address = '$address' 
-                         WHERE patient_id = '$patient_id'";
+        // Check if email exists but exclude the current patient
+        $email_check = "SELECT * FROM patient WHERE email = '$email' AND patient_id != '$patient_id'";
+        $email_result = mysqli_query($conn, $email_check);
+        if (mysqli_num_rows($email_result) > 0) {
+            $errors = "Email already exists.";
+        }
 
-        if (mysqli_query($conn, $update_query)) {
-            echo "<script>alert('Patient updated successfully!');</script>";
-        } else {
-            echo "<script>alert('Error updating patient: " . mysqli_error($conn) . "');</script>";
+        // Check if phone exists but exclude the current patient
+        $phone_check = "SELECT * FROM patient WHERE phone = '$phone' AND patient_id != '$patient_id'";
+        $phone_result = mysqli_query($conn, $phone_check);
+        if (mysqli_num_rows($phone_result) > 0) {
+            $errors = "Phone number already exists.";
+        }
+
+        if (empty($errors)) {
+            // Prepare UPDATE query
+            $update_query = "UPDATE patient 
+        SET first_name = '$first_name', 
+            last_name = '$last_name', 
+            gender = '$gender', 
+            email = '$email', 
+            phone = '$phone', 
+            dob = '$dob', 
+            address = '$address' 
+        WHERE patient_id = '$patient_id'";
+
+            if (mysqli_query($conn, $update_query)) {
+                // echo "<script>alert('Patient updated successfully!');</script>";
+                $message = "Patient updated successfully!";
+                $patient_id = $first_name = $last_name = $gender = $email = $phone = $dob = $address = '';
+            } else {
+                // echo "<script>alert('Error updating patient: " . mysqli_error($conn) . "');</script>";
+                $errors = "Error adding patient: " . mysqli_error($conn);
+            }
         }
     }
 
@@ -97,9 +126,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $delete_query = "DELETE FROM patient WHERE patient_id = '$patient_id'";
 
         if (mysqli_query($conn, $delete_query)) {
-            echo "<script>alert('Patient deleted successfully!');</script>";
+            // echo "<script>alert('Patient deleted successfully!');</script>";
+            $message = "Patient deleted successfully!";
         } else {
-            echo "<script>alert('Error deleting patient: " . mysqli_error($conn) . "');</script>";
+            // echo "<script>alert('Error deleting patient: " . mysqli_error($conn) . "');</script>";
+            $errors = "Error adding patient: " . mysqli_error($conn);
         }
     }
 }
@@ -166,7 +197,7 @@ if (empty($search_results)) {
                         </svg>
                         Dashboard</a></li>
 
-                <li><a href="#">
+                <li class="active"><a href="patient_management.php">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                             <circle cx="9" cy="7" r="4"></circle>
@@ -191,7 +222,7 @@ if (empty($search_results)) {
                         </svg>
                         Appointments</a></li>
 
-                <li><a href="#">
+                <li><a href="service_type_managment.php">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
                             <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
@@ -251,8 +282,15 @@ if (empty($search_results)) {
                 <button class="new-patient-button" name="new_patient" onclick="clearForm()">+ New Patient</button>
             </div>
 
+            <?php if ($message): ?>
+                <div class="message"><?php echo $message; ?></div>
+            <?php endif; ?>
+            <?php if ($errors): ?>
+                <div class="error"><?php echo $errors; ?></div>
+            <?php endif; ?>
+
             <!-- Patient Form -->
-            <form method="POST" action="">
+            <form method="POST" action="" id="patientForm">
                 <div class="patient-form">
                     <div class="form-group">
                         <label for="patientID">Patient ID</label>
@@ -279,11 +317,21 @@ if (empty($search_results)) {
                     </div>
                     <div class="form-group">
                         <label for="phone">Phone</label>
-                        <input type="tel" id="phone" name="phone" required>
+                        <!-- <input type="number" id="phone" name="phone" required> -->
+                        <input
+                            type="text"
+                            id="phone"
+                            name="phone"
+                            placeholder="Enter phone number 20xxxxxxxx"
+                            maxlength="10"
+                            inputmode="numeric"
+                            required />
+                        <div id="phoneError" class="error-message" style="display: none;"></div>
                     </div>
                     <div class="form-group">
                         <label for="dob">Date of Birth</label>
-                        <input type="date" id="dob" name="dob" placeholder="dd/mm/yyyy" required>
+                        <input type="date" id="dob" name="dob" required>
+                        <div id="dobError" class="error-message" style="display: none;"></div>
                     </div>
                     <div class="form-group">
                         <label for="address">Address</label>
@@ -317,6 +365,7 @@ if (empty($search_results)) {
                         <th>EMAIL</th>
                         <th>PHONE</th>
                         <th>DATE OF BIRTH</th>
+                        <th>ADDRESS</th>
                         <th>ACTIONS</th>
                     </tr>
                 </thead>
@@ -330,6 +379,7 @@ if (empty($search_results)) {
                             <td><?php echo htmlspecialchars($patient['email']); ?></td>
                             <td><?php echo htmlspecialchars($patient['phone']); ?></td>
                             <td><?php echo htmlspecialchars($patient['dob']); ?></td>
+                            <td><?php echo htmlspecialchars($patient['address']); ?></td>
                             <td>
                                 <a href="#" onclick="fillForm('<?php echo htmlspecialchars($patient['patient_id']); ?>', 
                                 '<?php echo htmlspecialchars($patient['first_name']); ?>', 
@@ -376,6 +426,222 @@ if (empty($search_results)) {
         if (window.history.replaceState) {
             window.history.replaceState(null, null, window.location.href);
         }
+
+        // const phoneInput = document.getElementById("phone");
+
+        // // Allow only digits on keypress
+        // phoneInput.addEventListener("keypress", function(e) {
+        //     if (!/^\d$/.test(e.key)) {
+        //         e.preventDefault();
+        //     }
+        // });
+
+        // // Clean pasted values (digits only)
+        // phoneInput.addEventListener("input", function(e) {
+        //     this.value = this.value.replace(/\D/g, ""); // remove all non-digit characters
+        // });
+
+        const phoneInput = document.getElementById("phone");
+        const phoneError = document.getElementById("phoneError");
+        const patientForm = document.getElementById("patientForm");
+
+        // Phone validation function
+        function validatePhoneNumber(phone) {
+            // Check if it's exactly 10 digits
+            if (!/^\d{10}$/.test(phone)) {
+                return {
+                    valid: false,
+                    message: "Phone number must be exactly 10 digits"
+                };
+            }
+
+            // Check if it starts with 20
+            if (!phone.startsWith('20')) {
+                return {
+                    valid: false,
+                    message: "Phone number must start with '20'"
+                };
+            }
+
+            // // Check if the 8 digits after '20' are unique
+            // const remainingDigits = phone.substring(2);
+            // const uniqueDigits = new Set(remainingDigits.split(''));
+
+            // // If there are fewer than 8 unique values, it means some digits are repeated
+            // if (uniqueDigits.size !== 8) {
+            //     return {
+            //         valid: false,
+            //         message: "The 8 digits after '20' must all be unique (no repeated digits)"
+            //     };
+            // }
+
+            // return {
+            //     valid: true,
+            //     message: ""
+            // };
+        }
+
+        // Show error message
+        function showPhoneError(message) {
+            phoneError.textContent = message;
+            phoneError.style.display = "block";
+            phoneInput.classList.add("error");
+        }
+
+        // Hide error message
+        function hidePhoneError() {
+            phoneError.style.display = "none";
+            phoneInput.classList.remove("error");
+        }
+
+        // Allow only digits on keypress
+        phoneInput.addEventListener("keypress", function(e) {
+            if (!/^\d$/.test(e.key)) {
+                e.preventDefault();
+            }
+        });
+
+        // Clean pasted values (digits only) and validate on input
+        phoneInput.addEventListener("input", function(e) {
+            // Remove all non-digit characters
+            this.value = this.value.replace(/\D/g, "");
+
+            // Limit to 10 digits
+            if (this.value.length > 10) {
+                this.value = this.value.slice(0, 10);
+            }
+
+            // Clear error if field is empty
+            if (this.value.length === 0) {
+                hidePhoneError();
+            }
+        });
+
+        // Validate when leaving the input field
+        phoneInput.addEventListener("blur", function() {
+            if (this.value.length > 0) {
+                const validation = validatePhoneNumber(this.value);
+                if (!validation.valid) {
+                    showPhoneError(validation.message);
+                } else {
+                    hidePhoneError();
+                }
+            }
+        });
+
+        // Form submission validation
+        patientForm.addEventListener("submit", function(e) {
+            // Only validate if there's a value
+            if (phoneInput.value.length > 0) {
+                const validation = validatePhoneNumber(phoneInput.value);
+                if (!validation.valid) {
+                    e.preventDefault();
+                    showPhoneError(validation.message);
+                    phoneInput.focus();
+                }
+            }
+        });
+
+
+        // Date of birth validation
+        const dobInput = document.getElementById("dob");
+        const dobError = document.getElementById("dobError");
+
+        // Set max date to today when the page loads
+        function setMaxDate() {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const maxDate = `${yyyy}-${mm}-${dd}`;
+            dobInput.setAttribute('max', maxDate);
+        }
+
+        // Calculate age from date of birth
+        function calculateAge(birthDate) {
+            const today = new Date();
+            const dob = new Date(birthDate);
+            let age = today.getFullYear() - dob.getFullYear();
+            const monthDiff = today.getMonth() - dob.getMonth();
+
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+                age--;
+            }
+
+            return age;
+        }
+
+        // Show DOB error message
+        function showDobError(message) {
+            dobError.textContent = message;
+            dobError.style.display = "block";
+            dobInput.classList.add("error");
+        }
+
+        // Hide DOB error message
+        function hideDobError() {
+            dobError.style.display = "none";
+            dobInput.classList.remove("error");
+        }
+
+        // Validate date of birth
+        function validateDob(dob) {
+            const selectedDate = new Date(dob);
+            const today = new Date();
+
+            // Check if date is in the future
+            if (selectedDate > today) {
+                return {
+                    valid: false,
+                    message: "Date of birth cannot be in the future"
+                };
+            }
+
+            // Check age range (assuming patients should be between 0 and 120 years old)
+            const age = calculateAge(dob);
+            if (age > 120) {
+                return {
+                    valid: false,
+                    message: "Age cannot exceed 120 years"
+                };
+            }
+
+            return {
+                valid: true,
+                message: ""
+            };
+        }
+
+        // Set max date when page loads
+        document.addEventListener("DOMContentLoaded", function() {
+            setMaxDate();
+        });
+
+        // Validate DOB when input changes
+        dobInput.addEventListener("change", function() {
+            if (this.value) {
+                const validation = validateDob(this.value);
+                if (!validation.valid) {
+                    showDobError(validation.message);
+                } else {
+                    hideDobError();
+                }
+            } else {
+                hideDobError();
+            }
+        });
+
+        // Add DOB validation to form submission
+        patientForm.addEventListener("submit", function(e) {
+            if (dobInput.value) {
+                const validation = validateDob(dobInput.value);
+                if (!validation.valid) {
+                    e.preventDefault();
+                    showDobError(validation.message);
+                    dobInput.focus();
+                }
+            }
+        });
     </script>
 </body>
 

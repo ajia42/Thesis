@@ -100,7 +100,7 @@ body {
 
 .patient-form input[type="text"],
 .patient-form input[type="email"],
-.patient-form input[type="tel"],
+.patient-form input[type="number"],
 .patient-form input[type="date"],
 .patient-form select {
   padding: 10px;
@@ -185,4 +185,14 @@ body {
 
 .patient-table .actions a:hover {
   text-decoration: underline;
+}
+
+input.error {
+  border: 2px solid red !important;
+}
+
+.error-message {
+  color: red;
+  font-size: 12px;
+  margin-top: 5px;
 }
