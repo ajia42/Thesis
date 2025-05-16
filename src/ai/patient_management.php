@@ -136,9 +136,43 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 
 // Search functionality
+// $search_query = "";
+// $search_results = [];
+// if (isset($_GET['search']) && !empty($_GET['search'])) {
+//     $search_term = mysqli_real_escape_string($conn, $_GET['search']);
+//     $search_query = "SELECT * FROM patient 
+//                      WHERE patient_id LIKE '%$search_term%' 
+//                      OR first_name LIKE '%$search_term%' 
+//                      OR last_name LIKE '%$search_term%' 
+//                      OR email LIKE '%$search_term%'
+//                      OR phone LIKE '%$search_term%'";
+//     $search_result = mysqli_query($conn, $search_query);
+
+//     if ($search_result) {
+//         while ($row = mysqli_fetch_assoc($search_result)) {
+//             $search_results[] = $row;
+//         }
+//     }
+// }
+
+// // Fetch all patients if no search is performed
+// if (empty($search_results)) {
+//     $all_patients_query = "SELECT * FROM patient";
+//     $all_patients_result = mysqli_query($conn, $all_patients_query);
+
+//     while ($row = mysqli_fetch_assoc($all_patients_result)) {
+//         $search_results[] = $row;
+//     }
+// }
+
+// Search functionality - REPLACE your current search code with this block
 $search_query = "";
 $search_results = [];
+$no_results_message = "";
+$is_search = false;
+
 if (isset($_GET['search']) && !empty($_GET['search'])) {
+    $is_search = true;
     $search_term = mysqli_real_escape_string($conn, $_GET['search']);
     $search_query = "SELECT * FROM patient 
                      WHERE patient_id LIKE '%$search_term%' 
@@ -152,11 +186,16 @@ if (isset($_GET['search']) && !empty($_GET['search'])) {
         while ($row = mysqli_fetch_assoc($search_result)) {
             $search_results[] = $row;
         }
+
+        // Display message if no records found for the search
+        if (empty($search_results)) {
+            $no_results_message = "No results found for: '" . htmlspecialchars($_GET['search']) . "'";
+        }
     }
 }
 
-// Fetch all patients if no search is performed
-if (empty($search_results)) {
+// Fetch all patients only if no search is performed
+if (!$is_search && empty($search_results)) {
     $all_patients_query = "SELECT * FROM patient";
     $all_patients_result = mysqli_query($conn, $all_patients_query);
 
@@ -354,34 +393,41 @@ if (empty($search_results)) {
                 </form>
             </div>
 
+            <?php if (!empty($no_results_message)): ?>
+                <div class="alert alert-info">
+                    <?php echo $no_results_message; ?>
+                </div>
+            <?php endif; ?>
+
             <!-- Patient Table -->
             <table class="patient-table">
-                <thead>
-                    <tr>
-                        <th>PATIENT ID</th>
-                        <th>FIRST NAME</th>
-                        <th>LAST NAME</th>
-                        <th>GENDER</th>
-                        <th>EMAIL</th>
-                        <th>PHONE</th>
-                        <th>DATE OF BIRTH</th>
-                        <th>ADDRESS</th>
-                        <th>ACTIONS</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php foreach ($search_results as $patient): ?>
+                <?php if (!empty($search_results)): ?>
+                    <thead>
                         <tr>
-                            <td><?php echo htmlspecialchars($patient['patient_id']); ?></td>
-                            <td><?php echo htmlspecialchars($patient['first_name']); ?></td>
-                            <td><?php echo htmlspecialchars($patient['last_name']); ?></td>
-                            <td><?php echo htmlspecialchars($patient['gender']); ?></td>
-                            <td><?php echo htmlspecialchars($patient['email']); ?></td>
-                            <td><?php echo htmlspecialchars($patient['phone']); ?></td>
-                            <td><?php echo htmlspecialchars($patient['dob']); ?></td>
-                            <td><?php echo htmlspecialchars($patient['address']); ?></td>
-                            <td>
-                                <a href="#" onclick="fillForm('<?php echo htmlspecialchars($patient['patient_id']); ?>', 
+                            <th>PATIENT ID</th>
+                            <th>FIRST NAME</th>
+                            <th>LAST NAME</th>
+                            <th>GENDER</th>
+                            <th>EMAIL</th>
+                            <th>PHONE</th>
+                            <th>DATE OF BIRTH</th>
+                            <th>ADDRESS</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($search_results as $patient): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($patient['patient_id']); ?></td>
+                                <td><?php echo htmlspecialchars($patient['first_name']); ?></td>
+                                <td><?php echo htmlspecialchars($patient['last_name']); ?></td>
+                                <td><?php echo htmlspecialchars($patient['gender']); ?></td>
+                                <td><?php echo htmlspecialchars($patient['email']); ?></td>
+                                <td><?php echo htmlspecialchars($patient['phone']); ?></td>
+                                <td><?php echo htmlspecialchars($patient['dob']); ?></td>
+                                <td><?php echo htmlspecialchars($patient['address']); ?></td>
+                                <td>
+                                    <a href="#" onclick="fillForm('<?php echo htmlspecialchars($patient['patient_id']); ?>', 
                                 '<?php echo htmlspecialchars($patient['first_name']); ?>', 
                                 '<?php echo htmlspecialchars($patient['last_name']); ?>', 
                                 '<?php echo htmlspecialchars($patient['gender']); ?>', 
@@ -389,11 +435,12 @@ if (empty($search_results)) {
                                 '<?php echo htmlspecialchars($patient['phone']); ?>', 
                                 '<?php echo htmlspecialchars($patient['dob']); ?>', 
                                 '<?php echo htmlspecialchars($patient['address']); ?>')">Edit</a>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
             </table>
+        <?php endif; ?>
         </main>
     </div>
 
