@@ -247,7 +247,7 @@ if (!$is_search && empty($search_results)) {
         </aside>
         <main class="main-content">
             <div class="header">
-                <h1>Patient Management</h1>
+                <h1>Service Type Management</h1>
                 <button class="new-patient-button" name="new_patient" onclick="clearForm()">+ New Service</button>
             </div>
 
@@ -276,7 +276,6 @@ if (!$is_search && empty($search_results)) {
                             type="text"
                             id="phone"
                             name="phone"
-                            placeholder="Enter phone number 20xxxxxxxx"
                             maxlength="10"
                             inputmode="numeric"
                             required />
@@ -293,7 +292,7 @@ if (!$is_search && empty($search_results)) {
             <!-- Search Form -->
             <div class="patient-list-header">
                 <form method="GET" action="">
-                    <input type="search" name="search" placeholder="Search patients by name or email..."
+                    <input type="search" name="search" placeholder="Search services by name or id..."
                         value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
                     <button type="submit">Search</button>
                 </form>
