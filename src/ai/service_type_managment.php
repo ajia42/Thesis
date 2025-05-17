@@ -166,7 +166,7 @@ if (!$is_search && empty($search_results)) {
                         </svg>
                         Dashboard</a></li>
 
-                <li class="active"><a href="patient_management.php">
+                <li><a href="patient_management.php">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                             <circle cx="9" cy="7" r="4"></circle>
@@ -191,7 +191,7 @@ if (!$is_search && empty($search_results)) {
                         </svg>
                         Appointments</a></li>
 
-                <li><a href="service_type_managment.php">
+                <li class="active"><a href="service_type_managment.php">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
                             <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
@@ -354,90 +354,6 @@ if (!$is_search && empty($search_results)) {
         if (window.history.replaceState) {
             window.history.replaceState(null, null, window.location.href);
         }
-
-        const phoneInput = document.getElementById("phone");
-        const phoneError = document.getElementById("phoneError");
-        const patientForm = document.getElementById("patientForm");
-
-        // Phone validation function
-        function validatePhoneNumber(phone) {
-            // Check if it's exactly 10 digits
-            if (!/^\d{10}$/.test(phone)) {
-                return {
-                    valid: false,
-                    message: "Phone number must be exactly 10 digits"
-                };
-            }
-
-            // Check if it starts with 20
-            if (!phone.startsWith('20')) {
-                return {
-                    valid: false,
-                    message: "Phone number must start with '20'"
-                };
-            }
-        }
-
-        // Show error message
-        function showPhoneError(message) {
-            phoneError.textContent = message;
-            phoneError.style.display = "block";
-            phoneInput.classList.add("error");
-        }
-
-        // Hide error message
-        function hidePhoneError() {
-            phoneError.style.display = "none";
-            phoneInput.classList.remove("error");
-        }
-
-        // Allow only digits on keypress
-        phoneInput.addEventListener("keypress", function(e) {
-            if (!/^\d$/.test(e.key)) {
-                e.preventDefault();
-            }
-        });
-
-        // Clean pasted values (digits only) and validate on input
-        phoneInput.addEventListener("input", function(e) {
-            // Remove all non-digit characters
-            this.value = this.value.replace(/\D/g, "");
-
-            // Limit to 10 digits
-            if (this.value.length > 10) {
-                this.value = this.value.slice(0, 10);
-            }
-
-            // Clear error if field is empty
-            if (this.value.length === 0) {
-                hidePhoneError();
-            }
-        });
-
-        // Validate when leaving the input field
-        phoneInput.addEventListener("blur", function() {
-            if (this.value.length > 0) {
-                const validation = validatePhoneNumber(this.value);
-                if (!validation.valid) {
-                    showPhoneError(validation.message);
-                } else {
-                    hidePhoneError();
-                }
-            }
-        });
-
-        // Form submission validation
-        patientForm.addEventListener("submit", function(e) {
-            // Only validate if there's a value
-            if (phoneInput.value.length > 0) {
-                const validation = validatePhoneNumber(phoneInput.value);
-                if (!validation.valid) {
-                    e.preventDefault();
-                    showPhoneError(validation.message);
-                    phoneInput.focus();
-                }
-            }
-        });
     </script>
 </body>
 
