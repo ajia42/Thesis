@@ -140,7 +140,7 @@ if (!$is_search && empty($search_results)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Patient Management</title>
+    <title>Disease Management</title>
     <link rel="stylesheet" href="patient_management.css">
 </head>
 
@@ -247,8 +247,8 @@ if (!$is_search && empty($search_results)) {
         </aside>
         <main class="main-content">
             <div class="header">
-                <h1>Service Type Management</h1>
-                <button class="new-patient-button" name="new_patient" onclick="clearForm()">+ New Service</button>
+                <h1>Disease Management</h1>
+                <button class="new-patient-button" name="new_patient" onclick="clearForm()">+ New disease</button>
             </div>
 
             <?php if ($message): ?>
@@ -262,20 +262,21 @@ if (!$is_search && empty($search_results)) {
             <form method="POST" action="" id="patientForm">
                 <div class="patient-form">
                     <div class="form-group">
-                        <label for="patientID">Service Type ID</label>
+                        <label for="patientID">Disease ID</label>
                         <input type="text" id="patientID" name="patient_id" readonly>
                     </div>
                     <div class="form-group">
-                        <label for="firstName">Service Name</label>
+                        <label for="firstName">Disease name</label>
                         <input type="text" id="firstName" name="first_name" required>
                     </div>
                     <div class="form-group">
-                        <label for="phone">Service Fee</label>
+                        <label for="phone">Description</label>
                         <!-- <input type="number" id="phone" name="phone" required> -->
                         <input
                             type="text"
                             id="phone"
-                            name="phone" />
+                            name="phone"
+                            placeholder="optional" />
                     </div>
                     <div class="form-actions">
                         <button type="submit" class="save-button" name="save_button">Save</button>
