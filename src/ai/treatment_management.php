@@ -1,0 +1,552 @@
+<?php
+// Include database configuration
+include("../db_config.php");
+
+// Function to generate next treatment ID
+function generateTreatmentID($conn)
+{
+    $sql = "SELECT MAX(treatment_id) AS max_id FROM treatment";
+    $result = mysqli_query($conn, $sql);
+    $row = mysqli_fetch_assoc($result);
+
+    // If no treatment exists, start with T0001
+    if (empty($row['max_id'])) {
+        return 'T0001';
+    }
+
+    // Extract the numeric part and increment
+    $lastID = $row['max_id'];
+    $numPart = intval(substr($lastID, 1));
+    $newNumPart = $numPart + 1;
+
+    // Format the new ID with leading zeros
+    return 'T' . str_pad($newNumPart, 4, '0', STR_PAD_LEFT);
+}
+
+// Validation checks
+$errors = '';
+$message = '';
+
+// Check if form is submitted
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Sanitize and validate input
+    $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id']);
+    $date = mysqli_real_escape_string($conn, $_POST['date']);
+    $staff_id = mysqli_real_escape_string($conn, $_POST['staff_id']);
+    $detail = mysqli_real_escape_string($conn, $_POST['detail']);
+    $selected_diseases = isset($_POST['diseases']) ? $_POST['diseases'] : [];
+
+    // Action based on button click
+    if (isset($_POST['save_button'])) {
+        // Validate required fields
+        if (empty($patient_id)) {
+            $errors = "Please select a patient.";
+        } elseif (empty($date)) {
+            $errors = "Please select a treatment date.";
+        } elseif (empty($staff_id)) {
+            $errors = "Please select a staff member.";
+        }
+
+        if (empty($errors)) {
+            // Generate new treatment ID
+            $treatment_id = generateTreatmentID($conn);
+
+            // Start transaction
+            mysqli_begin_transaction($conn);
+
+            try {
+                // Insert into treatment table
+                $insert_query = "INSERT INTO treatment (treatment_id, patient_id, date, staff_id, detail) 
+                             VALUES ('$treatment_id', '$patient_id', '$date', '$staff_id', '$detail')";
+
+                if (mysqli_query($conn, $insert_query)) {
+                    // Insert selected diseases into treatment_disease table (only if diseases are selected)
+                    if (!empty($selected_diseases)) {
+                        foreach ($selected_diseases as $disease_id) {
+                            $disease_id = mysqli_real_escape_string($conn, $disease_id);
+
+                            // Verify disease exists before inserting
+                            $verify_disease = "SELECT disease_id FROM disease WHERE disease_id = '$disease_id'";
+                            $verify_result = mysqli_query($conn, $verify_disease);
+
+                            if (mysqli_num_rows($verify_result) > 0) {
+                                $disease_insert = "INSERT INTO treatment_disease (treatment_id, disease_id) 
+                                                 VALUES ('$treatment_id', '$disease_id')";
+                                if (!mysqli_query($conn, $disease_insert)) {
+                                    throw new Exception("Error inserting disease association: " . mysqli_error($conn));
+                                }
+                            }
+                        }
+                    }
+
+                    mysqli_commit($conn);
+                    $message = "Treatment added successfully!";
+                    $treatment_id = $patient_id = $date = $staff_id = $detail = '';
+                    $selected_diseases = [];
+                } else {
+                    mysqli_rollback($conn);
+                    $errors = "Error adding treatment: " . mysqli_error($conn);
+                }
+            } catch (Exception $e) {
+                mysqli_rollback($conn);
+                $errors = "Error adding treatment: " . $e->getMessage();
+            }
+        }
+    }
+
+    // Update functionality
+    if (isset($_POST['update_button']) && !empty($_POST['treatment_id'])) {
+        $treatment_id = mysqli_real_escape_string($conn, $_POST['treatment_id']);
+
+        // Validate required fields
+        if (empty($patient_id)) {
+            $errors = "Please select a patient.";
+        } elseif (empty($date)) {
+            $errors = "Please select a treatment date.";
+        } elseif (empty($staff_id)) {
+            $errors = "Please select a staff member.";
+        }
+
+        if (empty($errors)) {
+            // Start transaction
+            mysqli_begin_transaction($conn);
+
+            try {
+                // Update treatment table
+                $update_query = "UPDATE treatment 
+                SET patient_id = '$patient_id', 
+                    date = '$date', 
+                    staff_id = '$staff_id', 
+                    detail = '$detail' 
+                WHERE treatment_id = '$treatment_id'";
+
+                if (mysqli_query($conn, $update_query)) {
+                    // Delete existing disease associations
+                    $delete_diseases = "DELETE FROM treatment_disease WHERE treatment_id = '$treatment_id'";
+                    mysqli_query($conn, $delete_diseases);
+
+                    // Insert new disease associations (only if diseases are selected)
+                    if (!empty($selected_diseases)) {
+                        foreach ($selected_diseases as $disease_id) {
+                            $disease_id = mysqli_real_escape_string($conn, $disease_id);
+
+                            // Verify disease exists before inserting
+                            $verify_disease = "SELECT disease_id FROM disease WHERE disease_id = '$disease_id'";
+                            $verify_result = mysqli_query($conn, $verify_disease);
+
+                            if (mysqli_num_rows($verify_result) > 0) {
+                                $disease_insert = "INSERT INTO treatment_disease (treatment_id, disease_id) 
+                                                 VALUES ('$treatment_id', '$disease_id')";
+                                if (!mysqli_query($conn, $disease_insert)) {
+                                    throw new Exception("Error updating disease association: " . mysqli_error($conn));
+                                }
+                            }
+                        }
+                    }
+
+                    mysqli_commit($conn);
+                    $message = "Treatment updated successfully!";
+                    $treatment_id = $patient_id = $date = $staff_id = $detail = '';
+                    $selected_diseases = [];
+                } else {
+                    mysqli_rollback($conn);
+                    $errors = "Error updating treatment: " . mysqli_error($conn);
+                }
+            } catch (Exception $e) {
+                mysqli_rollback($conn);
+                $errors = "Error updating treatment: " . $e->getMessage();
+            }
+        }
+    }
+
+    // Delete functionality
+    if (isset($_POST['delete_button']) && !empty($_POST['treatment_id'])) {
+        $treatment_id = mysqli_real_escape_string($conn, $_POST['treatment_id']);
+
+        // Start transaction
+        mysqli_begin_transaction($conn);
+
+        try {
+            // Delete from treatment_disease table first (foreign key constraint)
+            $delete_diseases = "DELETE FROM treatment_disease WHERE treatment_id = '$treatment_id'";
+            mysqli_query($conn, $delete_diseases);
+
+            // Delete from treatment table
+            $delete_query = "DELETE FROM treatment WHERE treatment_id = '$treatment_id'";
+
+            if (mysqli_query($conn, $delete_query)) {
+                mysqli_commit($conn);
+                $message = "Treatment deleted successfully!";
+            } else {
+                mysqli_rollback($conn);
+                $errors = "Error deleting treatment: " . mysqli_error($conn);
+            }
+        } catch (Exception $e) {
+            mysqli_rollback($conn);
+            $errors = "Error deleting treatment: " . $e->getMessage();
+        }
+    }
+}
+
+// Search functionality
+$search_query = "";
+$search_results = [];
+$no_results_message = "";
+$is_search = false;
+
+if (isset($_GET['search']) && !empty($_GET['search'])) {
+    $is_search = true;
+    $search_term = mysqli_real_escape_string($conn, $_GET['search']);
+    $search_query = "SELECT t.*, p.first_name, p.last_name, s.first_name as staff_first_name, s.last_name as staff_last_name
+                     FROM treatment t 
+                     LEFT JOIN patient p ON t.patient_id = p.patient_id
+                     LEFT JOIN staff s ON t.staff_id = s.staff_id
+                     WHERE t.treatment_id LIKE '%$search_term%' 
+                     OR p.first_name LIKE '%$search_term%' 
+                     OR p.last_name LIKE '%$search_term%' 
+                     OR t.detail LIKE '%$search_term%'";
+    $search_result = mysqli_query($conn, $search_query);
+
+    if ($search_result) {
+        while ($row = mysqli_fetch_assoc($search_result)) {
+            $search_results[] = $row;
+        }
+
+        if (empty($search_results)) {
+            $no_results_message = "No results found for: '" . htmlspecialchars($_GET['search']) . "'";
+        }
+    }
+}
+
+// Fetch all treatments only if no search is performed
+if (!$is_search && empty($search_results)) {
+    $all_treatments_query = "SELECT t.*, p.first_name, p.last_name, s.first_name as staff_first_name, s.last_name as staff_last_name
+                            FROM treatment t 
+                            LEFT JOIN patient p ON t.patient_id = p.patient_id
+                            LEFT JOIN staff s ON t.staff_id = s.staff_id";
+    $all_treatments_result = mysqli_query($conn, $all_treatments_query);
+
+    while ($row = mysqli_fetch_assoc($all_treatments_result)) {
+        $search_results[] = $row;
+    }
+}
+
+// Fetch patients for dropdown
+$patients_query = "SELECT patient_id, first_name, last_name FROM patient ORDER BY first_name";
+$patients_result = mysqli_query($conn, $patients_query);
+
+// Fetch staff for dropdown
+$staff_query = "SELECT staff_id, first_name, last_name FROM staff ORDER BY first_name";
+$staff_result = mysqli_query($conn, $staff_query);
+
+// Fetch diseases for checkboxes
+$diseases_query = "SELECT disease_id, disease_name FROM disease ORDER BY disease_name";
+$diseases_result = mysqli_query($conn, $diseases_query);
+?>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treatment Management</title>
+    <link rel="stylesheet" href="patient_management.css">
+    <style>
+        .diseases-group {
+            grid-column: span 2;
+        }
+
+        .diseases-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .disease-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .disease-checkbox input[type="checkbox"] {
+            margin: 0;
+        }
+
+        .disease-checkbox label {
+            margin: 0;
+            font-size: 14px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                Vision Care
+            </div>
+            <ul class="menu">
+                <li><a href="#">Dashboard</a></li>
+                <li><a href="patient_management.php">Patients</a></li>
+                <li><a href="#">Staff</a></li>
+                <li><a href="appointment_management.php">Appointments</a></li>
+                <li><a href="service_type_managment.php">Services</a></li>
+                <li><a href="disease_management.php">Diseases</a></li>
+                <li><a href="checkup_management.php">General Checkups</a></li>
+                <li class="active"><a href="treatment_management.php">Treatments</a></li>
+                <li><a href="#">Receipts</a></li>
+                <li><a href="#">Reports</a></li>
+                <li><a href="#">Settings</a></li>
+            </ul>
+        </aside>
+        <main class="main-content">
+            <div class="header">
+                <h1>Treatment Management</h1>
+                <button class="new-patient-button" name="new_treatment" onclick="clearForm()">+ New Treatment</button>
+            </div>
+
+            <?php if ($message): ?>
+                <div class="message"><?php echo $message; ?></div>
+            <?php endif; ?>
+            <?php if ($errors): ?>
+                <div class="error"><?php echo $errors; ?></div>
+            <?php endif; ?>
+
+            <!-- Treatment Form -->
+            <form method="POST" action="" id="treatmentForm">
+                <div class="patient-form">
+                    <div class="form-group">
+                        <label for="treatmentID">Treatment ID</label>
+                        <input type="text" id="treatmentID" name="treatment_id" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="patientSelect">Patient</label>
+                        <select id="patientSelect" name="patient_id" required>
+                            <option value="">Select Patient</option>
+                            <?php
+                            mysqli_data_seek($patients_result, 0);
+                            while ($patient = mysqli_fetch_assoc($patients_result)): ?>
+                                <option value="<?php echo $patient['patient_id']; ?>">
+                                    <?php echo $patient['patient_id'] . ' - ' . $patient['first_name'] . ' ' . $patient['last_name']; ?>
+                                </option>
+                            <?php endwhile; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="treatmentDate">Treatment Date</label>
+                        <input type="date" id="treatmentDate" name="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="staffSelect">Staff</label>
+                        <select id="staffSelect" name="staff_id" required>
+                            <option value="">Select Staff</option>
+                            <?php
+                            mysqli_data_seek($staff_result, 0);
+                            while ($staff = mysqli_fetch_assoc($staff_result)): ?>
+                                <option value="<?php echo $staff['staff_id']; ?>">
+                                    <?php echo $staff['staff_id'] . ' - ' . $staff['first_name'] . ' ' . $staff['last_name']; ?>
+                                </option>
+                            <?php endwhile; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="detail">Treatment Details</label>
+                        <textarea id="detail" name="detail" rows="3" placeholder="Enter treatment details..."></textarea>
+                    </div>
+                    <div class="form-group diseases-group">
+                        <label>Associated Diseases</label>
+                        <div class="diseases-container">
+                            <?php
+                            mysqli_data_seek($diseases_result, 0);
+                            while ($disease = mysqli_fetch_assoc($diseases_result)): ?>
+                                <div class="disease-checkbox">
+                                    <input type="checkbox"
+                                        id="disease_<?php echo $disease['disease_id']; ?>"
+                                        name="diseases[]"
+                                        value="<?php echo $disease['disease_id']; ?>">
+                                    <label for="disease_<?php echo $disease['disease_id']; ?>">
+                                        <?php echo htmlspecialchars($disease['disease_name']); ?>
+                                    </label>
+                                </div>
+                            <?php endwhile; ?>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="save-button" name="save_button">Save</button>
+                        <button type="submit" class="update-button" name="update_button">Update</button>
+                        <button type="submit" class="delete-button" name="delete_button">Delete</button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Search Form -->
+            <div class="patient-list-header">
+                <form method="GET" action="">
+                    <input type="search" name="search" placeholder="Search treatments by ID, patient name, or details..."
+                        value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
+                    <button type="submit">Search</button>
+                </form>
+            </div>
+
+            <?php if (!empty($no_results_message)): ?>
+                <div class="alert alert-info">
+                    <?php echo $no_results_message; ?>
+                </div>
+            <?php endif; ?>
+
+            <!-- Treatment Table -->
+            <table class="patient-table">
+                <?php if (!empty($search_results)): ?>
+                    <thead>
+                        <tr>
+                            <th>TREATMENT ID</th>
+                            <th>PATIENT</th>
+                            <th>DATE</th>
+                            <th>STAFF</th>
+                            <th>DETAILS</th>
+                            <th>DISEASES</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($search_results as $treatment): ?>
+                            <?php
+                            // Get associated diseases for this treatment
+                            $disease_query = "SELECT d.disease_name FROM treatment_disease td 
+                                            JOIN disease d ON td.disease_id = d.disease_id 
+                                            WHERE td.treatment_id = '" . $treatment['treatment_id'] . "'";
+                            $disease_result = mysqli_query($conn, $disease_query);
+                            $diseases = [];
+                            while ($disease_row = mysqli_fetch_assoc($disease_result)) {
+                                $diseases[] = $disease_row['disease_name'];
+                            }
+                            ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($treatment['treatment_id']); ?></td>
+                                <td><?php echo htmlspecialchars($treatment['first_name'] . ' ' . $treatment['last_name']); ?></td>
+                                <td><?php echo htmlspecialchars($treatment['date']); ?></td>
+                                <td><?php echo htmlspecialchars($treatment['staff_first_name'] . ' ' . $treatment['staff_last_name']); ?></td>
+                                <td><?php echo htmlspecialchars(substr($treatment['detail'], 0, 50)) . (strlen($treatment['detail']) > 50 ? '...' : ''); ?></td>
+                                <td><?php echo htmlspecialchars(implode(', ', $diseases)); ?></td>
+                                <td>
+                                    <a href="#" onclick="fillForm('<?php echo htmlspecialchars($treatment['treatment_id']); ?>', 
+                                        '<?php echo htmlspecialchars($treatment['patient_id']); ?>', 
+                                        '<?php echo htmlspecialchars($treatment['date']); ?>', 
+                                        '<?php echo htmlspecialchars($treatment['staff_id']); ?>', 
+                                        '<?php echo htmlspecialchars($treatment['detail']); ?>')">Edit</a>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+            </table>
+        <?php endif; ?>
+        </main>
+    </div>
+
+    <script>
+        function fillForm(treatmentId, patientId, date, staffId, detail) {
+            document.getElementById('treatmentID').value = treatmentId;
+            document.getElementById('patientSelect').value = patientId;
+            document.getElementById('treatmentDate').value = date;
+            document.getElementById('staffSelect').value = staffId;
+            document.getElementById('detail').value = detail;
+
+            // Load associated diseases
+            loadTreatmentDiseases(treatmentId);
+        }
+
+        function loadTreatmentDiseases(treatmentId) {
+            // Clear all checkboxes first
+            document.querySelectorAll('input[name="diseases[]"]').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+
+            // Fetch and check associated diseases via AJAX
+            fetch('get_treatment_diseases.php?treatment_id=' + encodeURIComponent(treatmentId))
+                .then(response => response.json())
+                .then(diseases => {
+                    diseases.forEach(diseaseId => {
+                        const checkbox = document.getElementById('disease_' + diseaseId);
+                        if (checkbox) {
+                            checkbox.checked = true;
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading treatment diseases:', error);
+                });
+        }
+
+        function clearForm() {
+            document.getElementById('treatmentID').value = '';
+            document.getElementById('patientSelect').selectedIndex = 0;
+            document.getElementById('treatmentDate').value = '';
+            document.getElementById('staffSelect').selectedIndex = 0;
+            document.getElementById('detail').value = '';
+
+            // Clear all disease checkboxes
+            document.querySelectorAll('input[name="diseases[]"]').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+
+            document.getElementById('patientSelect').focus();
+        }
+
+        // Form validation before submission
+        document.getElementById('treatmentForm').addEventListener('submit', function(e) {
+            const patientSelect = document.getElementById('patientSelect');
+            const dateInput = document.getElementById('treatmentDate');
+            const staffSelect = document.getElementById('staffSelect');
+
+            if (patientSelect.value === '') {
+                e.preventDefault();
+                alert('Please select a patient.');
+                patientSelect.focus();
+                return false;
+            }
+
+            if (dateInput.value === '') {
+                e.preventDefault();
+                alert('Please select a treatment date.');
+                dateInput.focus();
+                return false;
+            }
+
+            if (staffSelect.value === '') {
+                e.preventDefault();
+                alert('Please select a staff member.');
+                staffSelect.focus();
+                return false;
+            }
+
+            return true;
+        });
+
+        // Prevent form resubmission on page refresh
+        if (window.history.replaceState) {
+            window.history.replaceState(null, null, window.location.href);
+        }
+
+        // Set max date to today for treatment date
+        document.addEventListener("DOMContentLoaded", function() {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const maxDate = `${yyyy}-${mm}-${dd}`;
+            document.getElementById('treatmentDate').setAttribute('max', maxDate);
+        });
+    </script>
+</body>
+
+</html>
