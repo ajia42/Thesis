@@ -135,36 +135,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 
-// Search functionality
-// $search_query = "";
-// $search_results = [];
-// if (isset($_GET['search']) && !empty($_GET['search'])) {
-//     $search_term = mysqli_real_escape_string($conn, $_GET['search']);
-//     $search_query = "SELECT * FROM patient 
-//                      WHERE patient_id LIKE '%$search_term%' 
-//                      OR first_name LIKE '%$search_term%' 
-//                      OR last_name LIKE '%$search_term%' 
-//                      OR email LIKE '%$search_term%'
-//                      OR phone LIKE '%$search_term%'";
-//     $search_result = mysqli_query($conn, $search_query);
-
-//     if ($search_result) {
-//         while ($row = mysqli_fetch_assoc($search_result)) {
-//             $search_results[] = $row;
-//         }
-//     }
-// }
-
-// // Fetch all patients if no search is performed
-// if (empty($search_results)) {
-//     $all_patients_query = "SELECT * FROM patient";
-//     $all_patients_result = mysqli_query($conn, $all_patients_query);
-
-//     while ($row = mysqli_fetch_assoc($all_patients_result)) {
-//         $search_results[] = $row;
-//     }
-// }
-
 // Search functionality - REPLACE your current search code with this block
 $search_query = "";
 $search_results = [];
@@ -279,7 +249,7 @@ if (!$is_search && empty($search_results)) {
                         </svg>
                         Diseases</a></li>
 
-                <li><a href="#">
+                <li><a href="checkup_management.php">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M20.42 4.58a5.4 5.4 0 0 0-7.65 0l-.77.78-.77-.78a5.4 5.4 0 0 0-7.65 0C1.46 6.7 1.33 10.28 4 13l8 8 8-8c2.67-2.72 2.54-6.3.42-8.42z"></path>
                         </svg>
@@ -474,20 +444,6 @@ if (!$is_search && empty($search_results)) {
             window.history.replaceState(null, null, window.location.href);
         }
 
-        // const phoneInput = document.getElementById("phone");
-
-        // // Allow only digits on keypress
-        // phoneInput.addEventListener("keypress", function(e) {
-        //     if (!/^\d$/.test(e.key)) {
-        //         e.preventDefault();
-        //     }
-        // });
-
-        // // Clean pasted values (digits only)
-        // phoneInput.addEventListener("input", function(e) {
-        //     this.value = this.value.replace(/\D/g, ""); // remove all non-digit characters
-        // });
-
         const phoneInput = document.getElementById("phone");
         const phoneError = document.getElementById("phoneError");
         const patientForm = document.getElementById("patientForm");
@@ -510,22 +466,6 @@ if (!$is_search && empty($search_results)) {
                 };
             }
 
-            // // Check if the 8 digits after '20' are unique
-            // const remainingDigits = phone.substring(2);
-            // const uniqueDigits = new Set(remainingDigits.split(''));
-
-            // // If there are fewer than 8 unique values, it means some digits are repeated
-            // if (uniqueDigits.size !== 8) {
-            //     return {
-            //         valid: false,
-            //         message: "The 8 digits after '20' must all be unique (no repeated digits)"
-            //     };
-            // }
-
-            // return {
-            //     valid: true,
-            //     message: ""
-            // };
         }
 
         // Show error message

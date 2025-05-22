@@ -43,7 +43,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Action based on button click
     if (isset($_POST['save_button'])) {
         // Check if appointment time is available
-        $time_check = "SELECT * FROM appointment WHERE booking_date = '$booking_date' AND booking_time = '$booking_time' AND staff_id = '$staff_id'";
+        $time_check = "SELECT * FROM appointment WHERE booking_date = '$booking_date' AND booking_time = '$booking_time'";
         $time_result = mysqli_query($conn, $time_check);
         if (mysqli_num_rows($time_result) > 0) {
             $errors = "This time slot is already booked for the selected staff.";
@@ -273,7 +273,7 @@ $time_slots = ['08:00:00', '09:00:00', '10:00:00', '13:00:00', '14:00:00', '15:0
                         </svg>
                         Diseases</a></li>
 
-                <li><a href="#">
+                <li><a href="checkup_management.php">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M20.42 4.58a5.4 5.4 0 0 0-7.65 0l-.77.78-.77-.78a5.4 5.4 0 0 0-7.65 0C1.46 6.7 1.33 10.28 4 13l8 8 8-8c2.67-2.72 2.54-6.3.42-8.42z"></path>
                         </svg>
