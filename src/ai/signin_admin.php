@@ -1,7 +1,7 @@
 <?php
 session_start(); // Start the session to store user information upon successful login
 
-if (isset($_SESSION['staff_id'])) {
+if (isset($_SESSION['staff_id'])) {  // Keeping same session name for consistency
   header('Location: patient_management.php');
   exit();
 }
@@ -13,8 +13,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
   $email = $_POST["email_1"];
   $password = $_POST["password"];
 
-  // Prepare SQL query to fetch user by email
-  $sql = "SELECT * FROM staff WHERE email = ?";
+  // Prepare SQL query to fetch user by email - CHANGED FROM staff TO admin
+  $sql = "SELECT * FROM admin WHERE email = ?";
   $stmt = $conn->prepare($sql);
   $stmt->bind_param("s", $email);
   $stmt->execute();
@@ -25,22 +25,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $row = $result->fetch_assoc();
     if ($password == $row["password"]) { // In a real application, use password_verify() with hashed passwords
       // Password is correct, set session variables and redirect
-      $_SESSION["staff_id"] = $row["staff_id"];
+      $_SESSION["staff_id"] = $row["admin_id"];  // Using admin_id but keeping staff_id as session name
       $_SESSION["staff_name"] = $row["first_name"] . " " . $row["last_name"];
-      header("Location: patient_management.php?id=" . $row["staff_id"]);
+      header("Location: patient_management.php?id=" . $row["admin_id"]);
       exit();
     } else {
       // Incorrect password
       $_SESSION['login_error'] = "Incorrect password.";
       $_SESSION['login_email'] = $email;
-      header("Location: signin_staff.php");
+      header("Location: signin_admin.php");
       exit();
     }
   } else {
     // User not found
     $_SESSION['login_error'] = "Incorrect email.";
     $_SESSION['login_email'] = $email;
-    header("Location: signin_staff.php");
+    header("Location: signin_admin.php");
     exit();
   }
 
@@ -57,7 +57,7 @@ $conn->close();
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sign In - Vision Care</title>
-  <link rel="stylesheet" href="signin_staff.css">
+  <link rel="stylesheet" href="signin_admin.css">
 </head>
 
 <body>
@@ -86,11 +86,13 @@ $conn->close();
         <h2>Vision Care</h2>
       </div>
       <h1>Sign in to your account</h1>
-      <p class="create-account">Or <a href="#">create a new account</a></p>
+      <p class="create-account">Or <a href="register_admin.php">create a new account</a></p>
       <?php
+      // Display error message (if any)
       if (isset($_SESSION['login_error'])) {
-        echo '<p class="error-message">' . $_SESSION['login_error'] . '</p>';
-        unset($_SESSION['login_error']); // Clear the error message after displaying it
+        echo '<p class="error-message">' . htmlspecialchars($_SESSION['login_error']) . '</p>';
+        // Clear the error immediately after displaying
+        unset($_SESSION['login_error']);
       }
       ?>
       <form action="#" method="POST">
@@ -148,6 +150,11 @@ $conn->close();
             <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
           `;
       }
+    }
+
+    // Prevent form resubmission on page refresh
+    if (window.history.replaceState) {
+      window.history.replaceState(null, null, window.location.href);
     }
   </script>
 </body>

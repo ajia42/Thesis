@@ -2,9 +2,14 @@
 
 session_start();
 if (!isset($_SESSION['staff_id'])) {
-    header('Location: signin_staff.php');
+    header('Location: signin_admin.php');
     exit();
 }
+
+// Security headers to prevent caching
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
 
 // Include database configuration
 include("../db_config.php");
@@ -205,6 +210,12 @@ if (!$is_search && empty($search_results)) {
                 </svg>
                 Vision Care
             </div>
+
+            <!-- NEW STAFF INFO SECTION -->
+            <div class="staff-info">
+                <p>Welcome, <?php echo htmlspecialchars($_SESSION['staff_name']); ?></p>
+            </div>
+
             <ul class="menu">
 
                 <li><a href="#">
@@ -272,8 +283,8 @@ if (!$is_search && empty($search_results)) {
 
                 <li><a href="eyes_check_management.php">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                             <circle cx="12" cy="12" r="3"></circle>
-                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                         </svg>
                         Eyes Check</a>
 
@@ -304,8 +315,6 @@ if (!$is_search && empty($search_results)) {
             </ul>
         </aside>
         <main class="main-content">
-
-            <div class="staff-name">Welcome, <?php echo htmlspecialchars($_SESSION['staff_name']); ?></div>
 
             <div class="header">
                 <h1>Patient Management</h1>
@@ -368,9 +377,9 @@ if (!$is_search && empty($search_results)) {
                         <input type="text" id="address" name="address">
                     </div>
                     <div class="form-actions">
-                        <button type="submit" class="save-button" name="save_button">Save</button>
-                        <button type="submit" class="update-button" name="update_button">Update</button>
-                        <button type="submit" class="delete-button" name="delete_button">Delete</button>
+                        <button type="submit" class="save-button" name="save_button" id="saveButton">Save</button>
+                        <button type="submit" class="update-button" name="update_button" id="updateButton">Update</button>
+                        <button type="submit" class="delete-button" name="delete_button" id="deleteButton">Delete</button>
                     </div>
                 </div>
             </form>
@@ -445,6 +454,11 @@ if (!$is_search && empty($search_results)) {
             document.getElementById('phone').value = phone;
             document.getElementById('dob').value = dob;
             document.getElementById('address').value = address;
+
+            document.getElementById('saveButton').disabled = true;
+            document.getElementById('saveButton').classList.add('disabled-button');
+            document.querySelector('button[name="update_button"]').disabled = false;
+
         }
 
         function clearForm() {
@@ -458,7 +472,22 @@ if (!$is_search && empty($search_results)) {
             document.getElementById('address').value = ''; // Clear Address
             // Focus on first name input
             document.getElementById('firstName').focus();
+
+            document.getElementById('saveButton').disabled = false;
+            document.getElementById('saveButton').classList.remove('disabled-button');
+            document.querySelector('button[name="update_button"]').disabled = true;
         }
+
+        // Form submission safeguard
+        document.getElementById('patientForm').addEventListener('submit', function(e) {
+            const patientId = document.getElementById('patientID').value;
+            const isSave = e.submitter.name === 'save_button';
+
+            if (isSave && patientId) {
+                e.preventDefault();
+                alert("Error: You're trying to save an existing record. Use Update instead.");
+            }
+        });
 
         // Prevent form resubmission on page refresh
         if (window.history.replaceState) {
