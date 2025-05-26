@@ -1,4 +1,11 @@
 <?php
+session_start();
+if (!isset($_SESSION['staff_id'])) {
+    header('Location: signin_staff.php');
+    exit();
+}
+
+
 // Include database configuration
 include("../db_config.php");
 

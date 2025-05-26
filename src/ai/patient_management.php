@@ -1,4 +1,11 @@
 <?php
+
+session_start();
+if (!isset($_SESSION['staff_id'])) {
+    header('Location: signin_staff.php');
+    exit();
+}
+
 // Include database configuration
 include("../db_config.php");
 
@@ -185,6 +192,8 @@ if (!$is_search && empty($search_results)) {
 </head>
 
 <body>
+
+
     <div class="container">
         <aside class="sidebar">
             <!-- Sidebar content remains the same as in the original HTML -->
@@ -282,10 +291,22 @@ if (!$is_search && empty($search_results)) {
                             <line x1="6" y1="20" x2="6" y2="14"></line>
                         </svg>
                         Reports</a></li>
+
+                <li><a href="logout.php">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="20" x2="18" y2="10"></line>
+                            <line x1="12" y1="20" x2="12" y2="4"></line>
+                            <line x1="6" y1="20" x2="6" y2="14"></line>
+                        </svg>
+                        Log out</a></li>
+
                 </li>
             </ul>
         </aside>
         <main class="main-content">
+
+            <div class="staff-name">Welcome, <?php echo htmlspecialchars($_SESSION['staff_name']); ?></div>
+
             <div class="header">
                 <h1>Patient Management</h1>
                 <button class="new-patient-button" name="new_patient" onclick="clearForm()">+ New Patient</button>

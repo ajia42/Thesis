@@ -1,6 +1,11 @@
 <?php
 session_start(); // Start the session to store user information upon successful login
 
+if (isset($_SESSION['staff_id'])) {
+  header('Location: patient_management.php');
+  exit();
+}
+
 include("../db_config.php");
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -21,6 +26,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($password == $row["password"]) { // In a real application, use password_verify() with hashed passwords
       // Password is correct, set session variables and redirect
       $_SESSION["staff_id"] = $row["staff_id"];
+      $_SESSION["staff_name"] = $row["first_name"] . " " . $row["last_name"];
       header("Location: patient_management.php?id=" . $row["staff_id"]);
       exit();
     } else {
