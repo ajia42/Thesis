@@ -14,16 +14,16 @@ header("Expires: 0");
 // Include database configuration
 include("../db_config.php");
 
-// Function to generate next patient ID
-function generatePatientID($conn)
+// Function to generate next staff ID
+function generateStaffID($conn)
 {
-    $sql = "SELECT MAX(patient_id) AS max_id FROM patient";
+    $sql = "SELECT MAX(staff_id) AS max_id FROM staff";
     $result = mysqli_query($conn, $sql);
     $row = mysqli_fetch_assoc($result);
 
-    // If no patient exists, start with P0001
+    // If no staff exists, start with P0001
     if (empty($row['max_id'])) {
-        return 'P0001';
+        return 'S0001';
     }
 
     // Extract the numeric part and increment
@@ -32,7 +32,7 @@ function generatePatientID($conn)
     $newNumPart = $numPart + 1;
 
     // Format the new ID with leading zeros
-    return 'P' . str_pad($newNumPart, 4, '0', STR_PAD_LEFT);
+    return 'S' . str_pad($newNumPart, 4, '0', STR_PAD_LEFT);
 }
 
 // Validation checks
@@ -57,51 +57,51 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (isset($_POST['save_button'])) {
 
         // Check email uniqueness
-        $email_check = "SELECT * FROM patient WHERE email = '$email'";
+        $email_check = "SELECT * FROM staff WHERE email = '$email'";
         $email_result = mysqli_query($conn, $email_check);
         if (mysqli_num_rows($email_result) > 0) {
             $errors = "Email already exists.";
         }
 
         // Check phone uniqueness
-        $phone_check = "SELECT * FROM patient WHERE phone = '$phone'";
+        $phone_check = "SELECT * FROM staff WHERE phone = '$phone'";
         $phone_result = mysqli_query($conn, $phone_check);
         if (mysqli_num_rows($phone_result) > 0) {
             $errors = "Phone number already exists.";
         }
 
         if (empty($errors)) {
-            // Generate new patient ID
-            $patient_id = generatePatientID($conn);
+            // Generate new staff ID
+            $staff_id = generateStaffID($conn);
 
             // Prepare INSERT query
-            $insert_query = "INSERT INTO patient (patient_id, first_name, last_name, gender, email, phone, dob, address) 
-                         VALUES ('$patient_id', '$first_name', '$last_name', '$gender', '$email', '$phone', '$dob', '$address')";
+            $insert_query = "INSERT INTO staff (staff_id, first_name, last_name, gender, email, phone, dob, address) 
+                         VALUES ('$staff_id', '$first_name', '$last_name', '$gender', '$email', '$phone', '$dob', '$address')";
 
             if (mysqli_query($conn, $insert_query)) {
-                $message = "Patient added successfully!";
-                // echo "<script>alert('Patient added successfully!');</script>";
-                $patient_id = $first_name = $last_name = $gender = $email = $phone = $dob = $address = '';
+                $message = "Staff added successfully!";
+                // echo "<script>alert('Staff added successfully!');</script>";
+                $staff_id = $first_name = $last_name = $gender = $email = $phone = $dob = $address = '';
             } else {
-                // echo "<script>alert('Error adding patient: " . mysqli_error($conn) . "');</script>";
-                $errors = "Error adding patient: " . mysqli_error($conn);
+                // echo "<script>alert('Error adding staff: " . mysqli_error($conn) . "');</script>";
+                $errors = "Error adding staff: " . mysqli_error($conn);
             }
         }
     }
 
     // Update functionality
-    if (isset($_POST['update_button']) && !empty($_POST['patient_id'])) {
-        $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id']);
+    if (isset($_POST['update_button']) && !empty($_POST['staff_id'])) {
+        $staff_id = mysqli_real_escape_string($conn, $_POST['staff_id']);
 
-        // Check if email exists but exclude the current patient
-        $email_check = "SELECT * FROM patient WHERE email = '$email' AND patient_id != '$patient_id'";
+        // Check if email exists but exclude the current staff
+        $email_check = "SELECT * FROM staff WHERE email = '$email' AND staff_id != '$staff_id'";
         $email_result = mysqli_query($conn, $email_check);
         if (mysqli_num_rows($email_result) > 0) {
             $errors = "Email already exists.";
         }
 
-        // Check if phone exists but exclude the current patient
-        $phone_check = "SELECT * FROM patient WHERE phone = '$phone' AND patient_id != '$patient_id'";
+        // Check if phone exists but exclude the current staff
+        $phone_check = "SELECT * FROM staff WHERE phone = '$phone' AND staff_id != '$staff_id'";
         $phone_result = mysqli_query($conn, $phone_check);
         if (mysqli_num_rows($phone_result) > 0) {
             $errors = "Phone number already exists.";
@@ -109,7 +109,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         if (empty($errors)) {
             // Prepare UPDATE query
-            $update_query = "UPDATE patient 
+            $update_query = "UPDATE staff 
         SET first_name = '$first_name', 
             last_name = '$last_name', 
             gender = '$gender', 
@@ -117,32 +117,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             phone = '$phone', 
             dob = '$dob', 
             address = '$address' 
-        WHERE patient_id = '$patient_id'";
+        WHERE staff_id = '$staff_id'";
 
             if (mysqli_query($conn, $update_query)) {
-                // echo "<script>alert('Patient updated successfully!');</script>";
-                $message = "Patient updated successfully!";
-                $patient_id = $first_name = $last_name = $gender = $email = $phone = $dob = $address = '';
+                // echo "<script>alert('Staff updated successfully!');</script>";
+                $message = "Staff updated successfully!";
+                $staff_id = $first_name = $last_name = $gender = $email = $phone = $dob = $address = '';
             } else {
-                // echo "<script>alert('Error updating patient: " . mysqli_error($conn) . "');</script>";
-                $errors = "Error adding patient: " . mysqli_error($conn);
+                // echo "<script>alert('Error updating staff: " . mysqli_error($conn) . "');</script>";
+                $errors = "Error adding staff: " . mysqli_error($conn);
             }
         }
     }
 
     // Delete functionality
-    if (isset($_POST['delete_button']) && !empty($_POST['patient_id'])) {
-        $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id']);
+    if (isset($_POST['delete_button']) && !empty($_POST['staff_id'])) {
+        $staff_id = mysqli_real_escape_string($conn, $_POST['staff_id']);
 
         // Prepare DELETE query
-        $delete_query = "DELETE FROM patient WHERE patient_id = '$patient_id'";
+        $delete_query = "DELETE FROM staff WHERE staff_id = '$staff_id'";
 
         if (mysqli_query($conn, $delete_query)) {
-            // echo "<script>alert('Patient deleted successfully!');</script>";
-            $message = "Patient deleted successfully!";
+            // echo "<script>alert('Staff deleted successfully!');</script>";
+            $message = "Staff deleted successfully!";
         } else {
-            // echo "<script>alert('Error deleting patient: " . mysqli_error($conn) . "');</script>";
-            $errors = "Error adding patient: " . mysqli_error($conn);
+            // echo "<script>alert('Error deleting staff: " . mysqli_error($conn) . "');</script>";
+            $errors = "Error adding staff: " . mysqli_error($conn);
         }
     }
 }
@@ -156,8 +156,8 @@ $is_search = false;
 if (isset($_GET['search']) && !empty($_GET['search'])) {
     $is_search = true;
     $search_term = mysqli_real_escape_string($conn, $_GET['search']);
-    $search_query = "SELECT * FROM patient 
-                     WHERE patient_id LIKE '%$search_term%' 
+    $search_query = "SELECT * FROM staff 
+                     WHERE staff_id LIKE '%$search_term%' 
                      OR first_name LIKE '%$search_term%' 
                      OR last_name LIKE '%$search_term%' 
                      OR email LIKE '%$search_term%'
@@ -176,12 +176,12 @@ if (isset($_GET['search']) && !empty($_GET['search'])) {
     }
 }
 
-// Fetch all patients only if no search is performed
+// Fetch all staffs only if no search is performed
 if (!$is_search && empty($search_results)) {
-    $all_patients_query = "SELECT * FROM patient";
-    $all_patients_result = mysqli_query($conn, $all_patients_query);
+    $all_staffs_query = "SELECT * FROM staff";
+    $all_staffs_result = mysqli_query($conn, $all_staffs_query);
 
-    while ($row = mysqli_fetch_assoc($all_patients_result)) {
+    while ($row = mysqli_fetch_assoc($all_staffs_result)) {
         $search_results[] = $row;
     }
 }
@@ -192,8 +192,8 @@ if (!$is_search && empty($search_results)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Patient Management</title>
-    <link rel="stylesheet" href="patient_management.css">
+    <title>Staff Management</title>
+    <link rel="stylesheet" href="staff_management.css">
 </head>
 
 <body>
@@ -235,16 +235,16 @@ if (!$is_search && empty($search_results)) {
                         </svg>
                         Dashboard</a></li>
 
-                <li class="active"><a href="patient_management.php">
+                <li><a href="patient_management.php">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                             <circle cx="9" cy="7" r="4"></circle>
                             <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                             <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                         </svg>
-                        Patients</a></li>
+                        Patient</a></li>
 
-                <li><a href="staff_management.php">
+                <li class="active"><a href="staff_management.php">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                             <circle cx="12" cy="7" r="4"></circle>
@@ -326,8 +326,8 @@ if (!$is_search && empty($search_results)) {
         <main class="main-content">
 
             <div class="header">
-                <h1>Patient Management</h1>
-                <button class="new-patient-button" name="new_patient" onclick="clearForm()">+ New Patient</button>
+                <h1>Staff Management</h1>
+                <button class="new-staff-button" name="new_staff" onclick="clearForm()">+ New Staff</button>
             </div>
 
             <?php if ($message): ?>
@@ -337,12 +337,12 @@ if (!$is_search && empty($search_results)) {
                 <div class="error"><?php echo $errors; ?></div>
             <?php endif; ?>
 
-            <!-- Patient Form -->
-            <form method="POST" action="" id="patientForm">
-                <div class="patient-form">
+            <!-- Staff Form -->
+            <form method="POST" action="" id="staffForm">
+                <div class="staff-form">
                     <div class="form-group">
-                        <label for="patientID">Patient ID</label>
-                        <input type="text" id="patientID" name="patient_id" readonly>
+                        <label for="staffID">Staff ID</label>
+                        <input type="text" id="staffID" name="staff_id" readonly>
                     </div>
                     <div class="form-group">
                         <label for="firstName">First Name</label>
@@ -370,7 +370,7 @@ if (!$is_search && empty($search_results)) {
                             type="text"
                             id="phone"
                             name="phone"
-                            placeholder="Enter phone number 20xxxxxxxx"
+                            placeholder="Enter staff phone number"
                             maxlength="10"
                             inputmode="numeric"
                             required />
@@ -394,9 +394,9 @@ if (!$is_search && empty($search_results)) {
             </form>
 
             <!-- Search Form -->
-            <div class="patient-list-header">
+            <div class="staff-list-header">
                 <form method="GET" action="">
-                    <input type="search" name="search" placeholder="Search patients by name or email..."
+                    <input type="search" name="search" placeholder="Search staff by name or email..."
                         value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
                     <button type="submit">Search</button>
                 </form>
@@ -408,12 +408,12 @@ if (!$is_search && empty($search_results)) {
                 </div>
             <?php endif; ?>
 
-            <!-- Patient Table -->
-            <table class="patient-table">
+            <!-- Staff Table -->
+            <table class="staff-table">
                 <?php if (!empty($search_results)): ?>
                     <thead>
                         <tr>
-                            <th>PATIENT ID</th>
+                            <th>STAFF ID</th>
                             <th>FIRST NAME</th>
                             <th>LAST NAME</th>
                             <th>GENDER</th>
@@ -425,25 +425,25 @@ if (!$is_search && empty($search_results)) {
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($search_results as $patient): ?>
+                        <?php foreach ($search_results as $staff): ?>
                             <tr>
-                                <td><?php echo htmlspecialchars($patient['patient_id']); ?></td>
-                                <td><?php echo htmlspecialchars($patient['first_name']); ?></td>
-                                <td><?php echo htmlspecialchars($patient['last_name']); ?></td>
-                                <td><?php echo htmlspecialchars($patient['gender']); ?></td>
-                                <td><?php echo htmlspecialchars($patient['email']); ?></td>
-                                <td><?php echo htmlspecialchars($patient['phone']); ?></td>
-                                <td><?php echo htmlspecialchars($patient['dob']); ?></td>
-                                <td><?php echo htmlspecialchars($patient['address']); ?></td>
+                                <td><?php echo htmlspecialchars($staff['staff_id']); ?></td>
+                                <td><?php echo htmlspecialchars($staff['first_name']); ?></td>
+                                <td><?php echo htmlspecialchars($staff['last_name']); ?></td>
+                                <td><?php echo htmlspecialchars($staff['gender']); ?></td>
+                                <td><?php echo htmlspecialchars($staff['email']); ?></td>
+                                <td><?php echo htmlspecialchars($staff['phone']); ?></td>
+                                <td><?php echo htmlspecialchars($staff['dob']); ?></td>
+                                <td><?php echo htmlspecialchars($staff['address']); ?></td>
                                 <td>
-                                    <a href="#" onclick="fillForm('<?php echo htmlspecialchars($patient['patient_id']); ?>', 
-                                '<?php echo htmlspecialchars($patient['first_name']); ?>', 
-                                '<?php echo htmlspecialchars($patient['last_name']); ?>', 
-                                '<?php echo htmlspecialchars($patient['gender']); ?>', 
-                                '<?php echo htmlspecialchars($patient['email']); ?>', 
-                                '<?php echo htmlspecialchars($patient['phone']); ?>', 
-                                '<?php echo htmlspecialchars($patient['dob']); ?>', 
-                                '<?php echo htmlspecialchars($patient['address']); ?>')">Edit</a>
+                                    <a href="#" onclick="fillForm('<?php echo htmlspecialchars($staff['staff_id']); ?>', 
+                                '<?php echo htmlspecialchars($staff['first_name']); ?>', 
+                                '<?php echo htmlspecialchars($staff['last_name']); ?>', 
+                                '<?php echo htmlspecialchars($staff['gender']); ?>', 
+                                '<?php echo htmlspecialchars($staff['email']); ?>', 
+                                '<?php echo htmlspecialchars($staff['phone']); ?>', 
+                                '<?php echo htmlspecialchars($staff['dob']); ?>', 
+                                '<?php echo htmlspecialchars($staff['address']); ?>')">Edit</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -454,8 +454,8 @@ if (!$is_search && empty($search_results)) {
     </div>
 
     <script>
-        function fillForm(patientId, firstName, lastName, gender, email, phone, dob, address) {
-            document.getElementById('patientID').value = patientId;
+        function fillForm(staffId, firstName, lastName, gender, email, phone, dob, address) {
+            document.getElementById('staffID').value = staffId;
             document.getElementById('firstName').value = firstName;
             document.getElementById('lastName').value = lastName;
             document.getElementById('gender').value = gender;
@@ -470,13 +470,13 @@ if (!$is_search && empty($search_results)) {
             document.getElementById('deleteButton').disabled = false;
 
             // Scroll to form
-            document.getElementById('patientForm').scrollIntoView({
+            document.getElementById('staffForm').scrollIntoView({
                 behavior: 'smooth'
             });
         }
 
         function clearForm() {
-            document.getElementById('patientID').value = ''; // Clear Patient ID
+            document.getElementById('staffID').value = ''; // Clear Staff ID
             document.getElementById('firstName').value = ''; // Clear First Name
             document.getElementById('lastName').value = ''; // Clear Last Name
             document.getElementById('gender').selectedIndex = 0; // Reset Gender to default
@@ -499,9 +499,9 @@ if (!$is_search && empty($search_results)) {
             document.getElementById('updateButton').disabled = true;
             document.getElementById('deleteButton').disabled = true;
 
-            // If there's a patient ID in the form (from form submission error), 
+            // If there's a staff ID in the form (from form submission error), 
             // we should disable save and enable update/delete
-            if (document.getElementById('patientID').value) {
+            if (document.getElementById('staffID').value) {
                 document.getElementById('saveButton').disabled = true;
                 document.getElementById('updateButton').disabled = false;
                 document.getElementById('deleteButton').disabled = false;
@@ -509,21 +509,21 @@ if (!$is_search && empty($search_results)) {
         });
 
         // Add this to prevent form submission with wrong button states
-        document.getElementById('patientForm').addEventListener('submit', function(e) {
-            const patientId = document.getElementById('patientID').value;
+        document.getElementById('staffForm').addEventListener('submit', function(e) {
+            const staffId = document.getElementById('staffID').value;
             const isSave = e.submitter.name === 'save_button';
             const isUpdate = e.submitter.name === 'update_button';
             const isDelete = e.submitter.name === 'delete_button';
 
-            if (isSave && patientId) {
+            if (isSave && staffId) {
                 e.preventDefault();
                 alert("Error: You're trying to save an existing record. Use Update instead.");
                 return;
             }
 
-            if ((isUpdate || isDelete) && !patientId) {
+            if ((isUpdate || isDelete) && !staffId) {
                 e.preventDefault();
-                alert("Error: No patient selected. Please select a patient to edit first.");
+                alert("Error: No staff selected. Please select a staff to edit first.");
                 return;
             }
 
@@ -537,7 +537,7 @@ if (!$is_search && empty($search_results)) {
 
         const phoneInput = document.getElementById("phone");
         const phoneError = document.getElementById("phoneError");
-        const patientForm = document.getElementById("patientForm");
+        const staffForm = document.getElementById("staffForm");
 
         // Phone validation function
         function validatePhoneNumber(phone) {
@@ -608,7 +608,7 @@ if (!$is_search && empty($search_results)) {
         });
 
         // Form submission validation
-        patientForm.addEventListener("submit", function(e) {
+        staffForm.addEventListener("submit", function(e) {
             // Only validate if there's a value
             if (phoneInput.value.length > 0) {
                 const validation = validatePhoneNumber(phoneInput.value);
@@ -675,7 +675,7 @@ if (!$is_search && empty($search_results)) {
                 };
             }
 
-            // Check age range (assuming patients should be between 0 and 120 years old)
+            // Check age range (assuming staffs should be between 0 and 120 years old)
             const age = calculateAge(dob);
             if (age > 120) {
                 return {
@@ -710,7 +710,7 @@ if (!$is_search && empty($search_results)) {
         });
 
         // Add DOB validation to form submission
-        patientForm.addEventListener("submit", function(e) {
+        staffForm.addEventListener("submit", function(e) {
             if (dobInput.value) {
                 const validation = validateDob(dobInput.value);
                 if (!validation.valid) {

@@ -26,6 +26,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $errors[] = "Email already registered";
     }
 
+    // NEW: Check if phone exists
+    $phone_check = "SELECT * FROM admin WHERE phone = '$phone'";
+    $phone_result = mysqli_query($conn, $phone_check);
+    if (mysqli_num_rows($phone_result) > 0) {
+        $errors[] = "Phone number already registered";
+    }
+
     if (empty($errors)) {
         $admin_id = 'A' . str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
 
