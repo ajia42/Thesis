@@ -213,7 +213,12 @@ if (!$is_search && empty($search_results)) {
 
             <!-- NEW STAFF INFO SECTION -->
             <div class="staff-info">
-                <p>Welcome, <?php echo htmlspecialchars($_SESSION['staff_name']); ?></p>
+                <svg xmlns="http://www.w3.org/2000/svg" style="color: #2c3e50;" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-user-round-icon lucide-circle-user-round">
+                    <path d="M18 20a6 6 0 0 0-12 0" />
+                    <circle cx="12" cy="10" r="4" />
+                    <circle cx="12" cy="12" r="10" />
+                </svg>
+                <p><?php echo htmlspecialchars($_SESSION['staff_name']); ?></p>
             </div>
 
             <ul class="menu">
@@ -455,10 +460,15 @@ if (!$is_search && empty($search_results)) {
             document.getElementById('dob').value = dob;
             document.getElementById('address').value = address;
 
+            // Disable save button, enable update and delete
             document.getElementById('saveButton').disabled = true;
-            document.getElementById('saveButton').classList.add('disabled-button');
-            document.querySelector('button[name="update_button"]').disabled = false;
+            document.getElementById('updateButton').disabled = false;
+            document.getElementById('deleteButton').disabled = false;
 
+            // Scroll to form
+            document.getElementById('patientForm').scrollIntoView({
+                behavior: 'smooth'
+            });
         }
 
         function clearForm() {
@@ -473,20 +483,47 @@ if (!$is_search && empty($search_results)) {
             // Focus on first name input
             document.getElementById('firstName').focus();
 
+            // Enable save button, disable update and delete
             document.getElementById('saveButton').disabled = false;
-            document.getElementById('saveButton').classList.remove('disabled-button');
-            document.querySelector('button[name="update_button"]').disabled = true;
+            document.getElementById('updateButton').disabled = true;
+            document.getElementById('deleteButton').disabled = true;
         }
 
-        // Form submission safeguard
+        // Add this to initialize the form state when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initially disable update and delete buttons
+            document.getElementById('updateButton').disabled = true;
+            document.getElementById('deleteButton').disabled = true;
+
+            // If there's a patient ID in the form (from form submission error), 
+            // we should disable save and enable update/delete
+            if (document.getElementById('patientID').value) {
+                document.getElementById('saveButton').disabled = true;
+                document.getElementById('updateButton').disabled = false;
+                document.getElementById('deleteButton').disabled = false;
+            }
+        });
+
+        // Add this to prevent form submission with wrong button states
         document.getElementById('patientForm').addEventListener('submit', function(e) {
             const patientId = document.getElementById('patientID').value;
             const isSave = e.submitter.name === 'save_button';
+            const isUpdate = e.submitter.name === 'update_button';
+            const isDelete = e.submitter.name === 'delete_button';
 
             if (isSave && patientId) {
                 e.preventDefault();
                 alert("Error: You're trying to save an existing record. Use Update instead.");
+                return;
             }
+
+            if ((isUpdate || isDelete) && !patientId) {
+                e.preventDefault();
+                alert("Error: No patient selected. Please select a patient to edit first.");
+                return;
+            }
+
+            // Additional validation can be added here
         });
 
         // Prevent form resubmission on page refresh
