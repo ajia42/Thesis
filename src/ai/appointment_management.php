@@ -378,7 +378,9 @@ $time_slots = ['08:00:00', '09:00:00', '10:00:00', '13:00:00', '14:00:00', '15:0
                     </div>
                     <div class="form-group">
                         <label for="bookingDate">Booking Date</label>
-                        <input type="date" id="bookingDate" name="booking_date" min="<?php echo $current_date; ?>" required>
+                        <input type="date" id="bookingDate" name="booking_date"
+                            min="<?php echo (isset($_POST['delete_button']) ? '' : $current_date); ?>"
+                            required>
                     </div>
                     <div class="form-group">
                         <label for="bookingTime">Booking Time</label>
@@ -495,6 +497,9 @@ $time_slots = ['08:00:00', '09:00:00', '10:00:00', '13:00:00', '14:00:00', '15:0
             document.getElementById('symptoms').value = symptoms;
             document.getElementById('comment').value = comment;
             document.getElementById('status').value = status;
+
+            // When filling form for existing appointment, remove min date restriction
+            document.getElementById('bookingDate').removeAttribute('min');
         }
 
         function clearForm() {
@@ -509,5 +514,18 @@ $time_slots = ['08:00:00', '09:00:00', '10:00:00', '13:00:00', '14:00:00', '15:0
             document.getElementById('status').value = "";
             // Focus on first name input
             document.getElementById('patientID').focus();
+
+            // Set min date only for new appointments
+            document.getElementById('bookingDate').min = "<?php echo $current_date; ?>";
         }
+
+        // Add event listener to handle delete button differently
+        document.getElementById('appointmentForm').addEventListener('submit', function(e) {
+            if (e.submitter && e.submitter.name === 'delete_button') {
+                // For delete operation, bypass all validation
+                return true;
+            }
+
+            // For save/update operations, proceed with normal validation
+        });
     </script>

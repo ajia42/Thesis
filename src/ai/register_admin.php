@@ -36,10 +36,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($errors)) {
         $admin_id = 'A' . str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
 
-        // $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
         $sql = "INSERT INTO admin (admin_id, first_name, last_name, email, phone, password) 
-                VALUES ('$admin_id', '$first_name', '$last_name', '$email', '$phone', '$password')";
+                VALUES ('$admin_id', '$first_name', '$last_name', '$email', '$phone', '$hashed_password')";
 
         if (mysqli_query($conn, $sql)) {
             $success = "Registration successful! Redirecting to login...";

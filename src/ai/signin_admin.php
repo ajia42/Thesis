@@ -23,7 +23,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
   if ($result->num_rows == 1) {
     // User found, now verify the password
     $row = $result->fetch_assoc();
-    if ($password == $row["password"]) { // In a real application, use password_verify() with hashed passwords
+    if (password_verify($password, $row["password"])) { // In a real application, use password_verify() with hashed passwords
       // Password is correct, set session variables and redirect
       $_SESSION["staff_id"] = $row["admin_id"];  // Using admin_id but keeping staff_id as session name
       $_SESSION["staff_name"] = $row["first_name"] . " " . $row["last_name"];
