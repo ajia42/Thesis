@@ -219,12 +219,42 @@ $time_slots = ['08:00:00', '09:00:00', '10:00:00', '13:00:00', '14:00:00', '15:0
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Appointment Management</title>
     <link rel="stylesheet" href="appointment_management.css">
+    <style>
+        .searchable-dropdown {
+            position: relative;
+            width: 100%;
+        }
 
-    <!-- In the head section, add these lines (jQuery FIRST, then Select2) -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+        .searchable-dropdown input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
 
+        .dropdown-list {
+            display: none;
+            position: absolute;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            background: white;
+            z-index: 1000;
+            margin-top: 5px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .dropdown-item {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f5f5f5;
+        }
+    </style>
 </head>
 
 <body>
@@ -351,15 +381,20 @@ $time_slots = ['08:00:00', '09:00:00', '10:00:00', '13:00:00', '14:00:00', '15:0
 
 
                     <div class="form-group">
-                        <label for="patientID">Patient</label>
-                        <select id="patientID" name="patient_id" class="select2-search" required>
-                            <option value="">Select Patient</option>
-                            <?php foreach ($patients as $patient): ?>
-                                <option value="<?php echo $patient['patient_id']; ?>">
-                                    <?php echo $patient['first_name'] . ' ' . $patient['last_name'] . ' (' . $patient['patient_id'] . ')'; ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                        <label for="patientSearch">Patient</label>
+                        <div class="searchable-dropdown">
+                            <input type="text" id="patientSearch" placeholder="Type a name" autocomplete="off" onclick="showPatientDropdown()">
+                            <input type="hidden" id="patientID" name="patient_id" required>
+                            <div class="dropdown-list" id="patientDropdown">
+                                <?php foreach ($patients as $patient): ?>
+                                    <div class="dropdown-item"
+                                        data-value="<?php echo $patient['patient_id']; ?>"
+                                        onclick="selectPatient(this, '<?php echo $patient['patient_id']; ?>', '<?php echo $patient['first_name'] . ' ' . $patient['last_name'] . ' (' . $patient['patient_id'] . ')'; ?>')">
+                                        <?php echo $patient['first_name'] . ' ' . $patient['last_name'] . ' (' . $patient['patient_id'] . ')'; ?>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="form-group">
@@ -476,14 +511,15 @@ $time_slots = ['08:00:00', '09:00:00', '10:00:00', '13:00:00', '14:00:00', '15:0
                                 <td class="<?php echo $status_class; ?>"><?php echo htmlspecialchars(ucfirst($appointment['status'])); ?></td>
                                 <td>
                                     <a href="#" onclick="fillForm('<?php echo htmlspecialchars($appointment['appointment_id']); ?>', 
-                                '<?php echo htmlspecialchars($appointment['patient_id']); ?>', 
-                                '<?php echo htmlspecialchars($appointment['staff_id']); ?>', 
-                                '<?php echo htmlspecialchars($appointment['service_type_id']); ?>', 
-                                '<?php echo htmlspecialchars($appointment['booking_time']); ?>', 
-                                '<?php echo htmlspecialchars($appointment['booking_date']); ?>', 
-                                '<?php echo htmlspecialchars(addslashes($appointment['symptoms'])); ?>', 
-                                '<?php echo htmlspecialchars(addslashes($appointment['comment'])); ?>', 
-                                '<?php echo htmlspecialchars($appointment['status']); ?>')">Edit</a>
+    '<?php echo htmlspecialchars($appointment['patient_id']); ?>', 
+    '<?php echo htmlspecialchars($appointment['staff_id']); ?>', 
+    '<?php echo htmlspecialchars($appointment['service_type_id']); ?>', 
+    '<?php echo htmlspecialchars($appointment['booking_time']); ?>', 
+    '<?php echo htmlspecialchars($appointment['booking_date']); ?>', 
+    '<?php echo htmlspecialchars(addslashes($appointment['symptoms'])); ?>', 
+    '<?php echo htmlspecialchars(addslashes($appointment['comment'])); ?>', 
+    '<?php echo htmlspecialchars($appointment['status']); ?>',
+    '<?php echo htmlspecialchars($appointment['first_name'] . ' ' . $appointment['last_name'] . ' (' . $appointment['patient_id'] . ')'); ?>')">Edit</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -495,9 +531,10 @@ $time_slots = ['08:00:00', '09:00:00', '10:00:00', '13:00:00', '14:00:00', '15:0
 
     <script>
         // Fill form with data for editing
-        function fillForm(appointmentId, patientId, staffId, serviceTypeId, bookingTime, bookingDate, symptoms, comment, status) {
+        function fillForm(appointmentId, patientId, staffId, serviceTypeId, bookingTime, bookingDate, symptoms, comment, status, patientName) {
             document.getElementById('appointmentID').value = appointmentId;
             document.getElementById('patientID').value = patientId;
+            document.getElementById('patientSearch').value = patientName; // This sets the patient name in the input field
             document.getElementById('staffID').value = staffId;
             document.getElementById('serviceTypeID').value = serviceTypeId;
             document.getElementById('bookingTime').value = bookingTime;
@@ -508,14 +545,12 @@ $time_slots = ['08:00:00', '09:00:00', '10:00:00', '13:00:00', '14:00:00', '15:0
 
             // When filling form for existing appointment, remove min date restriction
             document.getElementById('bookingDate').removeAttribute('min');
-
-            // Trigger Select2 to update when filling form
-            $('#patientID').trigger('change');
         }
 
         function clearForm() {
             document.getElementById('appointmentID').value = "";
             document.getElementById('patientID').value = "";
+            document.getElementById('patientSearch').value = ""; // Clear the patient search field
             document.getElementById('staffID').value = "";
             document.getElementById('serviceTypeID').value = "";
             document.getElementById('bookingTime').value = "";
@@ -524,13 +559,10 @@ $time_slots = ['08:00:00', '09:00:00', '10:00:00', '13:00:00', '14:00:00', '15:0
             document.getElementById('comment').value = "";
             document.getElementById('status').value = "";
             // Focus on first name input
-            document.getElementById('patientID').focus();
+            document.getElementById('patientSearch').focus();
 
             // Set min date only for new appointments
             document.getElementById('bookingDate').min = "<?php echo $current_date; ?>";
-
-            // Clear Select2 dropdown
-            $('#patientID').val('').trigger('change');
         }
 
         // Add event listener to handle delete button differently
@@ -543,14 +575,48 @@ $time_slots = ['08:00:00', '09:00:00', '10:00:00', '13:00:00', '14:00:00', '15:0
             // For save/update operations, proceed with normal validation
         });
 
-        // Initialize Select2 when DOM is ready
-        document.addEventListener("DOMContentLoaded", function() {
-            $('#patientID').select2({
-                placeholder: "Search patient by name or ID...",
-                width: '100%',
-                dropdownParent: $('.appointment-form')
-            }).on('select2:open', () => {
-                document.querySelector('.select2-search__field').focus();
+        // Patient search functionality
+        const patientSearch = document.getElementById('patientSearch');
+        const patientDropdown = document.getElementById('patientDropdown');
+        const patientIDInput = document.getElementById('patientID');
+
+        function showPatientDropdown() {
+            patientDropdown.style.display = 'block';
+            // Show all items when dropdown is opened
+            const items = patientDropdown.querySelectorAll('.dropdown-item');
+            items.forEach(item => {
+                item.style.display = 'block';
             });
+        }
+
+        patientSearch.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const items = patientDropdown.querySelectorAll('.dropdown-item');
+            let hasMatches = false;
+
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    item.style.display = 'block';
+                    hasMatches = true;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            patientDropdown.style.display = hasMatches ? 'block' : 'none';
+        });
+
+        function selectPatient(element, id, name) {
+            patientSearch.value = name;
+            patientIDInput.value = id;
+            patientDropdown.style.display = 'none';
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.searchable-dropdown')) {
+                patientDropdown.style.display = 'none';
+            }
         });
     </script>
