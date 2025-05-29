@@ -133,7 +133,8 @@ h1 {
 
 .input-group input[type="email"],
 .input-group input[type="password"],
-.input-group input[type="text"] {
+.input-group input[type="text"],
+.input-group input[type="date"] {
   width: calc(100% - 22px);
   padding: 10px;
   border: 1px solid #ddd;

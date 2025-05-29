@@ -10,6 +10,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $last_name = mysqli_real_escape_string($conn, $_POST['last_name']);
     $email = mysqli_real_escape_string($conn, $_POST['email']);
     $phone = mysqli_real_escape_string($conn, $_POST['phone']);
+    $doD = mysqli_real_escape_string($conn, $_POST['doD']);
     $password = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
 
@@ -19,6 +20,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (!preg_match('/^20\d{8}$/', $phone)) $errors[] = "Phone must start with 20 and be 10 digits";
     if (strlen($password) < 8) $errors[] = "Password must be at least 8 characters";
     if ($password !== $confirm_password) $errors[] = "Passwords do not match";
+
+    // Add doD validation
+    if (empty($doD)) $errors[] = "Date of birth is required";
+    if (strtotime($doD) > time()) $errors[] = "Date of birth cannot be in the future";
 
     $email_check = "SELECT * FROM admin WHERE email = '$email'";
     $result = mysqli_query($conn, $email_check);
@@ -38,8 +43,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-        $sql = "INSERT INTO admin (admin_id, first_name, last_name, email, phone, password) 
-                VALUES ('$admin_id', '$first_name', '$last_name', '$email', '$phone', '$hashed_password')";
+        $sql = "INSERT INTO admin (admin_id, first_name, last_name, email, phone, dob, password) 
+                VALUES ('$admin_id', '$first_name', '$last_name', '$email', '$phone', '$doD', '$hashed_password')";
 
         if (mysqli_query($conn, $sql)) {
             $success = "Registration successful! Redirecting to login...";
@@ -172,6 +177,13 @@ $conn->close();
                         placeholder="20xxxxxxxx" maxlength="10"
                         value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>">
                     <small class="hint">Must start with 20 and be 10 digits</small>
+                </div>
+
+                <div class="input-group">
+                    <label for="doD">Date of Birth</label>
+                    <input type="date" id="doD" name="doD" required
+                        max="<?php echo date('Y-m-d'); ?>"
+                        value="<?php echo htmlspecialchars($_POST['doD'] ?? ''); ?>">
                 </div>
 
                 <div class="input-group">

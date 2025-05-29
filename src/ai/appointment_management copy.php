@@ -227,9 +227,10 @@ $time_slots = ['08:00:00', '09:00:00', '10:00:00', '13:00:00', '14:00:00', '15:0
 
         .searchable-dropdown input[type="text"] {
             width: 100%;
-            padding: 8px;
+            padding: 10px;
             border: 1px solid #ddd;
-            border-radius: 4px;
+            border-radius: 3px;
+            box-sizing: border-box;
         }
 
         .dropdown-list {
@@ -244,11 +245,30 @@ $time_slots = ['08:00:00', '09:00:00', '10:00:00', '13:00:00', '14:00:00', '15:0
             margin-top: 5px;
             border-radius: 4px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            scrollbar-width: thin;
+            scrollbar-color: #ccc #f5f5f5;
+        }
+
+        .dropdown-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .dropdown-list::-webkit-scrollbar-track {
+            background: #f5f5f5;
+            border-radius: 4px;
+        }
+
+        .dropdown-list::-webkit-scrollbar-thumb {
+            background-color: #ccc;
+            border-radius: 4px;
         }
 
         .dropdown-item {
             padding: 8px 12px;
             cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .dropdown-item:hover {
