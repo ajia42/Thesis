@@ -1,7 +1,7 @@
 <?php
 
 session_start();
-if (!isset($_SESSION['staff_id'])) {
+if (!isset($_SESSION['admin_id'])) {
     header('Location: signin_admin.php');
     exit();
 }
@@ -215,7 +215,7 @@ if (!$is_search && empty($search_results)) {
 
                 <!-- NEW STAFF INFO SECTION -->
                 <li>
-                    <a href="#">
+                    <a href="admin_profile.php">
                         <div class="staff-info">
                             <svg xmlns="http://www.w3.org/2000/svg" style="color: #2c3e50;" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-user-round-icon lucide-circle-user-round">
                                 <path d="M18 20a6 6 0 0 0-12 0" />

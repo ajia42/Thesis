@@ -158,6 +158,26 @@ $conn->close();
             background-color: #f9f9f9;
             color: #666;
         }
+
+        .auth-links {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .back-link {
+            text-decoration: none;
+            color: #555;
+            font-weight: 500;
+            padding: 8px 12px;
+            border-radius: 4px;
+            background-color: #f0f0f0;
+            transition: background-color 0.3s;
+        }
+
+        .back-link:hover {
+            background-color: #e0e0e0;
+        }
     </style>
 </head>
 
@@ -171,6 +191,7 @@ $conn->close();
                 <span>Vision Care</span>
             </div>
             <div class="auth-links">
+                <a href="patient_management.php" class="back-link">Back</a>
                 <a href="logout.php">Logout</a>
             </div>
         </div>

@@ -1,7 +1,7 @@
 <?php
 session_start(); // Start the session to store user information upon successful login
 
-if (isset($_SESSION['staff_id'])) {  // Keeping same session name for consistency
+if (isset($_SESSION['admin_id'])) {  // Keeping same session name for consistency
   header('Location: patient_management.php');
   exit();
 }
@@ -25,7 +25,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $row = $result->fetch_assoc();
     if (password_verify($password, $row["password"])) { // In a real application, use password_verify() with hashed passwords
       // Password is correct, set session variables and redirect
-      $_SESSION["staff_id"] = $row["admin_id"];  // Using admin_id but keeping staff_id as session name
+      $_SESSION["admin_id"] = $row["admin_id"];  // Using admin_id but keeping staff_id as session name
       $_SESSION["staff_name"] = $row["first_name"] . " " . $row["last_name"];
       header("Location: patient_management.php?id=" . $row["admin_id"]);
       exit();

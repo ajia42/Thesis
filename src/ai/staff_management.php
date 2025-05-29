@@ -1,7 +1,7 @@
 <?php
 
 session_start();
-if (!isset($_SESSION['staff_id'])) {
+if (!isset($_SESSION['admin_id'])) {
     header('Location: signin_admin.php');
     exit();
 }

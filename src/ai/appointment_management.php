@@ -1,6 +1,6 @@
 <?php
 session_start();
-if (!isset($_SESSION['staff_id'])) {
+if (!isset($_SESSION['admin_id'])) {
     header('Location: signin_admin.php');
     exit();
 }
@@ -372,6 +372,7 @@ $time_slots = ['08:00:00', '09:00:00', '10:00:00', '13:00:00', '14:00:00', '15:0
                                 </option>
                             <?php endforeach; ?>
                         </select>
+
                     </div>
                     <div class="form-group">
                         <label for="serviceTypeID">Service Type</label>
