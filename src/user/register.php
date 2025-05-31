@@ -197,6 +197,30 @@
             transform: translateY(0);
         }
 
+        .login-link {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .login-link p {
+            color: #64748b;
+            font-size: 16px;
+        }
+
+        .login-link a {
+            color: #0ea5e9;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .login-link a:hover {
+            color: #0284c7;
+            text-decoration: underline;
+        }
+
         .error {
             color: #ef4444;
             font-size: 12px;
@@ -280,7 +304,7 @@
 
             <div class="form-group">
                 <label for="phone">Phone Number *</label>
-                <input type="tel" id="phone" name="phone" placeholder="+1 (555) 123-4567" required>
+                <input type="tel" id="phone" name="phone" placeholder="+856 (020) 523-4567" required>
                 <div class="error" id="phone-error"></div>
             </div>
 
@@ -305,6 +329,11 @@
 
             <button type="submit" class="submit-btn">Create Account</button>
         </form>
+
+       <div class="login-link">
+    <p>Already have an account? <a href="login.php">Sign In</a></p>
+</div>
+
     </div>
 
     <script>
@@ -405,6 +434,13 @@
             }
             e.target.value = value;
         });
+
+        // Handle navigation to login page
+        function goToLogin() {
+            // You can redirect to your actual login page here
+            alert('Redirecting to Sign In page...\n\nIn a real application, this would navigate to the login page.');
+            // window.location.href = 'login.php'; // Uncomment and update with your login page URL
+        }
     </script>
 
     <?php

@@ -314,9 +314,10 @@
             <span>or</span>
         </div>
 
-        <div class="signup-link">
-            Don't have an account? <a href="#" onclick="showSignup()">Sign up here</a>
-        </div>
+      <div class="signup-link">
+    Don't have an account? <a href="register.php">Sign up here</a>
+</div>
+
     </div>
 
     <script>

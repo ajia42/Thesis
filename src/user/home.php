@@ -427,67 +427,6 @@
                 flex-direction: column;
                 gap: 12px;
             }
-        }: 8px;
-            border: 1px solid #ddd;
-            text-align: center;
-            cursor: pointer;
-            background-color: var(--bg-color);
-        }
-        
-        .time-slot.selected {
-            background-color: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
-        }
-        
-        .btn-confirm-time {
-            width: 100%;
-            background-color: var(--primary-color);
-            color: white;
-            padding: 12px;
-            border-radius: 8px;
-            border: none;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 480px) {
-            .page-title {
-                font-size: 24px;
-                margin: 20px 0;
-            }
-            
-            .date-box {
-                width: 80px;
-                padding: 15px;
-            }
-            
-            .date-day {
-                font-size: 30px;
-            }
-            
-            .appointment-details {
-                padding: 15px;
-            }
-            
-            .appointment-type {
-                font-size: 18px;
-            }
-            
-            .appointment-actions {
-                flex-direction: column;
-                gap: 8px;
-            }
-            
-            .btn {
-                width: 100%;
-            }
-            
-            .available-slots {
-                grid-template-columns: repeat(2, 1fr);
-            }
         }
     </style>
 </head>
@@ -518,7 +457,7 @@
                     <div class="date-month">ທັນວາ</div>
                 </div>
                 <div class="appointment-details">
-                    <div class="appointment-type">ຕິດຕາມຜົນ</div>
+                    <div class="appointment-type">ກວດທົ່ວໄປ</div>
                     <div class="appointment-person">ຄຣິສຕິນາ ຢາງ</div>
                     <div class="appointment-position">ທີ່ປຶກສາອາວຸໂສ</div>
                     <div class="appointment-time">14:30</div>
@@ -538,7 +477,7 @@
                     <div class="date-month">ພະຈິກ</div>
                 </div>
                 <div class="appointment-details">
-                    <div class="appointment-type">ກວດກາຍະພາບບໍາບັດ</div>
+                    <div class="appointment-type">ວັດແທກສາຍຕາ</div>
                     <div class="appointment-person">ຄຣິສຕິນາ ຢາງ</div>
                     <div class="appointment-position">ທີ່ປຶກສາອາວຸໂສ</div>
                     <div class="appointment-time">9:15</div>
@@ -566,20 +505,12 @@
                     <h3>ປະເພດການນັດໝາຍ</h3>
                     <div class="appointment-types">
                         <label class="type-option">
-                            <input type="radio" name="appointmentType" value="followup" checked>
-                            <span class="type-label">ຕິດຕາມຜົນ</span>
+                            <input type="radio" name="appointmentType" value="general" checked>
+                            <span class="type-label">ກວດທົ່ວໄປ</span>
                         </label>
                         <label class="type-option">
-                            <input type="radio" name="appointmentType" value="physio">
-                            <span class="type-label">ກວດກາຍະພາບບໍາບັດ</span>
-                        </label>
-                        <label class="type-option">
-                            <input type="radio" name="appointmentType" value="initial">
-                            <span class="type-label">ປຶກສາຄັ້ງທໍາອິດ</span>
-                        </label>
-                        <label class="type-option">
-                            <input type="radio" name="appointmentType" value="specialist">
-                            <span class="type-label">ພົບຜູ້ຊ່ຽວຊານ</span>
+                            <input type="radio" name="appointmentType" value="eyetest">
+                            <span class="type-label">ວັດແທກສາຍຕາ</span>
                         </label>
                     </div>
                 </div>
@@ -753,10 +684,8 @@
         document.querySelector('.btn-confirm-time').addEventListener('click', function() {
             const selectedType = document.querySelector('input[name="appointmentType"]:checked').value;
             const typeLabels = {
-                'followup': 'ຕິດຕາມຜົນ',
-                'physio': 'ກວດກາຍະພາບບໍາບັດ',
-                'initial': 'ປຶກສາຄັ້ງທໍາອິດ',
-                'specialist': 'ພົບຜູ້ຊ່ຽວຊານ'
+                'general': 'ກວດທົ່ວໄປ',
+                'eyetest': 'ວັດແທກສາຍຕາ'
             };
             
             const hour = document.getElementById('hourSelect').value;

@@ -521,7 +521,8 @@
             <h1>WELCOME TO</h1>
             <h2>DocTime</h2>
         </div>
-        <button class="get-started-btn" id="get-started-btn">Get Started</button>
+       <button class="get-started-btn" id="get-started-btn" onclick="window.location.href='login.php'">Get Started</button>
+
     </div>
 
     <!-- Main App -->
