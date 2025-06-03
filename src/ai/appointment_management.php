@@ -523,15 +523,21 @@ $time_slots = ['08:00:00', '09:00:00', '10:00:00', '13:00:00', '14:00:00', '15:0
             document.getElementById('bookingDate').value = "";
             document.getElementById('symptoms').value = "";
             document.getElementById('comment').value = "";
-            document.getElementById('status').value = "";
+            document.getElementById('status').value = "pending";
             // Focus on first name input
             document.getElementById('patientID').focus();
 
             // Set min date only for new appointments
             document.getElementById('bookingDate').min = "<?php echo $current_date; ?>";
 
-            // Clear Select2 dropdown
+            // Clear and focus Select2 dropdown
             $('#patientID').val('').trigger('change');
+            $('#patientID').select2('open');
+
+            // Focus on the search field inside Select2
+            setTimeout(function() {
+                $('.select2-search__field').focus();
+            }, 100);
         }
 
         // Add event listener to handle delete button differently
