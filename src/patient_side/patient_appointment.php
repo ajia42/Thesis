@@ -65,9 +65,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Check if the selected time slot is available
     $check_sql = "SELECT * FROM appointment 
-                 WHERE booking_date = '$booking_date' 
-                 AND booking_time = '$booking_time'
-                 AND status != 'Cancelled'";
+             WHERE booking_date = '$booking_date' 
+             AND booking_time = '$booking_time'
+             AND status != 'Cancelled'";
     $check_result = mysqli_query($conn, $check_sql);
     if (mysqli_num_rows($check_result) > 0) {
         $errors[] = "The selected time slot is already booked. Please choose another time.";
@@ -333,6 +333,28 @@ $conn->close();
                 font-size: 1.8rem;
             }
         }
+
+        .time-slot.disabled {
+            background-color: #f5f5f5;
+            color: #ccc;
+            cursor: not-allowed;
+            border-color: #eee;
+            position: relative;
+        }
+
+        .time-slot.disabled:hover {
+            background-color: #f5f5f5;
+        }
+
+        .time-slot.disabled::after {
+            content: "✗";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.2em;
+            color: #e74c3c;
+        }
     </style>
 </head>
 
@@ -398,35 +420,65 @@ $conn->close();
                 <div class="form-group">
                     <label>Booking Time</label>
                     <div class="time-slots">
-                        <label class="time-slot <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '08:00:00') ? 'selected' : ''; ?>">
+                        <label class="time-slot <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '08:00:00') ? 'selected' : ''; ?>" data-hour="8" data-minute="0">
                             <input type="radio" name="booking_time" value="08:00:00"
                                 <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '08:00:00') ? 'checked' : ''; ?> required>
-                            8:00 AM
+                            08:00
                         </label>
-                        <label class="time-slot <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '09:00:00') ? 'selected' : ''; ?>">
+                        <label class="time-slot <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '08:30:00') ? 'selected' : ''; ?>" data-hour="8" data-minute="30">
+                            <input type="radio" name="booking_time" value="08:30:00"
+                                <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '08:30:00') ? 'checked' : ''; ?>>
+                            08:30
+                        </label>
+                        <label class="time-slot <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '09:00:00') ? 'selected' : ''; ?>" data-hour="9" data-minute="0">
                             <input type="radio" name="booking_time" value="09:00:00"
                                 <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '09:00:00') ? 'checked' : ''; ?>>
-                            9:00 AM
+                            09:00
                         </label>
-                        <label class="time-slot <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '10:00:00') ? 'selected' : ''; ?>">
+                        <label class="time-slot <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '09:30:00') ? 'selected' : ''; ?>" data-hour="9" data-minute="30">
+                            <input type="radio" name="booking_time" value="09:30:00"
+                                <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '09:30:00') ? 'checked' : ''; ?>>
+                            09:30
+                        </label>
+                        <label class="time-slot <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '10:00:00') ? 'selected' : ''; ?>" data-hour="10" data-minute="0">
                             <input type="radio" name="booking_time" value="10:00:00"
                                 <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '10:00:00') ? 'checked' : ''; ?>>
-                            10:00 AM
+                            10:00
                         </label>
-                        <label class="time-slot <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '13:00:00') ? 'selected' : ''; ?>">
+                        <label class="time-slot <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '10:30:00') ? 'selected' : ''; ?>" data-hour="10" data-minute="30">
+                            <input type="radio" name="booking_time" value="10:30:00"
+                                <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '10:30:00') ? 'checked' : ''; ?>>
+                            10:30
+                        </label>
+                        <label class="time-slot <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '13:00:00') ? 'selected' : ''; ?>" data-hour="13" data-minute="0">
                             <input type="radio" name="booking_time" value="13:00:00"
                                 <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '13:00:00') ? 'checked' : ''; ?>>
-                            1:00 PM
+                            13:00
                         </label>
-                        <label class="time-slot <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '14:00:00') ? 'selected' : ''; ?>">
+                        <label class="time-slot <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '13:30:00') ? 'selected' : ''; ?>" data-hour="13" data-minute="30">
+                            <input type="radio" name="booking_time" value="13:30:00"
+                                <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '13:30:00') ? 'checked' : ''; ?>>
+                            13:30
+                        </label>
+                        <label class="time-slot <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '14:00:00') ? 'selected' : ''; ?>" data-hour="14" data-minute="0">
                             <input type="radio" name="booking_time" value="14:00:00"
                                 <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '14:00:00') ? 'checked' : ''; ?>>
-                            2:00 PM
+                            14:00
                         </label>
-                        <label class="time-slot <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '15:00:00') ? 'selected' : ''; ?>">
+                        <label class="time-slot <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '14:30:00') ? 'selected' : ''; ?>" data-hour="14" data-minute="30">
+                            <input type="radio" name="booking_time" value="14:30:00"
+                                <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '14:30:00') ? 'checked' : ''; ?>>
+                            14:30
+                        </label>
+                        <label class="time-slot <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '15:00:00') ? 'selected' : ''; ?>" data-hour="15" data-minute="0">
                             <input type="radio" name="booking_time" value="15:00:00"
                                 <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '15:00:00') ? 'checked' : ''; ?>>
-                            3:00 PM
+                            15:00
+                        </label>
+                        <label class="time-slot <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '15:30:00') ? 'selected' : ''; ?>" data-hour="15" data-minute="30">
+                            <input type="radio" name="booking_time" value="15:30:00"
+                                <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '15:30:00') ? 'checked' : ''; ?>>
+                            15:30
                         </label>
                     </div>
                 </div>
@@ -471,6 +523,195 @@ $conn->close();
             if (selectedDate < today) {
                 alert('Booking date cannot be in the past');
                 this.value = '';
+            }
+        });
+
+        // Check available time slots when date changes
+        document.getElementById('booking_date').addEventListener('change', function() {
+            const selectedDate = this.value;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const dateObj = new Date(selectedDate);
+
+            if (dateObj < today) {
+                alert('Booking date cannot be in the past');
+                this.value = '';
+                return;
+            }
+
+            if (selectedDate) {
+                // Disable all time slots while checking
+                document.querySelectorAll('.time-slot input').forEach(slot => {
+                    slot.disabled = true;
+                    slot.parentElement.classList.add('disabled');
+                });
+
+                // Fetch already booked time slots for this date
+                fetch(`check_time_slots.php?date=${selectedDate}`)
+                    .then(response => response.json())
+                    .then(bookedSlots => {
+                        document.querySelectorAll('.time-slot input').forEach(slot => {
+                            const slotValue = slot.value;
+                            const isBooked = bookedSlots.includes(slotValue);
+
+                            slot.disabled = isBooked;
+                            slot.parentElement.classList.toggle('disabled', isBooked);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error checking time slots:', error);
+                        // Re-enable all slots if there's an error
+                        document.querySelectorAll('.time-slot input').forEach(slot => {
+                            slot.disabled = false;
+                            slot.parentElement.classList.remove('disabled');
+                        });
+                    });
+            }
+        });
+
+        // Highlight selected time slot
+        document.querySelectorAll('.time-slot').forEach(slot => {
+            slot.addEventListener('click', function() {
+                if (this.classList.contains('disabled')) return;
+
+                // Remove selected class from all slots
+                document.querySelectorAll('.time-slot').forEach(s => {
+                    s.classList.remove('selected');
+                });
+
+                // Add selected class to clicked slot
+                this.classList.add('selected');
+
+                // Ensure the radio button is checked
+                const radio = this.querySelector('input[type="radio"]');
+                if (radio) {
+                    radio.checked = true;
+                }
+            });
+        });
+
+        // Function to disable passed time slots for today
+        function disablePassedTimeSlots() {
+            const today = new Date();
+            const currentHour = today.getHours();
+            const currentMinutes = today.getMinutes();
+
+            // Only proceed if the selected date is today
+            const selectedDate = new Date(document.getElementById('booking_date').value);
+            const isToday = selectedDate.toDateString() === today.toDateString();
+
+            if (!isToday) {
+                // If not today, make sure all slots are enabled
+                document.querySelectorAll('.time-slot').forEach(slot => {
+                    const radio = slot.querySelector('input[type="radio"]');
+                    if (!slot.classList.contains('disabled')) {
+                        radio.disabled = false;
+                    }
+                });
+                return;
+            }
+
+            document.querySelectorAll('.time-slot').forEach(slot => {
+                const hour = parseInt(slot.dataset.hour);
+                const minute = parseInt(slot.dataset.minute);
+
+                // If the time has already passed today
+                if (hour < currentHour || (hour === currentHour && minute < currentMinutes)) {
+                    const radio = slot.querySelector('input[type="radio"]');
+                    radio.disabled = true;
+                    slot.classList.add('disabled');
+                } else {
+                    // Enable slots that haven't passed yet (unless they're booked)
+                    const radio = slot.querySelector('input[type="radio"]');
+                    if (!slot.classList.contains('disabled')) {
+                        radio.disabled = false;
+                    }
+                }
+            });
+        }
+
+        // Call this function when date changes, after checking booked slots
+        document.getElementById('booking_date').addEventListener('change', function() {
+            const selectedDate = new Date(this.value);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            if (selectedDate < today) {
+                alert('Booking date cannot be in the past');
+                this.value = '';
+                return;
+            }
+
+            if (this.value) {
+                // First disable all slots while checking
+                document.querySelectorAll('.time-slot input').forEach(slot => {
+                    slot.disabled = true;
+                    slot.parentElement.classList.add('disabled');
+                });
+
+                // Fetch already booked time slots for this date
+                fetch(`check_time_slots.php?date=${this.value}`)
+                    .then(response => response.json())
+                    .then(bookedSlots => {
+                        document.querySelectorAll('.time-slot input').forEach(slot => {
+                            const slotValue = slot.value;
+                            const isBooked = bookedSlots.includes(slotValue);
+
+                            slot.disabled = isBooked;
+                            slot.parentElement.classList.toggle('disabled', isBooked);
+                        });
+
+                        // After checking booked slots, disable passed slots if today
+                        disablePassedTimeSlots();
+                    })
+                    .catch(error => {
+                        console.error('Error checking time slots:', error);
+                        // Re-enable all slots if there's an error
+                        document.querySelectorAll('.time-slot input').forEach(slot => {
+                            slot.disabled = false;
+                            slot.parentElement.classList.remove('disabled');
+                        });
+                        disablePassedTimeSlots();
+                    });
+            }
+        });
+
+        // Also call it when the page loads if the selected date is today
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().split('T')[0];
+            const selectedDate = document.getElementById('booking_date').value;
+
+            if (selectedDate === today) {
+                // First disable all slots while checking
+                document.querySelectorAll('.time-slot input').forEach(slot => {
+                    slot.disabled = true;
+                    slot.parentElement.classList.add('disabled');
+                });
+
+                // Fetch already booked time slots for today
+                fetch(`check_time_slots.php?date=${today}`)
+                    .then(response => response.json())
+                    .then(bookedSlots => {
+                        document.querySelectorAll('.time-slot input').forEach(slot => {
+                            const slotValue = slot.value;
+                            const isBooked = bookedSlots.includes(slotValue);
+
+                            slot.disabled = isBooked;
+                            slot.parentElement.classList.toggle('disabled', isBooked);
+                        });
+
+                        // After checking booked slots, disable passed slots
+                        disablePassedTimeSlots();
+                    })
+                    .catch(error => {
+                        console.error('Error checking time slots:', error);
+                        // Re-enable all slots if there's an error
+                        document.querySelectorAll('.time-slot input').forEach(slot => {
+                            slot.disabled = false;
+                            slot.parentElement.classList.remove('disabled');
+                        });
+                        disablePassedTimeSlots();
+                    });
             }
         });
     </script>
