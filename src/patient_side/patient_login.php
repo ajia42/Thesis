@@ -2,7 +2,7 @@
 session_start(); // Start the session to store user information upon successful login
 
 if (isset($_SESSION['patient_id'])) {
-    header('Location: patient_dashboard.php');
+    header('Location: patient_history.php');
     exit();
 }
 
@@ -27,7 +27,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             // Password is correct, set session variables and redirect
             $_SESSION["patient_id"] = $row["patient_id"];
             $_SESSION["patient_name"] = $row["first_name"] . " " . $row["last_name"];
-            header("Location: patient_dashboard.php?id=" . $row["patient_id"]);
+            header("Location: patient_history.php?id=" . $row["patient_id"]);
             exit();
         } else {
             // Incorrect password

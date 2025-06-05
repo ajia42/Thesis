@@ -88,8 +88,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 '$booking_time', '$booking_date', '$symptoms', '$status')";
 
         if (mysqli_query($conn, $sql)) {
-            $success = "Appointment booked successfully!";
-            // Clear form or redirect to appointments list
+            // Redirect to history page after successful booking
+            header("Location: patient_history.php");
+            exit();
         } else {
             $errors[] = "Error: " . mysqli_error($conn);
         }
@@ -160,6 +161,31 @@ $conn->close();
         .auth-links a {
             color: #3498db;
             text-decoration: none;
+        }
+
+        .back-button {
+            background-color: #f8f9fa;
+            color: #212529;
+            border: 1px solid #ddd;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .back-button:hover {
+            background-color: #e2e6ea;
+            border-color: #dae0e5;
+        }
+
+        .back-button svg {
+            width: 16px;
+            height: 16px;
         }
 
         /* Appointment container styles */
@@ -314,19 +340,22 @@ $conn->close();
     <header>
         <div class="container header-content">
             <div class="logo">
+
                 <svg viewBox="0 0 24 24" fill="currentColor" class="icon">
                     <path d="M12 4a4 4 0 100 8 4 4 0 000-8zM2 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10S2 17.514 2 12z"></path>
                 </svg>
                 <span>Vision Care</span>
             </div>
-            <div class="auth-links">
-                <span>Welcome, <?php echo htmlspecialchars($patient_name); ?></span>
-                <a href="patient_logout.php">Logout</a>
-            </div>
         </div>
     </header>
 
     <main class="container appointment-container">
+        <a href="patient_history.php" class="back-button">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path>
+            </svg>
+            Back to History
+        </a>
         <div class="welcome-message">
             <h1>Book an Appointment</h1>
             <p>Please fill in the details below to schedule your appointment.</p>
