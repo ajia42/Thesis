@@ -13,10 +13,11 @@ $patient_name = $_SESSION['patient_name'];
 
 // Fetch all appointments for the patient, newest first
 $appointments = [];
+
 $sql = "SELECT appointment_id, booking_date, booking_time, status 
         FROM appointment 
         WHERE patient_id = '$patient_id'
-        ORDER BY booking_date DESC, booking_time DESC";
+        ORDER BY created_at DESC";
 $result = mysqli_query($conn, $sql);
 if ($result) {
     while ($row = mysqli_fetch_assoc($result)) {
@@ -201,8 +202,8 @@ $conn->close();
         }
 
         .status-pending {
-            background-color: #fff3cd;
-            color: #856404;
+            background-color: #e2f0fd;
+            color: #0d6efd;
         }
 
         .status-completed {
@@ -213,6 +214,18 @@ $conn->close();
         .status-cancelled {
             background-color: #f8d7da;
             color: #721c24;
+        }
+
+        .status-scheduled {
+
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .status-no-show {
+            background-color: #f8d7da;
+            color: #721c24;
+            text-transform: capitalize;
         }
 
         .detail-btn {
