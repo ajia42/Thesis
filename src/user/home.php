@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="lo">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ລະບົບນັດໝາຍ</title>
+    <title>Medical Appointment Booking</title>
     <style>
         :root {
             --primary-color: #4EADBE;
@@ -21,683 +21,946 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Noto Sans Lao', Arial, sans-serif;
         }
 
         body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
+            line-height: 1.6;
         }
 
         .container {
-            max-width: 768px;
+            min-height: 100vh;
+            max-width: 800px;
             margin: 0 auto;
-            padding: 0 16px;
+            background-color: var(--bg-color);
         }
 
-        /* Header Styles */
-        header {
-            background-color: var(--white);
-            padding: 16px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        }
-
-        .header-content {
+        /* Header */
+        .header {
+            background: var(--white);
+            padding: 12px 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
-        .menu-icon {
-            font-size: 24px;
-            cursor: pointer;
-        }
-
-        .profile {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .profile-name {
+        .header h1 {
             font-size: 18px;
-            font-weight: 500;
-        }
-
-        .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: #ddd;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-
-        /* Page Title */
-        .page-title {
-            margin: 30px 0;
-            font-size: 28px;
             font-weight: 600;
+            color: var(--text-color);
         }
 
-        /* Appointment Card Styles */
-        .appointment-card {
+        .menu-container {
+            position: relative;
+        }
+
+
+        .menu-btn, .profile-btn, .back-btn {
+            background: none;
+            border: none;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .menu-btn:hover, .back-btn:hover {
             background-color: var(--card-color);
-            border-radius: var(--border-radius);
-            margin-bottom: 20px;
-            overflow: hidden;
-            display: flex;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
         }
 
-        .date-box {
+        .profile-btn {
+            background-color: var(--card-color);
+            border-radius: 50%;
+        }
+
+        .profile-btn:hover {
             background-color: var(--primary-color);
             color: var(--white);
-            padding: 20px;
-            text-align: center;
-            width: 100px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+        }
+        
+        /* Dropdown Menu */
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: var(--white);
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 180px;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
         }
 
-        .date-day {
-            font-size: 36px;
+        .dropdown-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: var(--text-color);
+            text-decoration: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border-radius: var(--border-radius);
+            margin: 4px;
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--card-color);
+        }
+
+        .dropdown-item:first-child {
+            margin-top: 8px;
+        }
+
+        .dropdown-item:last-child {
+            margin-bottom: 8px;
+            color: var(--danger-color);
+        }
+
+        .dropdown-item:last-child:hover {
+            background-color: rgba(220, 53, 69, 0.1);
+        }
+
+        .dropdown-icon {
+            font-size: 16px;
+        }
+
+        .hamburger {
+            width: 24px;
+            height: 18px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .hamburger span {
+            width: 100%;
+            height: 2px;
+            background: var(--text-color);
+            border-radius: 1px;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 16px;
+        }
+
+        .page-title {
+            margin-bottom: 24px;
+        }
+
+        .page-title h2 {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        /* Appointment Cards */
+        .appointment-card {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 16px;
+            display: flex;
+        }
+
+        .date-section {
+            background: var(--primary-color);
+            color: var(--white);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-width: 80px;
+        }
+
+        .date-number {
+            font-size: 24px;
             font-weight: bold;
             line-height: 1;
         }
 
         .date-month {
-            font-size: 18px;
-            margin-top: 5px;
+            font-size: 12px;
+            margin-top: 2px;
         }
 
-        .appointment-details {
-            padding: 20px;
-            flex-grow: 1;
+        .appointment-content {
+            flex: 1;
+            padding: 16px;
+        }
+
+        .appointment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
         }
 
         .appointment-type {
-            font-size: 20px;
             font-weight: 600;
-            margin-bottom: 5px;
+            color: var(--text-color);
         }
 
-        .appointment-person {
-            font-size: 18px;
-            margin-bottom: 4px;
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
         }
 
-        .appointment-position {
-            color: #666;
+        .status-completed {
+            background: rgba(40, 167, 69, 0.1);
+            color: var(--success-color);
+        }
+
+        .status-upcoming {
+            background: rgba(255, 193, 7, 0.1);
+            color: var(--warning-color);
+        }
+
+        .status-new {
+            background: rgba(78, 173, 190, 0.1);
+            color: var(--primary-color);
+        }
+
+        .clinic-name {
+            font-size: 14px;
+            color: #6b7280;
             margin-bottom: 12px;
         }
 
         .appointment-time {
-            font-size: 18px;
-            font-weight: 500;
-            margin-bottom: 10px;
-        }
-        
-        .appointment-status {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
             font-size: 14px;
             font-weight: 500;
-            margin-bottom: 15px;
+            color: var(--text-color);
+            margin-bottom: 12px;
         }
-        
-        .appointment-status.confirmed {
-            background-color: rgba(40, 167, 69, 0.15);
-            color: var(--success-color);
-        }
-        
-        .appointment-status.pending {
-            background-color: rgba(255, 193, 7, 0.15);
-            color: var(--warning-color);
-        }
-        
-        .appointment-actions {
+
+        .action-buttons {
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
         }
-        
+
         .btn {
-            padding: 8px 14px;
+            padding: 8px 16px;
             border-radius: 8px;
             border: none;
             font-size: 14px;
             font-weight: 500;
             cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        
-        .btn-details {
-            background-color: var(--primary-color);
-            color: white;
-        }
-        
-        .btn-reschedule {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            border: 1px solid #ddd;
-        }
-        
-        .btn-cancel {
-            background-color: rgba(220, 53, 69, 0.1);
-            color: var(--danger-color);
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
         }
 
-        /* New Appointment Button */
-        .new-appointment-btn {
+        .btn-primary {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: #3d8fa0;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            color: var(--white);
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        /* FAB Button */
+        .fab {
             position: fixed;
-            bottom: 30px;
-            right: 30px;
-            background-color: var(--primary-color);
-            color: white;
-            width: 60px;
-            height: 60px;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            box-shadow: 0 4px 12px rgba(78, 173, 190, 0.4);
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 30px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-            cursor: pointer;
-            border: none;
+            font-size: 24px;
+            transition: all 0.2s;
+            z-index: 50;
         }
-        
-        /* Modal Styles */
-        .modal {
-            display: none;
+
+        .fab:hover {
+            background: #3d8fa0;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(78, 173, 190, 0.4);
+        }
+
+        /* New Appointment Form */
+        .form-section {
+            background: var(--white);
+            border-radius: var(--border-radius);
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 24px;
+        }
+
+        .form-section h3 {
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--text-color);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(78, 173, 190, 0.1);
+        }
+
+        .time-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .time-slot {
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background: var(--card-color);
+            text-align: center;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .time-slot:hover {
+            background: var(--white);
+        }
+
+        .time-slot.selected {
+            background: var(--primary-color);
+            color: var(--white);
+            border-color: var(--primary-color);
+        }
+
+        .appointment-types {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .type-option {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background: var(--card-color);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .type-option:hover {
+            background: var(--white);
+        }
+
+        .type-option.selected {
+            background: rgba(78, 173, 190, 0.1);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .type-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .book-btn {
+            width: 100%;
+            padding: 16px;
+            border-radius: 8px;
+            border: none;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .book-btn.enabled {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+
+        .book-btn.enabled:hover {
+            background: #3d8fa0;
+        }
+
+        .book-btn.disabled {
+            background: #d1d5db;
+            color: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .form-note {
+            font-size: 14px;
+            color: #6b7280;
+            margin-top: 8px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px 16px;
+        }
+
+        .empty-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            opacity: 0.5;
+        }
+
+        .empty-title {
+            font-size: 18px;
+            color: #6b7280;
+            margin-bottom: 8px;
+        }
+
+        .empty-subtitle {
+            color: #9ca3af;
+        }
+
+        /* Hidden class */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 640px) {
+            .container {
+                max-width: 100%;
+            }
+
+            .time-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .fab {
+                bottom: 16px;
+                right: 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .appointment-card {
+                flex-direction: column;
+            }
+
+            .date-section {
+                flex-direction: row;
+                justify-content: center;
+                gap: 8px;
+                min-width: auto;
+                padding: 12px 16px;
+            }
+
+            .date-number {
+                font-size: 20px;
+            }
+
+            .time-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Icons (simple CSS-based icons) */
+        .icon-calendar::before { content: "📅"; }
+        .icon-clock::before { content: "🕐"; }
+        .icon-stethoscope::before { content: "🩺"; }
+        .icon-eye::before { content: "👁️"; }
+        .icon-user::before { content: "👤"; }
+        .icon-plus::before { content: "+"; }
+        .icon-back::before { content: "←"; }
+        .icon-contact::before { content: "📞"; }
+        .icon-logout::before { content: "🚪"; }
+
+        /* Overlay for dropdown */
+        .overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .modal-content {
-            background-color: white;
-            border-radius: var(--border-radius);
-            padding: 24px;
-            width: 90%;
-            max-width: 500px;
-            position: relative;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        
-        .close-modal {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            font-size: 24px;
-            cursor: pointer;
-        }
-        
-        .time-slots {
-            margin-top: 20px;
-        }
-        
-        .date-selector {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-        
-        .current-date {
-            font-size: 18px;
-            font-weight: 500;
-        }
-        
-        .date-nav {
-            background: none;
-            border: 1px solid #ddd;
-            border-radius: 50%;
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-        
-        /* Appointment Type Selector */
-        .appointment-type-selector {
-            margin-top: 24px;
-            margin-bottom: 24px;
-        }
-        
-        .appointment-type-selector h3 {
-            margin-bottom: 12px;
-            font-size: 16px;
-        }
-        
-        .appointment-types {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-        }
-        
-        .type-option {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-            background-color: var(--bg-color);
-        }
-        
-        .type-option:hover {
-            background-color: #e9e9e9;
-        }
-        
-        /* Time Selection */
-        .time-selection {
-            margin-bottom: 24px;
-        }
-        
-        .time-selection h3 {
-            margin-bottom: 12px;
-            font-size: 16px;
-        }
-        
-        .time-inputs {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 16px;
-        }
-        
-        .hour-select, .minute-select {
-            flex: 1;
-        }
-        
-        .time-dropdown, .duration-dropdown {
-            width: 100%;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-            background-color: var(--bg-color);
-            font-size: 16px;
-        }
-        
-        /* Available Time Slots */
-        .available-slots {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin-bottom: 24px;
-        }
-        
-        .time-slot {
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-            text-align: center;
-            cursor: pointer;
-            background-color: var(--bg-color);
-        }
-        
-        .time-slot.selected {
-            background-color: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
-        }
-        
-        /* Duration Selection */
-        .duration-select {
-            margin-bottom: 24px;
-        }
-        
-        .duration-select h3 {
-            margin-bottom: 12px;
-            font-size: 16px;
-        }
-        
-        .btn-confirm-time {
-            width: 100%;
-            background-color: var(--primary-color);
-            color: white;
-            padding: 12px;
-            border-radius: 8px;
-            border: none;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
+            background: transparent;
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
         }
 
-        /* Responsive Design */
-        @media (max-width: 480px) {
-            .page-title {
-                font-size: 24px;
-                margin: 20px 0;
-            }
-            
-            .date-box {
-                width: 80px;
-                padding: 15px;
-            }
-            
-            .date-day {
-                font-size: 30px;
-            }
-            
-            .appointment-details {
-                padding: 15px;
-            }
-            
-            .appointment-type {
-                font-size: 18px;
-            }
-            
-            .appointment-actions {
-                flex-direction: column;
-                gap: 8px;
-            }
-            
-            .btn {
-                width: 100%;
-            }
-            
-            .available-slots, .appointment-types {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .time-inputs {
-                flex-direction: column;
-                gap: 12px;
-            }
+        .overlay.show {
+            opacity: 1;
+            visibility: visible;
         }
     </style>
 </head>
 <body>
-    <header>
-        <div class="header-content container">
-            <div class="menu-icon">&#9776;</div>
-            <div class="profile">
-                <div class="profile-name">ໂຈນາທານ ຈາລເລ</div>
-                <div class="avatar">
-                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
+    <div class="container">
+        <!-- Main View -->
+        <div id="mainView">
+            <!-- Header -->
+            <div class="header">
+                <div class="menu-container">
+                    <button class="menu-btn" onclick="toggleMenu()">
+                        <div class="hamburger">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </button>
+                    <!-- Dropdown Menu -->
+                    <div id="dropdownMenu" class="dropdown-menu">
+                        <div class="dropdown-item" onclick="contactUs()">
+                            <span class="dropdown-icon icon-contact"></span>
+                            <span>Contact Us</span>
+                        </div>
+                        <div class="dropdown-item" onclick="logout()">
+                            <span class="dropdown-icon icon-logout"></span>
+                            <span>Log Out</span>
+                        </div>
+                    </div>
                 </div>
+                <h1>Medical Center</h1>
+                <button class="profile-btn">
+                    <span class="icon-user"></span>
+                </button>
             </div>
-        </div>
-    </header>
 
-    <main class="container">
-        <h1 class="page-title">ການນັດໝາຍ</h1>
-        
-        <div class="appointments-list">
-            <!-- First Appointment -->
-            <div class="appointment-card">
-                <div class="date-box">
-                    <div class="date-day">30</div>
-                    <div class="date-month">ທັນວາ</div>
+            <!-- Main Content -->
+            <div class="main-content">
+                <div class="page-title">
+                    <h2>Medical Appointments</h2>
                 </div>
-                <div class="appointment-details">
-                    <div class="appointment-type">ກວດທົ່ວໄປ</div>
-                    <div class="appointment-person">ຄຣິສຕິນາ ຢາງ</div>
-                    <div class="appointment-position">ທີ່ປຶກສາອາວຸໂສ</div>
-                    <div class="appointment-time">14:30</div>
-                    <div class="appointment-status confirmed">ຢືນຢັນແລ້ວ</div>
-                    <div class="appointment-actions">
-                        <button class="btn btn-details">ລາຍລະອຽດ</button>
-                        <button class="btn btn-reschedule">ປ່ຽນເວລາ</button>
-                        <button class="btn btn-cancel">ຍົກເລີກ</button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Second Appointment -->
-            <div class="appointment-card">
-                <div class="date-box">
-                    <div class="date-day">22</div>
-                    <div class="date-month">ພະຈິກ</div>
-                </div>
-                <div class="appointment-details">
-                    <div class="appointment-type">ວັດແທກສາຍຕາ</div>
-                    <div class="appointment-person">ຄຣິສຕິນາ ຢາງ</div>
-                    <div class="appointment-position">ທີ່ປຶກສາອາວຸໂສ</div>
-                    <div class="appointment-time">9:15</div>
-                    <div class="appointment-status pending">ລໍຖ້າການຢືນຢັນ</div>
-                    <div class="appointment-actions">
-                        <button class="btn btn-details">ລາຍລະອຽດ</button>
-                        <button class="btn btn-reschedule">ປ່ຽນເວລາ</button>
-                        <button class="btn btn-cancel">ຍົກເລີກ</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- New Appointment Button -->
-        <button class="new-appointment-btn">+</button>
-        
-        <!-- Booking Time Slots Modal -->
-        <div id="timeSlotModal" class="modal">
-            <div class="modal-content">
-                <span class="close-modal">&times;</span>
-                <h2>ເລືອກເວລາການນັດໝາຍ</h2>
-                
-                <!-- Appointment Type Selection -->
-                <div class="appointment-type-selector">
-                    <h3>ປະເພດການນັດໝາຍ</h3>
-                    <div class="appointment-types">
-                        <label class="type-option">
-                            <input type="radio" name="appointmentType" value="general" checked>
-                            <span class="type-label">ກວດທົ່ວໄປ</span>
-                        </label>
-                        <label class="type-option">
-                            <input type="radio" name="appointmentType" value="eyetest">
-                            <span class="type-label">ວັດແທກສາຍຕາ</span>
-                        </label>
-                    </div>
-                </div>
-                
-                <div class="time-slots">
-                    <div class="date-selector">
-                        <button class="date-nav prev">&#8592;</button>
-                        <div class="current-date">16 ພຶດສະພາ 2025</div>
-                        <button class="date-nav next">&#8594;</button>
-                    </div>
-                    
-                    <!-- Detailed Time Selection -->
-                    <div class="time-selection">
-                        <h3>ເລືອກເວລາ</h3>
-                        <div class="time-inputs">
-                            <div class="hour-select">
-                                <label>ຊົ່ວໂມງ</label>
-                                <select id="hourSelect" class="time-dropdown">
-                                    <option value="8">8</option>
-                                    <option value="9">9</option>
-                                    <option value="10">10</option>
-                                    <option value="11">11</option>
-                                    <option value="13">13</option>
-                                    <option value="14">14</option>
-                                    <option value="15">15</option>
-                                    <option value="16">16</option>
-                                    <option value="17">17</option>
-                                </select>
+
+                <!-- Appointments List -->
+                <div id="appointmentsList">
+                    <!-- Sample appointments -->
+                    <div class="appointment-card">
+                        <div class="date-section">
+                            <div class="date-number">30</div>
+                            <div class="date-month">Mar</div>
+                        </div>
+                        <div class="appointment-content">
+                            <div class="appointment-header">
+                                <div class="appointment-type">General Check-up</div>
+                                <span class="status-badge status-completed">Completed</span>
                             </div>
-                            <div class="minute-select">
-                                <label>ນາທີ</label>
-                                <select id="minuteSelect" class="time-dropdown">
-                                    <option value="00">00</option>
-                                    <option value="05">05</option>
-                                    <option value="10">10</option>
-                                    <option value="15">15</option>
-                                    <option value="20">20</option>
-                                    <option value="25">25</option>
-                                    <option value="30">30</option>
-                                    <option value="35">35</option>
-                                    <option value="40">40</option>
-                                    <option value="45">45</option>
-                                    <option value="50">50</option>
-                                    <option value="55">55</option>
-                                </select>
+                            <div class="clinic-name">Dr. Johnson's Clinic</div>
+                            <div class="appointment-time">14:30</div>
+                            <div class="action-buttons">
+                                <button class="btn btn-primary">View Details</button>
                             </div>
                         </div>
                     </div>
-                    
-                    <h3>ຫຼື ເລືອກຈາກຊ່ວງເວລາທີ່ວ່າງ</h3>
-                    <div class="available-slots">
-                        <button class="time-slot">8:00</button>
-                        <button class="time-slot">9:15</button>
-                        <button class="time-slot">10:30</button>
-                        <button class="time-slot">13:00</button>
-                        <button class="time-slot">14:30</button>
-                        <button class="time-slot">16:00</button>
+
+                    <div class="appointment-card">
+                        <div class="date-section">
+                            <div class="date-number">22</div>
+                            <div class="date-month">Apr</div>
+                        </div>
+                        <div class="appointment-content">
+                            <div class="appointment-header">
+                                <div class="appointment-type">Eye Examination</div>
+                                <span class="status-badge status-upcoming">Upcoming</span>
+                            </div>
+                            <div class="clinic-name">Dr. Johnson's Clinic</div>
+                            <div class="appointment-time">9:15</div>
+                            <div class="action-buttons">
+                                <button class="btn btn-primary">View Details</button>
+                                <button class="btn btn-danger">Cancel</button>
+                            </div>
+                        </div>
                     </div>
-                    
-                    <div class="duration-select">
-                        <h3>ໄລຍະເວລາ</h3>
-                        <select id="durationSelect" class="duration-dropdown">
-                            <option value="30">30 ນາທີ</option>
-                            <option value="45">45 ນາທີ</option>
-                            <option value="60" selected>1 ຊົ່ວໂມງ</option>
-                            <option value="90">1 ຊົ່ວໂມງ 30 ນາທີ</option>
-                            <option value="120">2 ຊົ່ວໂມງ</option>
-                        </select>
-                    </div>
-                    
-                    <button class="btn btn-confirm-time">ຢືນຢັນເວລາ</button>
+                </div>
+
+                <!-- Empty State (hidden by default) -->
+                <div id="emptyState" class="empty-state hidden">
+                    <div class="empty-icon">📅</div>
+                    <div class="empty-title">No Appointments</div>
+                    <div class="empty-subtitle">Tap the + button to create a new appointment</div>
                 </div>
             </div>
+
+            <!-- FAB Button -->
+            <button class="fab" onclick="showNewAppointment()">
+                <span class="icon-plus"></span>
+            </button>
         </div>
-    </main>
+
+        <!-- New Appointment View -->
+        <div id="newAppointmentView" class="hidden">
+            <!-- Header -->
+            <div class="header">
+                <button class="back-btn" onclick="showMainView()">
+                    <span class="icon-back"></span>
+                </button>
+                <h1>New Appointment</h1>
+                <div style="width: 36px;"></div>
+            </div>
+
+            <!-- Form Content -->
+            <div class="main-content">
+                <!-- Date Selection -->
+                <div class="form-section">
+                    <h3>
+                        <span class="icon-calendar"></span>
+                        Select Date
+                    </h3>
+                    <input type="date" id="appointmentDate" class="form-input" min="">
+                    <div class="form-note">*Cannot book for today or past dates</div>
+                </div>
+
+                <!-- Time Selection -->
+                <div class="form-section">
+                    <h3>
+                        <span class="icon-clock"></span>
+                        Select Time
+                    </h3>
+                    <div class="time-grid" id="timeSlots">
+                        <div class="time-slot" data-time="8:00">8:00</div>
+                        <div class="time-slot" data-time="9:00">9:00</div>
+                        <div class="time-slot" data-time="10:00">10:00</div>
+                        <div class="time-slot" data-time="13:00">1:00</div>
+                        <div class="time-slot" data-time="14:00">2:00</div>
+                        <div class="time-slot" data-time="15:00">3:00</div>
+                    </div>
+                </div>
+
+                <!-- Appointment Type -->
+                <div class="form-section">
+                    <h3>Appointment Type</h3>
+                    <div class="appointment-types">
+                        <div class="type-option" data-type="general">
+                            <div class="type-icon">
+                                <span class="icon-stethoscope"></span>
+                            </div>
+                            <span>General Check</span>
+                        </div>
+                        <div class="type-option" data-type="eyes">
+                            <div class="type-icon">
+                                <span class="icon-eye"></span>
+                            </div>
+                            <span>Eyes Check</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Book Button -->
+                <button id="bookBtn" class="book-btn disabled" onclick="bookAppointment()">
+                    Book Appointment
+                </button>
+            </div>
+        </div>
+
+        <!-- Overlay for dropdown menu -->
+        <div id="overlay" class="overlay" onclick="closeMenu()"></div>
+    </div>
 
     <script>
-        // Basic interactivity for demo purposes
-        document.querySelector('.new-appointment-btn').addEventListener('click', function() {
-            document.getElementById('timeSlotModal').style.display = 'flex';
-        });
-        
-        document.querySelector('.menu-icon').addEventListener('click', function() {
-            alert('ເປີດເມນູ');
-        });
-        
-        // Detail buttons functionality
-        const detailButtons = document.querySelectorAll('.btn-details');
-        detailButtons.forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.stopPropagation();
-                alert('ເບິ່ງລາຍລະອຽດການນັດໝາຍ');
-            });
-        });
-        
-        // Reschedule buttons functionality
-        const rescheduleButtons = document.querySelectorAll('.btn-reschedule');
-        rescheduleButtons.forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.stopPropagation();
-                document.getElementById('timeSlotModal').style.display = 'flex';
-            });
-        });
-        
-        // Cancel buttons functionality
-        const cancelButtons = document.querySelectorAll('.btn-cancel');
-        cancelButtons.forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.stopPropagation();
-                if(confirm('ທ່ານແນ່ໃຈບໍ່ທີ່ຈະຍົກເລີກການນັດໝາຍນີ້?')) {
-                    alert('ຍົກເລີກການນັດໝາຍສຳເລັດ');
+        // Global variables
+        let selectedDate = '';
+        let selectedTime = '';
+        let selectedType = '';
+        let appointments = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set minimum date to tomorrow
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const tomorrowString = tomorrow.toISOString().split('T')[0];
+            document.getElementById('appointmentDate').min = tomorrowString;
+
+            // Add event listeners
+            setupEventListeners();
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                const menuContainer = document.querySelector('.menu-container');
+                if (!menuContainer.contains(e.target)) {
+                    closeMenu();
                 }
             });
         });
-        
-        // Close modal
-        document.querySelector('.close-modal').addEventListener('click', function() {
-            document.getElementById('timeSlotModal').style.display = 'none';
-        });
-        
-        // Time slot selection
-        const timeSlots = document.querySelectorAll('.time-slot');
-        timeSlots.forEach(slot => {
-            slot.addEventListener('click', function() {
-                // Remove selection from all slots
-                timeSlots.forEach(s => s.classList.remove('selected'));
-                // Add selection to clicked slot
-                this.classList.add('selected');
-                
-                // Update hour and minute selects to match the selected slot
-                const timeText = this.textContent;
-                const [hour, minute] = timeText.split(':');
-                document.getElementById('hourSelect').value = hour;
-                document.getElementById('minuteSelect').value = minute;
+
+        // Menu Functions
+        function toggleMenu() {
+            const dropdown = document.getElementById('dropdownMenu');
+            const overlay = document.getElementById('overlay');
+            const isOpen = dropdown.classList.contains('show');
+            
+            if (isOpen) {
+                closeMenu();
+            } else {
+                dropdown.classList.add('show');
+                overlay.classList.add('show');
+            }
+        }
+
+        function closeMenu() {
+            document.getElementById('dropdownMenu').classList.remove('show');
+            document.getElementById('overlay').classList.remove('show');
+        }
+
+        function contactUs() {
+            closeMenu();
+            alert('Contact Us\n\nPhone: +1 (555) 123-4567\nEmail: info@medicalcenter.com\nAddress: 123 Health Street, Medical City, MC 12345\n\nOffice Hours:\nMonday - Friday: 8:00 AM - 6:00 PM\nSaturday: 9:00 AM - 2:00 PM\nSunday: Closed');
+        }
+
+        function logout() {
+            closeMenu();
+            if (confirm('Are you sure you want to log out?')) {
+                alert('You have been logged out successfully.');
+                // Here you would typically redirect to login page
+                // window.location.href = 'login.php';
+            }
+        }
+
+        function setupEventListeners() {
+            // Date input
+            document.getElementById('appointmentDate').addEventListener('change', function(e) {
+                selectedDate = e.target.value;
+                updateBookButton();
             });
-        });
-        
-        // Hour and minute select synchronization
-        document.getElementById('hourSelect').addEventListener('change', unselectTimeSlots);
-        document.getElementById('minuteSelect').addEventListener('change', unselectTimeSlots);
-        
-        function unselectTimeSlots() {
-            const timeSlots = document.querySelectorAll('.time-slot');
-            timeSlots.forEach(s => s.classList.remove('selected'));
+
+            // Time slots
+            document.querySelectorAll('.time-slot').forEach(slot => {
+                slot.addEventListener('click', function() {
+                    document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedTime = this.dataset.time;
+                    updateBookButton();
+                });
+            });
+
+            // Appointment types
+            document.querySelectorAll('.type-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    document.querySelectorAll('.type-option').forEach(o => o.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedType = this.dataset.type;
+                    updateBookButton();
+                });
+            });
         }
-        
-        // Date navigation
-        let currentDate = new Date();
-        updateDateDisplay();
-        
-        document.querySelector('.date-nav.prev').addEventListener('click', function() {
-            currentDate.setDate(currentDate.getDate() - 1);
-            updateDateDisplay();
-        });
-        
-        document.querySelector('.date-nav.next').addEventListener('click', function() {
-            currentDate.setDate(currentDate.getDate() + 1);
-            updateDateDisplay();
-        });
-        
-        function updateDateDisplay() {
-            const day = currentDate.getDate();
-            const monthNames = ['ມັງກອນ', 'ກຸມພາ', 'ມີນາ', 'ເມສາ', 'ພຶດສະພາ', 'ມິຖຸນາ', 
-                               'ກໍລະກົດ', 'ສິງຫາ', 'ກັນຍາ', 'ຕຸລາ', 'ພະຈິກ', 'ທັນວາ'];
-            const month = monthNames[currentDate.getMonth()];
-            const year = currentDate.getFullYear();
-            document.querySelector('.current-date').textContent = `${day} ${month} ${year}`;
+
+        function updateBookButton() {
+            const bookBtn = document.getElementById('bookBtn');
+            if (selectedDate && selectedTime && selectedType) {
+                bookBtn.classList.remove('disabled');
+                bookBtn.classList.add('enabled');
+            } else {
+                bookBtn.classList.remove('enabled');
+                bookBtn.classList.add('disabled');
+            }
         }
-        
-        // Confirm time button
-        document.querySelector('.btn-confirm-time').addEventListener('click', function() {
-            const selectedType = document.querySelector('input[name="appointmentType"]:checked').value;
-            const typeLabels = {
-                'general': 'ກວດທົ່ວໄປ',
-                'eyetest': 'ວັດແທກສາຍຕາ'
+
+        function showNewAppointment() {
+            document.getElementById('mainView').classList.add('hidden');
+            document.getElementById('newAppointmentView').classList.remove('hidden');
+        }
+
+        function showMainView() {
+            document.getElementById('newAppointmentView').classList.add('hidden');
+            document.getElementById('mainView').classList.remove('hidden');
+            
+            // Reset form
+            resetForm();
+        }
+
+        function resetForm() {
+            selectedDate = '';
+            selectedTime = '';
+            selectedType = '';
+            
+            document.getElementById('appointmentDate').value = '';
+            document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+            document.querySelectorAll('.type-option').forEach(o => o.classList.remove('selected'));
+            updateBookButton();
+        }
+
+        function bookAppointment() {
+            if (!selectedDate || !selectedTime || !selectedType) {
+                alert('Please select date, time and appointment type');
+                return;
+            }
+
+            // Get appointment type name
+            const typeNames = {
+                'general': 'General Check',
+                'eyes': 'Eyes Check'
             };
+
+            // Create appointment object
+            const appointmentDate = new Date(selectedDate);
+            const newAppointment = {
+                id: Date.now(),
+                date: appointmentDate.getDate().toString(),
+                month: appointmentDate.toLocaleDateString('en-US', { month: 'short' }),
+                type: typeNames[selectedType],
+                time: selectedTime,
+                status: 'upcoming'
+            };
+
+            // Add to appointments array
+            appointments.unshift(newAppointment);
+
+            // Create and add appointment card to DOM
+            addAppointmentCard(newAppointment);
+
+            alert(`Appointment Booked Successfully!\nDate: ${selectedDate}\nTime: ${selectedTime}\nType: ${typeNames[selectedType]}`);
             
-            const hour = document.getElementById('hourSelect').value;
-            const minute = document.getElementById('minuteSelect').value;
-            const duration = document.getElementById('durationSelect').value;
+            // Return to main view
+            showMainView();
+        }
+
+        function addAppointmentCard(appointment) {
+            const appointmentsList = document.getElementById('appointmentsList');
+            const emptyState = document.getElementById('emptyState');
             
-            const selectedDate = document.querySelector('.current-date').textContent;
-            
-            alert(`ຈອງສຳເລັດ:\nປະເພດ: ${typeLabels[selectedType]}\nວັນທີ: ${selectedDate}\nເວລາ: ${hour}:${minute}\nໄລຍະເວລາ: ${duration} ນາທີ`);
-            
-            document.getElementById('timeSlotModal').style.display = 'none';
-        });
+            // Hide empty state if visible
+            emptyState.classList.add('hidden');
+
+            // Create appointment card HTML
+            const cardHTML = `
+                <div class="appointment-card">
+                    <div class="date-section">
+                        <div class="date-number">${appointment.date}</div>
+                        <div class="date-month">${appointment.month}</div>
+                    </div>
+                    <div class="appointment-content">
+                        <div class="appointment-header">
+                            <div class="appointment-type">${appointment.type}</div>
+                            <span class="status-badge status-new">New</span>
+                        </div>
+                        <div class="clinic-name">Dr. Johnson's Clinic</div>
+                        <div class="appointment-time">${appointment.time}</div>
+                        <div class="action-buttons">
+                            <button class="btn btn-primary">View Details</button>
+                            <button class="btn btn-danger" onclick="cancelAppointment(${appointment.id})">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Insert at the beginning of the list
+            appointmentsList.insertAdjacentHTML('afterbegin', cardHTML);
+        }
+
+        function cancelAppointment(appointmentId) {
+            if (confirm('Are you sure you want to cancel this appointment?')) {
+                // Remove from appointments array
+                appointments = appointments.filter(apt => apt.id !== appointmentId);
+                
+                // Remove from DOM
+                const appointmentCards = document.querySelectorAll('.appointment-card');
+                appointmentCards.forEach(card => {
+                    const cancelBtn = card.querySelector(`button[onclick="cancelAppointment(${appointmentId})"]`);
+                    if (cancelBtn) {
+                        card.remove();
+                    }
+                });
+
+                // Show empty state if no appointments
+                const remainingCards = document.querySelectorAll('#appointmentsList .appointment-card');
+                if (remainingCards.length === 0) {
+                    document.getElementById('emptyState').classList.remove('hidden');
+                }
+
+                alert('Appointment cancelled successfully');
+            }
+        }
+
+        // PHP-like functionality can be added here for server communication
+        // Example AJAX functions:
+        
+        function saveAppointmentToServer(appointmentData) {
+            // This would be used to send data to a PHP backend
+            fetch('save_appointment.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(appointmentData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Appointment saved:', data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function loadAppointmentsFromServer() {
+            // This would be used to load appointments from PHP backend
+            fetch('get_appointments.php')
+            .then(response => response.json())
+            .then(data => {
+                // Populate appointments list
+                console.log('Appointments loaded:', data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
     </script>
 </body>
 </html>
