@@ -602,7 +602,7 @@
                                 <div class="appointment-type">General Check-up</div>
                                 <span class="status-badge status-completed">Completed</span>
                             </div>
-                            <div class="clinic-name">Dr. Johnson's Clinic</div>
+                            <div class="clinic-name">Senior advisor</div>
                             <div class="appointment-time">14:30</div>
                             <div class="action-buttons">
                                 <button class="btn btn-primary">View Details</button>
@@ -620,7 +620,7 @@
                                 <div class="appointment-type">Eye Examination</div>
                                 <span class="status-badge status-upcoming">Upcoming</span>
                             </div>
-                            <div class="clinic-name">Dr. Johnson's Clinic</div>
+                            <div class="clinic-name">Senior advisor</div>
                             <div class="appointment-time">9:15</div>
                             <div class="action-buttons">
                                 <button class="btn btn-primary">View Details</button>
