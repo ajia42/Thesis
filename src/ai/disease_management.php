@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 if (!isset($_SESSION['admin_id'])) {
     header('Location: signin_admin.php');
@@ -16,13 +17,13 @@ include("../db_config.php");
 // Function to generate next patient ID
 function generatePatientID($conn)
 {
-    $sql = "SELECT MAX(service_type_id) AS max_id FROM service_type";
+    $sql = "SELECT MAX(disease_id) AS max_id FROM disease";
     $result = mysqli_query($conn, $sql);
     $row = mysqli_fetch_assoc($result);
 
     // If no patient exists, start with P0001
     if (empty($row['max_id'])) {
-        return 'ST001';
+        return 'DS001';
     }
 
     // Extract the numeric part and increment
@@ -31,7 +32,7 @@ function generatePatientID($conn)
     $newNumPart = $numPart + 1;
 
     // Format the new ID with leading zeros
-    return 'ST' . str_pad($newNumPart, 3, '0', STR_PAD_LEFT);
+    return 'DS' . str_pad($newNumPart, 3, '0', STR_PAD_LEFT);
 }
 
 // Validation checks
@@ -54,16 +55,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $patient_id = generatePatientID($conn);
 
             // Prepare INSERT query
-            $insert_query = "INSERT INTO service_type (service_type_id, service_name, service_fee) 
+            $insert_query = "INSERT INTO disease (disease_id, disease_name, description) 
                          VALUES ('$patient_id', '$first_name', '$phone')";
 
             if (mysqli_query($conn, $insert_query)) {
-                $message = "Service added successfully!";
+                $message = "Disease added successfully!";
                 // echo "<script>alert('Patient added successfully!');</script>";
                 $patient_id = $first_name =  $phone = '';
             } else {
                 // echo "<script>alert('Error adding patient: " . mysqli_error($conn) . "');</script>";
-                $errors = "Error adding service: " . mysqli_error($conn);
+                $errors = "Error adding disease: " . mysqli_error($conn);
             }
         }
     }
@@ -74,18 +75,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         if (empty($errors)) {
             // Prepare UPDATE query
-            $update_query = "UPDATE service_type 
-        SET service_name = '$first_name', 
-            service_fee = '$phone'  
-        WHERE service_type_id = '$patient_id'";
+            $update_query = "UPDATE disease 
+        SET disease_name = '$first_name', 
+        description = '$phone'  
+        WHERE disease_id = '$patient_id'";
 
             if (mysqli_query($conn, $update_query)) {
                 // echo "<script>alert('Patient updated successfully!');</script>";
-                $message = "Service updated successfully!";
+                $message = "Disease updated successfully!";
                 // $patient_id = $first_name = $last_name = $gender = $email = $phone = $dob = $address = '';
             } else {
                 // echo "<script>alert('Error updating patient: " . mysqli_error($conn) . "');</script>";
-                $errors = "Error updating service: " . mysqli_error($conn);
+                $errors = "Error updating disease: " . mysqli_error($conn);
             }
         }
     }
@@ -95,14 +96,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id']);
 
         // Prepare DELETE query
-        $delete_query = "DELETE FROM service_type WHERE service_type_id = '$patient_id'";
+        $delete_query = "DELETE FROM disease WHERE disease_id = '$patient_id'";
 
         if (mysqli_query($conn, $delete_query)) {
             // echo "<script>alert('Patient deleted successfully!');</script>";
-            $message = "Service deleted successfully!";
+            $message = "Disease deleted successfully!";
         } else {
             // echo "<script>alert('Error deleting patient: " . mysqli_error($conn) . "');</script>";
-            $errors = "Error deleting service: " . mysqli_error($conn);
+            $errors = "Error adding disease: " . mysqli_error($conn);
         }
     }
 }
@@ -117,10 +118,10 @@ $is_search = false;
 if (isset($_GET['search']) && !empty($_GET['search'])) {
     $is_search = true;
     $search_term = mysqli_real_escape_string($conn, $_GET['search']);
-    $search_query = "SELECT * FROM service_type 
-                     WHERE service_type_id LIKE '%$search_term%' 
-                     OR service_name LIKE '%$search_term%' 
-                     OR service_fee LIKE '%$search_term%'";
+    $search_query = "SELECT * FROM disease
+                     WHERE disease_id LIKE '%$search_term%' 
+                     OR disease_name LIKE '%$search_term%' 
+                     OR description LIKE '%$search_term%'";
     $search_result = mysqli_query($conn, $search_query);
 
     if ($search_result) {
@@ -137,7 +138,7 @@ if (isset($_GET['search']) && !empty($_GET['search'])) {
 
 // Fetch all patients only if no search is performed
 if (!$is_search && empty($search_results)) {
-    $all_patients_query = "SELECT * FROM service_type";
+    $all_patients_query = "SELECT * FROM disease";
     $all_patients_result = mysqli_query($conn, $all_patients_query);
 
     while ($row = mysqli_fetch_assoc($all_patients_result)) {
@@ -151,7 +152,7 @@ if (!$is_search && empty($search_results)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Patient Management</title>
+    <title>Disease Management</title>
     <link rel="stylesheet" href="patient_management.css">
 </head>
 
@@ -217,7 +218,7 @@ if (!$is_search && empty($search_results)) {
                         </svg>
                         Appointments</a></li>
 
-                <li class="active"><a href="service_type_managment.php">
+                <li><a href="service_type_managment.php">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
                             <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
@@ -225,7 +226,7 @@ if (!$is_search && empty($search_results)) {
                         </svg>
                         Services</a></li>
 
-                <li><a href="disease_management.php">
+                <li class="active"><a href="disease_management.php">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                             <polyline points="14 2 14 8 20 8"></polyline>
@@ -282,8 +283,8 @@ if (!$is_search && empty($search_results)) {
         </aside>
         <main class="main-content">
             <div class="header">
-                <h1>Service Type Management</h1>
-                <button class="new-patient-button" name="new_patient" onclick="clearForm()">+ New Service</button>
+                <h1>Disease Management</h1>
+                <button class="new-patient-button" name="new_patient" onclick="clearForm()">+ New disease</button>
             </div>
 
             <?php if ($message): ?>
@@ -297,24 +298,21 @@ if (!$is_search && empty($search_results)) {
             <form method="POST" action="" id="patientForm">
                 <div class="patient-form">
                     <div class="form-group">
-                        <label for="patientID">Service Type ID</label>
+                        <label for="patientID">Disease ID</label>
                         <input type="text" id="patientID" name="patient_id" readonly>
                     </div>
                     <div class="form-group">
-                        <label for="firstName">Service Name</label>
+                        <label for="firstName">Disease name</label>
                         <input type="text" id="firstName" name="first_name" required>
                     </div>
                     <div class="form-group">
-                        <label for="phone">Service Fee</label>
+                        <label for="phone">Description</label>
                         <!-- <input type="number" id="phone" name="phone" required> -->
                         <input
                             type="text"
                             id="phone"
                             name="phone"
-                            maxlength="10"
-                            inputmode="numeric"
-                            required />
-                        <div id="phoneError" class="error-message" style="display: none;"></div>
+                            placeholder="optional" />
                     </div>
                     <div class="form-actions">
                         <button type="submit" class="save-button" name="save_button">Save</button>
@@ -344,22 +342,22 @@ if (!$is_search && empty($search_results)) {
                 <?php if (!empty($search_results)): ?>
                     <thead>
                         <tr>
-                            <th>SERVICE TYPE ID</th>
-                            <th>SERVICE NAME</th>
-                            <th>SERVICE FEE</th>
+                            <th>DISEASE</th>
+                            <th>DISEASE NAME</th>
+                            <th>DESCRIPTION</th>
                             <th>ACTIONS</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($search_results as $patient): ?>
                             <tr>
-                                <td><?php echo htmlspecialchars($patient['service_type_id']); ?></td>
-                                <td><?php echo htmlspecialchars($patient['service_name']); ?></td>
-                                <td><?php echo htmlspecialchars($patient['service_fee']); ?></td>
+                                <td><?php echo htmlspecialchars($patient['disease_id']); ?></td>
+                                <td><?php echo htmlspecialchars($patient['disease_name']); ?></td>
+                                <td><?php echo htmlspecialchars($patient['description']); ?></td>
                                 <td>
-                                    <a href="#" onclick="fillForm('<?php echo htmlspecialchars($patient['service_type_id']); ?>', 
-                                '<?php echo htmlspecialchars($patient['service_name']); ?>', 
-                                '<?php echo htmlspecialchars($patient['service_fee']); ?>')">Edit</a>
+                                    <a href="#" onclick="fillForm('<?php echo htmlspecialchars($patient['disease_id']); ?>', 
+                                '<?php echo htmlspecialchars($patient['disease_name']); ?>', 
+                                '<?php echo htmlspecialchars($patient['description']); ?>')">Edit</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

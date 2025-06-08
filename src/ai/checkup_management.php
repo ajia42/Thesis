@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 if (!isset($_SESSION['admin_id'])) {
     header('Location: signin_admin.php');
@@ -13,16 +14,16 @@ header("Expires: 0");
 // Include database configuration
 include("../db_config.php");
 
-// Function to generate next patient ID
-function generatePatientID($conn)
+// Function to generate next checkup ID
+function generateCheckupID($conn)
 {
-    $sql = "SELECT MAX(service_type_id) AS max_id FROM service_type";
+    $sql = "SELECT MAX(checkup_id) AS max_id FROM general_checkup";
     $result = mysqli_query($conn, $sql);
     $row = mysqli_fetch_assoc($result);
 
-    // If no patient exists, start with P0001
+    // If no checkup exists, start with GC0001
     if (empty($row['max_id'])) {
-        return 'ST001';
+        return 'GC001';
     }
 
     // Extract the numeric part and increment
@@ -31,84 +32,103 @@ function generatePatientID($conn)
     $newNumPart = $numPart + 1;
 
     // Format the new ID with leading zeros
-    return 'ST' . str_pad($newNumPart, 3, '0', STR_PAD_LEFT);
+    return 'GC' . str_pad($newNumPart, 3, '0', STR_PAD_LEFT);
 }
 
 // Validation checks
-$validate_email = "";
-$validate_phone = "";
 $errors = '';
 $message = '';
 
 // Check if form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Sanitize and validate input
-    $first_name = mysqli_real_escape_string($conn, $_POST['first_name']);
-    $phone = mysqli_real_escape_string($conn, $_POST['phone']);
+    $checkup_id = mysqli_real_escape_string($conn, $_POST['checkup_id']);
+    $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id']);
+    $weight = mysqli_real_escape_string($conn, $_POST['weight']);
+    $height = mysqli_real_escape_string($conn, $_POST['height']);
+    $temperature = mysqli_real_escape_string($conn, $_POST['temperature']);
+    $pulse = mysqli_real_escape_string($conn, $_POST['pulse']);
+    $blood_pressure = mysqli_real_escape_string($conn, $_POST['blood_pressure']);
+    $remark = mysqli_real_escape_string($conn, $_POST['remark']);
+    $staff_id = mysqli_real_escape_string($conn, $_POST['staff_id']);
+    $date = mysqli_real_escape_string($conn, $_POST['date']);
 
     // Action based on button click
     if (isset($_POST['save_button'])) {
+        // Check if patient exists
+        $patient_check = "SELECT * FROM patient WHERE patient_id = '$patient_id'";
+        $patient_result = mysqli_query($conn, $patient_check);
+        if (mysqli_num_rows($patient_result) == 0) {
+            $errors = "Patient ID does not exist.";
+        }
 
         if (empty($errors)) {
-            // Generate new patient ID
-            $patient_id = generatePatientID($conn);
+            // Generate new checkup ID
+            $checkup_id = generateCheckupID($conn);
 
             // Prepare INSERT query
-            $insert_query = "INSERT INTO service_type (service_type_id, service_name, service_fee) 
-                         VALUES ('$patient_id', '$first_name', '$phone')";
+            $insert_query = "INSERT INTO general_checkup (checkup_id, patient_id, weight, height, temperature, pulse, blood_pressure, remark, staff_id, date) 
+                         VALUES ('$checkup_id', '$patient_id', '$weight', '$height', '$temperature', '$pulse', '$blood_pressure', '$remark', '$staff_id', '$date')";
 
             if (mysqli_query($conn, $insert_query)) {
-                $message = "Service added successfully!";
-                // echo "<script>alert('Patient added successfully!');</script>";
-                $patient_id = $first_name =  $phone = '';
+                $message = "General checkup added successfully!";
+                $checkup_id = $patient_id = $weight = $height = $temperature = $pulse = $blood_pressure = $remark = $staff_id = $date = '';
             } else {
-                // echo "<script>alert('Error adding patient: " . mysqli_error($conn) . "');</script>";
-                $errors = "Error adding service: " . mysqli_error($conn);
+                $errors = "Error adding checkup: " . mysqli_error($conn);
             }
         }
     }
 
     // Update functionality
-    if (isset($_POST['update_button']) && !empty($_POST['patient_id'])) {
-        $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id']);
+    if (isset($_POST['update_button']) && !empty($_POST['checkup_id'])) {
+        $checkup_id = mysqli_real_escape_string($conn, $_POST['checkup_id']);
+
+        // Check if patient exists
+        $patient_check = "SELECT * FROM patient WHERE patient_id = '$patient_id'";
+        $patient_result = mysqli_query($conn, $patient_check);
+        if (mysqli_num_rows($patient_result) == 0) {
+            $errors = "Patient ID does not exist.";
+        }
 
         if (empty($errors)) {
             // Prepare UPDATE query
-            $update_query = "UPDATE service_type 
-        SET service_name = '$first_name', 
-            service_fee = '$phone'  
-        WHERE service_type_id = '$patient_id'";
+            $update_query = "UPDATE general_checkup 
+        SET patient_id = '$patient_id', 
+            weight = '$weight', 
+            height = '$height', 
+            temperature = '$temperature', 
+            pulse = '$pulse', 
+            blood_pressure = '$blood_pressure', 
+            remark = '$remark', 
+            staff_id = '$staff_id', 
+            date = '$date' 
+        WHERE checkup_id = '$checkup_id'";
 
             if (mysqli_query($conn, $update_query)) {
-                // echo "<script>alert('Patient updated successfully!');</script>";
-                $message = "Service updated successfully!";
-                // $patient_id = $first_name = $last_name = $gender = $email = $phone = $dob = $address = '';
+                $message = "General checkup updated successfully!";
+                $checkup_id = $patient_id = $weight = $height = $temperature = $pulse = $blood_pressure = $remark = $staff_id = $date = '';
             } else {
-                // echo "<script>alert('Error updating patient: " . mysqli_error($conn) . "');</script>";
-                $errors = "Error updating service: " . mysqli_error($conn);
+                $errors = "Error updating checkup: " . mysqli_error($conn);
             }
         }
     }
 
     // Delete functionality
-    if (isset($_POST['delete_button']) && !empty($_POST['patient_id'])) {
-        $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id']);
+    if (isset($_POST['delete_button']) && !empty($_POST['checkup_id'])) {
+        $checkup_id = mysqli_real_escape_string($conn, $_POST['checkup_id']);
 
         // Prepare DELETE query
-        $delete_query = "DELETE FROM service_type WHERE service_type_id = '$patient_id'";
+        $delete_query = "DELETE FROM general_checkup WHERE checkup_id = '$checkup_id'";
 
         if (mysqli_query($conn, $delete_query)) {
-            // echo "<script>alert('Patient deleted successfully!');</script>";
-            $message = "Service deleted successfully!";
+            $message = "General checkup deleted successfully!";
         } else {
-            // echo "<script>alert('Error deleting patient: " . mysqli_error($conn) . "');</script>";
-            $errors = "Error deleting service: " . mysqli_error($conn);
+            $errors = "Error deleting checkup: " . mysqli_error($conn);
         }
     }
 }
 
-
-// Search functionality - REPLACE your current search code with this block
+// Search functionality
 $search_query = "";
 $search_results = [];
 $no_results_message = "";
@@ -117,10 +137,13 @@ $is_search = false;
 if (isset($_GET['search']) && !empty($_GET['search'])) {
     $is_search = true;
     $search_term = mysqli_real_escape_string($conn, $_GET['search']);
-    $search_query = "SELECT * FROM service_type 
-                     WHERE service_type_id LIKE '%$search_term%' 
-                     OR service_name LIKE '%$search_term%' 
-                     OR service_fee LIKE '%$search_term%'";
+    $search_query = "SELECT gc.*, p.first_name, p.last_name
+                     FROM general_checkup gc 
+                     LEFT JOIN patient p ON gc.patient_id = p.patient_id
+                     WHERE gc.checkup_id LIKE '%$search_term%' 
+                     OR gc.patient_id LIKE '%$search_term%' 
+                     OR p.first_name LIKE '%$search_term%'
+                     OR p.last_name LIKE '%$search_term%'";
     $search_result = mysqli_query($conn, $search_query);
 
     if ($search_result) {
@@ -128,21 +151,38 @@ if (isset($_GET['search']) && !empty($_GET['search'])) {
             $search_results[] = $row;
         }
 
-        // Display message if no records found for the search
         if (empty($search_results)) {
             $no_results_message = "No results found for: '" . htmlspecialchars($_GET['search']) . "'";
         }
     }
 }
 
-// Fetch all patients only if no search is performed
+// Fetch all checkups only if no search is performed
 if (!$is_search && empty($search_results)) {
-    $all_patients_query = "SELECT * FROM service_type";
-    $all_patients_result = mysqli_query($conn, $all_patients_query);
+    $all_checkups_query = "SELECT gc.*, p.first_name, p.last_name 
+                          FROM general_checkup gc 
+                          LEFT JOIN patient p ON gc.patient_id = p.patient_id";
+    $all_checkups_result = mysqli_query($conn, $all_checkups_query);
 
-    while ($row = mysqli_fetch_assoc($all_patients_result)) {
+    while ($row = mysqli_fetch_assoc($all_checkups_result)) {
         $search_results[] = $row;
     }
+}
+
+// Fetch patients for dropdown
+$patients_query = "SELECT patient_id, first_name, last_name FROM patient";
+$patients_result = mysqli_query($conn, $patients_query);
+$patients = [];
+while ($row = mysqli_fetch_assoc($patients_result)) {
+    $patients[] = $row;
+}
+
+// Fetch staff for dropdown
+$staff_query = "SELECT staff_id, first_name, last_name FROM staff";
+$staff_result = mysqli_query($conn, $staff_query);
+$staff = [];
+while ($row = mysqli_fetch_assoc($staff_result)) {
+    $staff[] = $row;
 }
 ?>
 <!DOCTYPE html>
@@ -151,7 +191,7 @@ if (!$is_search && empty($search_results)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Patient Management</title>
+    <title>General Checkup Management</title>
     <link rel="stylesheet" href="patient_management.css">
 </head>
 
@@ -217,7 +257,7 @@ if (!$is_search && empty($search_results)) {
                         </svg>
                         Appointments</a></li>
 
-                <li class="active"><a href="service_type_managment.php">
+                <li><a href="service_type_managment.php">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
                             <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
@@ -235,7 +275,7 @@ if (!$is_search && empty($search_results)) {
                         </svg>
                         Diseases</a></li>
 
-                <li><a href="checkup_management.php">
+                <li class="active"><a href="checkup_management.php">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M20.42 4.58a5.4 5.4 0 0 0-7.65 0l-.77.78-.77-.78a5.4 5.4 0 0 0-7.65 0C1.46 6.7 1.33 10.28 4 13l8 8 8-8c2.67-2.72 2.54-6.3.42-8.42z"></path>
                         </svg>
@@ -282,8 +322,8 @@ if (!$is_search && empty($search_results)) {
         </aside>
         <main class="main-content">
             <div class="header">
-                <h1>Service Type Management</h1>
-                <button class="new-patient-button" name="new_patient" onclick="clearForm()">+ New Service</button>
+                <h1>General Checkup Management</h1>
+                <button class="new-patient-button" name="new_checkup" onclick="clearForm()">+ New Checkup</button>
             </div>
 
             <?php if ($message): ?>
@@ -293,28 +333,62 @@ if (!$is_search && empty($search_results)) {
                 <div class="error"><?php echo $errors; ?></div>
             <?php endif; ?>
 
-            <!-- Patient Form -->
-            <form method="POST" action="" id="patientForm">
+            <!-- Checkup Form -->
+            <form method="POST" action="" id="checkupForm">
                 <div class="patient-form">
                     <div class="form-group">
-                        <label for="patientID">Service Type ID</label>
-                        <input type="text" id="patientID" name="patient_id" readonly>
+                        <label for="checkupID">Checkup ID</label>
+                        <input type="text" id="checkupID" name="checkup_id" readonly>
                     </div>
                     <div class="form-group">
-                        <label for="firstName">Service Name</label>
-                        <input type="text" id="firstName" name="first_name" required>
+                        <label for="patientID">Patient</label>
+                        <select id="patientID" name="patient_id" required>
+                            <option value="">Select Patient</option>
+                            <?php foreach ($patients as $patient): ?>
+                                <option value="<?php echo $patient['patient_id']; ?>">
+                                    <?php echo $patient['patient_id'] . ' - ' . $patient['first_name'] . ' ' . $patient['last_name']; ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
                     <div class="form-group">
-                        <label for="phone">Service Fee</label>
-                        <!-- <input type="number" id="phone" name="phone" required> -->
-                        <input
-                            type="text"
-                            id="phone"
-                            name="phone"
-                            maxlength="10"
-                            inputmode="numeric"
-                            required />
-                        <div id="phoneError" class="error-message" style="display: none;"></div>
+                        <label for="weight">Weight (kg)</label>
+                        <input type="number" id="weight" name="weight" step="0.1" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="height">Height (cm)</label>
+                        <input type="number" id="height" name="height" step="0.1" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="temperature">Temperature (°C)</label>
+                        <input type="number" id="temperature" name="temperature" step="0.1" min="30" max="45">
+                    </div>
+                    <div class="form-group">
+                        <label for="pulse">Pulse (bpm)</label>
+                        <input type="number" id="pulse" name="pulse" min="0" max="300">
+                    </div>
+                    <div class="form-group">
+                        <label for="bloodPressure">Blood Pressure</label>
+                        <input type="text" id="bloodPressure" name="blood_pressure" placeholder="e.g., 120/80">
+                    </div>
+                    <div class="form-group">
+                        <label for="remark">Remark</label>
+                        <textarea id="remark" name="remark" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="staffID">Staff</label>
+                        <select id="staffID" name="staff_id" required>
+                            <option value="">Select Staff</option>
+                            <?php foreach ($staff as $staff_member): ?>
+                                <option value="<?php echo $staff_member['staff_id']; ?>">
+                                    <?php echo $staff_member['staff_id'] . ' - ' . $staff_member['first_name'] . ' ' . $staff_member['last_name']; ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="date">Date</label>
+                        <input type="date" id="date" name="date" required>
                     </div>
                     <div class="form-actions">
                         <button type="submit" class="save-button" name="save_button">Save</button>
@@ -327,7 +401,7 @@ if (!$is_search && empty($search_results)) {
             <!-- Search Form -->
             <div class="patient-list-header">
                 <form method="GET" action="">
-                    <input type="search" name="search" placeholder="Search services by name or id..."
+                    <input type="search" name="search" placeholder="Search checkups by ID, patient name..."
                         value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
                     <button type="submit">Search</button>
                 </form>
@@ -339,27 +413,48 @@ if (!$is_search && empty($search_results)) {
                 </div>
             <?php endif; ?>
 
-            <!-- Patient Table -->
+            <!-- Checkup Table -->
             <table class="patient-table">
                 <?php if (!empty($search_results)): ?>
                     <thead>
                         <tr>
-                            <th>SERVICE TYPE ID</th>
-                            <th>SERVICE NAME</th>
-                            <th>SERVICE FEE</th>
+                            <th>CHECKUP ID</th>
+                            <th>PATIENT</th>
+                            <th>WEIGHT</th>
+                            <th>HEIGHT</th>
+                            <th>TEMPERATURE</th>
+                            <th>PULSE</th>
+                            <th>BLOOD PRESSURE</th>
+                            <th>REMARK</th>
+                            <th>STAFF ID</th>
+                            <th>DATE</th>
                             <th>ACTIONS</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($search_results as $patient): ?>
+                        <?php foreach ($search_results as $checkup): ?>
                             <tr>
-                                <td><?php echo htmlspecialchars($patient['service_type_id']); ?></td>
-                                <td><?php echo htmlspecialchars($patient['service_name']); ?></td>
-                                <td><?php echo htmlspecialchars($patient['service_fee']); ?></td>
+                                <td><?php echo htmlspecialchars($checkup['checkup_id']); ?></td>
+                                <td><?php echo htmlspecialchars($checkup['patient_id'] . ' - ' . ($checkup['first_name'] ?? '') . ' ' . ($checkup['last_name'] ?? '')); ?></td>
+                                <td><?php echo htmlspecialchars($checkup['weight']); ?></td>
+                                <td><?php echo htmlspecialchars($checkup['height']); ?></td>
+                                <td><?php echo htmlspecialchars($checkup['temperature']); ?></td>
+                                <td><?php echo htmlspecialchars($checkup['pulse']); ?></td>
+                                <td><?php echo htmlspecialchars($checkup['blood_pressure']); ?></td>
+                                <td><?php echo htmlspecialchars($checkup['remark']); ?></td>
+                                <td><?php echo htmlspecialchars($checkup['staff_id']); ?></td>
+                                <td><?php echo htmlspecialchars($checkup['date']); ?></td>
                                 <td>
-                                    <a href="#" onclick="fillForm('<?php echo htmlspecialchars($patient['service_type_id']); ?>', 
-                                '<?php echo htmlspecialchars($patient['service_name']); ?>', 
-                                '<?php echo htmlspecialchars($patient['service_fee']); ?>')">Edit</a>
+                                    <a href="#" onclick="fillForm('<?php echo htmlspecialchars($checkup['checkup_id']); ?>', 
+                                '<?php echo htmlspecialchars($checkup['patient_id']); ?>', 
+                                '<?php echo htmlspecialchars($checkup['weight']); ?>', 
+                                '<?php echo htmlspecialchars($checkup['height']); ?>', 
+                                '<?php echo htmlspecialchars($checkup['temperature']); ?>', 
+                                '<?php echo htmlspecialchars($checkup['pulse']); ?>', 
+                                '<?php echo htmlspecialchars($checkup['blood_pressure']); ?>', 
+                                '<?php echo htmlspecialchars($checkup['remark']); ?>', 
+                                '<?php echo htmlspecialchars($checkup['staff_id']); ?>', 
+                                '<?php echo htmlspecialchars($checkup['date']); ?>')">Edit</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -370,19 +465,42 @@ if (!$is_search && empty($search_results)) {
     </div>
 
     <script>
-        function fillForm(patientId, firstName, phone) {
+        function fillForm(checkupId, patientId, weight, height, temperature, pulse, bloodPressure, remark, staffId, date) {
+            document.getElementById('checkupID').value = checkupId;
             document.getElementById('patientID').value = patientId;
-            document.getElementById('firstName').value = firstName;
-            document.getElementById('phone').value = phone;
+            document.getElementById('weight').value = weight;
+            document.getElementById('height').value = height;
+            document.getElementById('temperature').value = temperature;
+            document.getElementById('pulse').value = pulse;
+            document.getElementById('bloodPressure').value = bloodPressure;
+            document.getElementById('remark').value = remark;
+            document.getElementById('staffID').value = staffId;
+            document.getElementById('date').value = date;
         }
 
         function clearForm() {
-            document.getElementById('patientID').value = ''; // Clear Patient ID
-            document.getElementById('firstName').value = ''; // Clear First Name
-            document.getElementById('phone').value = ''; // Clear Phone
-            // Focus on first name input
-            document.getElementById('firstName').focus();
+            document.getElementById('checkupID').value = '';
+            document.getElementById('patientID').selectedIndex = 0;
+            document.getElementById('weight').value = '';
+            document.getElementById('height').value = '';
+            document.getElementById('temperature').value = '';
+            document.getElementById('pulse').value = '';
+            document.getElementById('bloodPressure').value = '';
+            document.getElementById('remark').value = '';
+            document.getElementById('staffID').selectedIndex = 0;
+            document.getElementById('date').value = '';
+            document.getElementById('patientID').focus();
         }
+
+        // Set today's date as default
+        document.addEventListener("DOMContentLoaded", function() {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const todayDate = `${yyyy}-${mm}-${dd}`;
+            document.getElementById('date').value = todayDate;
+        });
 
         // Prevent form resubmission on page refresh
         if (window.history.replaceState) {

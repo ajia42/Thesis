@@ -37,8 +37,7 @@ header {
   width: 24px;
   height: 24px;
   margin-right: 8px;
-  fill: #1e88e5;
-  /* Example primary color */
+  fill: #4caf50; /* Changed to green */
 }
 
 nav ul {
@@ -91,7 +90,7 @@ nav ul li a {
 .logo-center .icon-large {
   width: 36px;
   height: 36px;
-  fill: #1e88e5;
+  fill: #4caf50; /* Changed to green */
   margin-bottom: 5px;
 }
 
@@ -116,7 +115,7 @@ h1 {
 }
 
 .create-account a {
-  color: #1e88e5;
+  color: #4caf50; /* Changed to green */
   text-decoration: none;
 }
 
@@ -132,7 +131,9 @@ h1 {
 }
 
 .input-group input[type="email"],
-.input-group input[type="password"] {
+.input-group input[type="password"],
+.input-group input[type="text"],
+.input-group input[type="date"] {
   width: calc(100% - 22px);
   padding: 10px;
   border: 1px solid #ddd;
@@ -146,12 +147,24 @@ h1 {
   align-items: center;
 }
 
-.password-input input[type="password"] {
-  width: calc(100% - 40px);
-  /* Adjust for the eye icon button */
+.password-input input {
+  flex-grow: 1;
+  padding-right: 40px;
 }
 
-.password-input .eye-icon {
+.toggle-password {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.eye-icon {
   width: 20px;
   height: 20px;
   fill: #777;
@@ -177,12 +190,12 @@ h1 {
 }
 
 .forgot-password {
-  color: #1e88e5;
+  color: #4caf50; /* Changed to green */
   text-decoration: none;
 }
 
 .sign-in-button {
-  background-color: #1e88e5;
+  background-color: #4caf50; /* Changed to green */
   color: #fff;
   padding: 12px 20px;
   border: none;
@@ -197,7 +210,7 @@ h1 {
 }
 
 .sign-in-button:hover {
-  background-color: #1565c0;
+  background-color: #3d8b40; /* Darker green for hover state */
 }
 
 .arrow-icon {
@@ -208,25 +221,10 @@ h1 {
 
 .error-message {
   color: #dc3545;
-  /* Red color for error text */
   background-color: #f8d7da;
-  /* Light red background */
   border: 1px solid #f5c6cb;
-  /* Red border */
   padding: 10px;
   border-radius: 4px;
   margin-bottom: 15px;
   text-align: center;
-}
-
-.password-input .toggle-password {
-  position: absolute;
-  right: 10px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0;
-  outline: none;
-  z-index: 3;
-  /* Ensure the button is above the input */
 }

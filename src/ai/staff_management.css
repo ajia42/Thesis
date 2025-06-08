@@ -68,7 +68,7 @@ body {
   margin: 0;
 }
 
-.new-patient-button {
+.new-staff-button {
   background-color: #388e3c; /* Example button color */
   color: white;
   border: none;
@@ -77,7 +77,7 @@ body {
   cursor: pointer;
 }
 
-.patient-form {
+.staff-form {
   background-color: white;
   padding: 20px;
   border-radius: 5px;
@@ -87,39 +87,39 @@ body {
   gap: 15px;
 }
 
-.patient-form .form-group {
+.staff-form .form-group {
   display: flex;
   flex-direction: column;
 }
 
-.patient-form label {
+.staff-form label {
   margin-bottom: 5px;
   font-weight: bold;
   color: #555;
 }
 
-.patient-form input[type="text"],
-.patient-form input[type="email"],
-.patient-form input[type="number"],
-.patient-form input[type="date"],
-.patient-form select {
+.staff-form input[type="text"],
+.staff-form input[type="email"],
+.staff-form input[type="number"],
+.staff-form input[type="date"],
+.staff-form select {
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 3px;
 }
 
-.patient-form .address {
+.staff-form .address {
   grid-column: 1 / -1; /* Make address span full width */
 }
 
-.patient-form .form-actions {
+.staff-form .form-actions {
   grid-column: 1 / -1;
   display: flex;
   gap: 10px;
   justify-content: flex-end;
 }
 
-.patient-form .form-actions button {
+.staff-form .form-actions button {
   color: white;
   border: none;
   padding: 10px 15px;
@@ -127,30 +127,30 @@ body {
   cursor: pointer;
 }
 
-.patient-form .save-button {
+.staff-form .save-button {
   background-color: #1976d2; /* Example save button color */
 }
 
-.patient-form .update-button {
+.staff-form .update-button {
   background-color: #ffa000; /* Example update button color */
 }
 
-.patient-form .delete-button {
+.staff-form .delete-button {
   background-color: #d32f2f; /* Example delete button color */
 }
 
-.patient-list-header {
+.staff-list-header {
   margin-bottom: 10px;
 }
 
-.patient-list-header input[type="search"] {
+.staff-list-header input[type="search"] {
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 3px;
   width: 300px;
 }
 
-.patient-table {
+.staff-table {
   width: 100%;
   border-collapse: collapse;
   background-color: white;
@@ -158,32 +158,32 @@ body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.patient-table th,
-.patient-table td {
+.staff-table th,
+.staff-table td {
   padding: 12px 15px;
   text-align: left;
   border-bottom: 1px solid #eee;
 }
 
-.patient-table th {
+.staff-table th {
   background-color: #f9f9f9;
   font-weight: bold;
 }
 
-.patient-table tbody tr:last-child td {
+.staff-table tbody tr:last-child td {
   border-bottom: none;
 }
 
-.patient-table tbody tr:hover {
+.staff-table tbody tr:hover {
   background-color: #f5f5f5;
 }
 
-.patient-table .actions a {
+.staff-table .actions a {
   color: #1976d2;
   text-decoration: none;
 }
 
-.patient-table .actions a:hover {
+.staff-table .actions a:hover {
   text-decoration: underline;
 }
 

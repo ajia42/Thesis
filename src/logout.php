@@ -1,7 +1,12 @@
-<?php 
-include("db_config.php");
+<?php
 session_start();
 
+// Unset all session variables
+$_SESSION = array();
+
+// Destroy the session
 session_destroy();
-header("location: login.php");
-?>
+
+// Redirect to login page
+header("Location: signin_staff.php");
+exit();
