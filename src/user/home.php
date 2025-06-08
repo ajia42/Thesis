@@ -577,10 +577,10 @@
                         </div>
                     </div>
                 </div>
-                <h1>Medical Center</h1>
-                <button class="profile-btn">
+                <h>Medical Center</h>
+                <a class="profile-btn" href="userinfo.php">
                     <span class="icon-user"></span>
-                </button>
+                </a>
             </div>
 
             <!-- Main Content -->

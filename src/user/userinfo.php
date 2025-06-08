@@ -77,13 +77,6 @@
             align-items: center;
             justify-content: center;
             position: relative;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .avatar-circle:hover {
-            background: #d0d0d0;
-            transform: scale(1.05);
         }
 
         .avatar-icon {
@@ -104,7 +97,7 @@
 
         .avatar-plus {
             position: absolute;
-            top: -5px;
+            bottom: -5px;
             right: -5px;
             width: 25px;
             height: 25px;
@@ -287,13 +280,11 @@
             Please fill in all required fields.
         </div>
 
-        <form id="profileForm" method="POST" action="" enctype="multipart/form-data">
+        <form id="profileForm" method="POST" action="">
             <div class="profile-avatar">
-                <div class="avatar-circle" onclick="document.getElementById('avatarInput').click()">
+                <div class="avatar-circle">
                     <div class="avatar-icon"></div>
-                    <div class="avatar-plus">+</div>
                 </div>
-                <input type="file" id="avatarInput" name="avatar" accept="image/*" style="display: none;">
             </div>
 
             <div class="form-group">
@@ -371,32 +362,11 @@
             });
         });
         
-        // Avatar upload preview
-        document.getElementById('avatarInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const avatarIcon = document.querySelector('.avatar-icon');
-                    avatarIcon.style.backgroundImage = `url(${e.target.result})`;
-                    avatarIcon.style.backgroundSize = 'cover';
-                    avatarIcon.style.backgroundPosition = 'center';
-                    avatarIcon.innerHTML = '';
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-        
         // Reset form function
         function resetForm() {
             document.getElementById('profileForm').reset();
             document.getElementById('successMessage').style.display = 'none';
             document.getElementById('errorMessage').style.display = 'none';
-            
-            // Reset avatar
-            const avatarIcon = document.querySelector('.avatar-icon');
-            avatarIcon.style.backgroundImage = '';
-            avatarIcon.innerHTML = '';
         }
         
         // Back button function
@@ -454,29 +424,6 @@
             $errors[] = "Phone number is required.";
         }
         
-        // Handle avatar upload
-        $avatar_path = '';
-        if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
-            $upload_dir = 'uploads/avatars/';
-            if (!file_exists($upload_dir)) {
-                mkdir($upload_dir, 0777, true);
-            }
-            
-            $file_extension = pathinfo($_FILES['avatar']['name'], PATHINFO_EXTENSION);
-            $allowed_types = ['jpg', 'jpeg', 'png', 'gif'];
-            
-            if (in_array(strtolower($file_extension), $allowed_types)) {
-                $avatar_filename = uniqid() . '.' . $file_extension;
-                $avatar_path = $upload_dir . $avatar_filename;
-                
-                if (!move_uploaded_file($_FILES['avatar']['tmp_name'], $avatar_path)) {
-                    $errors[] = "Failed to upload avatar.";
-                }
-            } else {
-                $errors[] = "Invalid file type for avatar.";
-            }
-        }
-        
         if (empty($errors)) {
             // Here you would typically save to database
             // For demonstration, we'll just log the data
@@ -486,7 +433,6 @@
                 'email' => $email,
                 'phone' => $phone,
                 'address' => $address,
-                'avatar_path' => $avatar_path,
                 'updated_at' => date('Y-m-d H:i:s')
             ];
             
@@ -496,8 +442,8 @@
                 $pdo = new PDO("mysql:host=localhost;dbname=your_database", $username, $password);
                 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
                 
-                $stmt = $pdo->prepare("UPDATE users SET full_name = ?, email = ?, phone = ?, address = ?, avatar_path = ?, updated_at = ? WHERE id = ?");
-                $stmt->execute([$full_name, $email, $phone, $address, $avatar_path, date('Y-m-d H:i:s'), $user_id]);
+                $stmt = $pdo->prepare("UPDATE users SET full_name = ?, email = ?, phone = ?, address = ?, updated_at = ? WHERE id = ?");
+                $stmt->execute([$full_name, $email, $phone, $address, date('Y-m-d H:i:s'), $user_id]);
                 
                 $success_message = "Profile updated successfully!";
             } catch(PDOException $e) {
