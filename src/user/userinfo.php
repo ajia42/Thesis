@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -254,9 +255,10 @@
                 padding: 20px;
                 margin: 10px;
             }
-            
+
             .form-input {
-                font-size: 16px; /* Prevents zoom on iOS */
+                font-size: 16px;
+                /* Prevents zoom on iOS */
             }
         }
 
@@ -265,7 +267,7 @@
                 flex-direction: column;
                 gap: 15px;
             }
-            
+
             .country-code {
                 width: 100%;
                 justify-content: center;
@@ -273,16 +275,17 @@
         }
     </style>
 </head>
+
 <body>
     <div class="profile-container">
         <button class="back-button" onclick="goBack()" title="Go Back">
             ←
         </button>
-        
+
         <div id="successMessage" class="success-message">
             Profile updated successfully!
         </div>
-        
+
         <div id="errorMessage" class="error-message">
             Please fill in all required fields.
         </div>
@@ -291,7 +294,7 @@
             <div class="profile-avatar">
                 <div class="avatar-circle" onclick="document.getElementById('avatarInput').click()">
                     <div class="avatar-icon"></div>
-                    <div class="avatar-plus">+</div>
+
                 </div>
                 <input type="file" id="avatarInput" name="avatar" accept="image/*" style="display: none;">
             </div>
@@ -327,21 +330,21 @@
         // Form validation and submission
         document.getElementById('profileForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            
+
             const fullName = document.getElementById('fullName').value.trim();
             const email = document.getElementById('email').value.trim();
             const phone = document.getElementById('phone').value.trim();
-            
+
             // Hide previous messages
             document.getElementById('successMessage').style.display = 'none';
             document.getElementById('errorMessage').style.display = 'none';
-            
+
             // Basic validation
             if (!fullName || !email || !phone) {
                 document.getElementById('errorMessage').style.display = 'block';
                 return;
             }
-            
+
             // Email validation
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
@@ -349,7 +352,7 @@
                 document.getElementById('errorMessage').style.display = 'block';
                 return;
             }
-            
+
             // Phone validation (basic)
             const phoneRegex = /^[\d\s\-\+\(\)]+$/;
             if (!phoneRegex.test(phone)) {
@@ -357,10 +360,10 @@
                 document.getElementById('errorMessage').style.display = 'block';
                 return;
             }
-            
+
             // Simulate successful submission
             document.getElementById('successMessage').style.display = 'block';
-            
+
             // In a real application, you would submit the form data to your PHP backend
             // For demo purposes, we'll just show success message
             console.log('Form data:', {
@@ -370,7 +373,7 @@
                 address: document.getElementById('address').value.trim()
             });
         });
-        
+
         // Avatar upload preview
         document.getElementById('avatarInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
@@ -386,34 +389,34 @@
                 reader.readAsDataURL(file);
             }
         });
-        
+
         // Reset form function
         function resetForm() {
             document.getElementById('profileForm').reset();
             document.getElementById('successMessage').style.display = 'none';
             document.getElementById('errorMessage').style.display = 'none';
-            
+
             // Reset avatar
             const avatarIcon = document.querySelector('.avatar-icon');
             avatarIcon.style.backgroundImage = '';
             avatarIcon.innerHTML = '';
         }
-        
+
         // Back button function
         function goBack() {
             if (window.history.length > 1) {
                 window.history.back();
             } else {
                 // Fallback if no history
-                window.location.href = '/dashboard'; // Change to your desired fallback page
+                window.location.href = '/home'; // Change to your desired fallback page
             }
         }
-        
+
         // Phone number formatting
         document.getElementById('phone').addEventListener('input', function(e) {
             let value = e.target.value.replace(/\D/g, '');
             let formattedValue = '';
-            
+
             if (value.length > 0) {
                 if (value.length <= 4) {
                     formattedValue = value;
@@ -423,7 +426,7 @@
                     formattedValue = value.slice(0, 4) + ' ' + value.slice(4, 8) + ' ' + value.slice(8, 12);
                 }
             }
-            
+
             e.target.value = formattedValue;
         });
     </script>
@@ -436,24 +439,24 @@
         $email = isset($_POST['email']) ? trim($_POST['email']) : '';
         $phone = isset($_POST['phone']) ? trim($_POST['phone']) : '';
         $address = isset($_POST['address']) ? trim($_POST['address']) : '';
-        
+
         $errors = [];
-        
+
         // Validation
         if (empty($full_name)) {
             $errors[] = "Full name is required.";
         }
-        
+
         if (empty($email)) {
             $errors[] = "Email is required.";
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $errors[] = "Invalid email format.";
         }
-        
+
         if (empty($phone)) {
             $errors[] = "Phone number is required.";
         }
-        
+
         // Handle avatar upload
         $avatar_path = '';
         if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
@@ -461,14 +464,14 @@
             if (!file_exists($upload_dir)) {
                 mkdir($upload_dir, 0777, true);
             }
-            
+
             $file_extension = pathinfo($_FILES['avatar']['name'], PATHINFO_EXTENSION);
             $allowed_types = ['jpg', 'jpeg', 'png', 'gif'];
-            
+
             if (in_array(strtolower($file_extension), $allowed_types)) {
                 $avatar_filename = uniqid() . '.' . $file_extension;
                 $avatar_path = $upload_dir . $avatar_filename;
-                
+
                 if (!move_uploaded_file($_FILES['avatar']['tmp_name'], $avatar_path)) {
                     $errors[] = "Failed to upload avatar.";
                 }
@@ -476,11 +479,11 @@
                 $errors[] = "Invalid file type for avatar.";
             }
         }
-        
+
         if (empty($errors)) {
             // Here you would typically save to database
             // For demonstration, we'll just log the data
-            
+
             $profile_data = [
                 'full_name' => $full_name,
                 'email' => $email,
@@ -489,7 +492,7 @@
                 'avatar_path' => $avatar_path,
                 'updated_at' => date('Y-m-d H:i:s')
             ];
-            
+
             // Example database insertion (uncomment and modify as needed)
             /*
             try {
@@ -504,7 +507,7 @@
                 $errors[] = "Database error: " . $e->getMessage();
             }
             */
-            
+
             // For demo purposes, just show success
             echo "<script>
                 document.addEventListener('DOMContentLoaded', function() {
@@ -523,4 +526,5 @@
     }
     ?>
 </body>
+
 </html>

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -41,7 +42,7 @@
         .header {
             background: var(--white);
             padding: 12px 16px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -61,7 +62,9 @@
         }
 
 
-        .menu-btn, .profile-btn, .back-btn {
+        .menu-btn,
+        .profile-btn,
+        .back-btn {
             background: none;
             border: none;
             padding: 8px;
@@ -70,7 +73,8 @@
             transition: background-color 0.2s;
         }
 
-        .menu-btn:hover, .back-btn:hover {
+        .menu-btn:hover,
+        .back-btn:hover {
             background-color: var(--card-color);
         }
 
@@ -83,7 +87,7 @@
             background-color: var(--primary-color);
             color: var(--white);
         }
-        
+
         /* Dropdown Menu */
         .dropdown-menu {
             position: absolute;
@@ -91,7 +95,7 @@
             left: 0;
             background: var(--white);
             border-radius: var(--border-radius);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             min-width: 180px;
             z-index: 1000;
             opacity: 0;
@@ -175,7 +179,7 @@
             background: var(--white);
             border-radius: var(--border-radius);
             overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             margin-bottom: 16px;
             display: flex;
         }
@@ -320,7 +324,7 @@
             background: var(--white);
             border-radius: var(--border-radius);
             padding: 16px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
             margin-bottom: 24px;
         }
 
@@ -521,15 +525,41 @@
         }
 
         /* Icons (simple CSS-based icons) */
-        .icon-calendar::before { content: "📅"; }
-        .icon-clock::before { content: "🕐"; }
-        .icon-stethoscope::before { content: "🩺"; }
-        .icon-eye::before { content: "👁️"; }
-        .icon-user::before { content: "👤"; }
-        .icon-plus::before { content: "+"; }
-        .icon-back::before { content: "←"; }
-        .icon-contact::before { content: "📞"; }
-        .icon-logout::before { content: "🚪"; }
+        .icon-calendar::before {
+            content: "📅";
+        }
+
+        .icon-clock::before {
+            content: "🕐";
+        }
+
+        .icon-stethoscope::before {
+            content: "🩺";
+        }
+
+        .icon-eye::before {
+            content: "👁️";
+        }
+
+        .icon-user::before {
+            content: "👤";
+        }
+
+        .icon-plus::before {
+            content: "+";
+        }
+
+        .icon-back::before {
+            content: "←";
+        }
+
+        .icon-contact::before {
+            content: "📞";
+        }
+
+        .icon-logout::before {
+            content: "🚪";
+        }
 
         /* Overlay for dropdown */
         .overlay {
@@ -551,6 +581,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <!-- Main View -->
@@ -578,9 +609,9 @@
                     </div>
                 </div>
                 <h1>Medical Center</h1>
-                <button class="profile-btn">
+                <a class="profile-btn" href="userinfo.php">
                     <span class="icon-user"></span>
-                </button>
+                </a>
             </div>
 
             <!-- Main Content -->
@@ -745,7 +776,7 @@
             const dropdown = document.getElementById('dropdownMenu');
             const overlay = document.getElementById('overlay');
             const isOpen = dropdown.classList.contains('show');
-            
+
             if (isOpen) {
                 closeMenu();
             } else {
@@ -820,7 +851,7 @@
         function showMainView() {
             document.getElementById('newAppointmentView').classList.add('hidden');
             document.getElementById('mainView').classList.remove('hidden');
-            
+
             // Reset form
             resetForm();
         }
@@ -829,7 +860,7 @@
             selectedDate = '';
             selectedTime = '';
             selectedType = '';
-            
+
             document.getElementById('appointmentDate').value = '';
             document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
             document.querySelectorAll('.type-option').forEach(o => o.classList.remove('selected'));
@@ -853,7 +884,9 @@
             const newAppointment = {
                 id: Date.now(),
                 date: appointmentDate.getDate().toString(),
-                month: appointmentDate.toLocaleDateString('en-US', { month: 'short' }),
+                month: appointmentDate.toLocaleDateString('en-US', {
+                    month: 'short'
+                }),
                 type: typeNames[selectedType],
                 time: selectedTime,
                 status: 'upcoming'
@@ -866,7 +899,7 @@
             addAppointmentCard(newAppointment);
 
             alert(`Appointment Booked Successfully!\nDate: ${selectedDate}\nTime: ${selectedTime}\nType: ${typeNames[selectedType]}`);
-            
+
             // Return to main view
             showMainView();
         }
@@ -874,7 +907,7 @@
         function addAppointmentCard(appointment) {
             const appointmentsList = document.getElementById('appointmentsList');
             const emptyState = document.getElementById('emptyState');
-            
+
             // Hide empty state if visible
             emptyState.classList.add('hidden');
 
@@ -908,7 +941,7 @@
             if (confirm('Are you sure you want to cancel this appointment?')) {
                 // Remove from appointments array
                 appointments = appointments.filter(apt => apt.id !== appointmentId);
-                
+
                 // Remove from DOM
                 const appointmentCards = document.querySelectorAll('.appointment-card');
                 appointmentCards.forEach(card => {
@@ -930,37 +963,38 @@
 
         // PHP-like functionality can be added here for server communication
         // Example AJAX functions:
-        
+
         function saveAppointmentToServer(appointmentData) {
             // This would be used to send data to a PHP backend
             fetch('save_appointment.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(appointmentData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Appointment saved:', data);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(appointmentData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Appointment saved:', data);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
         }
 
         function loadAppointmentsFromServer() {
             // This would be used to load appointments from PHP backend
             fetch('get_appointments.php')
-            .then(response => response.json())
-            .then(data => {
-                // Populate appointments list
-                console.log('Appointments loaded:', data);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
+                .then(response => response.json())
+                .then(data => {
+                    // Populate appointments list
+                    console.log('Appointments loaded:', data);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
         }
     </script>
 </body>
+
 </html>
