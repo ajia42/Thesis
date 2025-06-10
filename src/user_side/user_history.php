@@ -2,14 +2,13 @@
 session_start();
 include("../db_config.php");
 
-// Check if patient is logged in
-if (!isset($_SESSION['patient_id'])) {
-    header("Location: patient_login.php");
+if (!isset($_SESSION['registered_phone'])) {
+    header("Location: user_login.php");
     exit();
 }
 
-$patient_id = $_SESSION['patient_id'];
-$patient_name = $_SESSION['patient_name'];
+$patient_id = $_SESSION['registered_phone'];
+$patient_name = $_SESSION['user_name'];
 
 // Fetch all appointments for the patient, newest first
 $appointments = [];
@@ -35,7 +34,7 @@ $conn->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Appointment History - Vision Care</title>
-    <link rel="stylesheet" href="patient_login.css">
+    <link rel="stylesheet" href="user_login.css">
     <style>
         /* Base styles */
         body {
@@ -271,8 +270,8 @@ $conn->close();
                 <span>Vision Care</span>
             </div>
             <div class="auth-links">
-                <a href="patient_profile.php">profile</a>
-                <a href="patient_logout.php">Logout</a>
+                <a href="user_profile.php">profile</a>
+                <a href="user_logout.php">Logout</a>
             </div>
         </div>
     </header>
@@ -284,7 +283,7 @@ $conn->close();
             <p>View and manage your past and upcoming appointments.</p>
         </div>
 
-        <a href="patient_appointment.php" class="new-appointment-btn">New Appointment</a>
+        <a href="user_appointment.php" class="new-appointment-btn">New Appointment</a>
 
         <div class="history-section">
             <h2>History</h2>
@@ -317,7 +316,7 @@ $conn->close();
                                     </div>
                                 </div>
                             </div>
-                            <a href="patient_appointment_detail.php?id=<?php echo htmlspecialchars($appointment['appointment_id']); ?>" class="detail-btn">Details</a>
+                            <a href="user_appointment_detail.php?id=<?php echo htmlspecialchars($appointment['appointment_id']); ?>" class="detail-btn">Details</a>
                         </div>
                     <?php endforeach; ?>
                 <?php endif; ?>

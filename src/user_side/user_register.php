@@ -5,93 +5,47 @@ include("../db_config.php");
 $errors = [];
 $success = '';
 
-// Function to generate next patient ID
-function generatePatientID($conn)
-{
-    $sql = "SELECT MAX(patient_id) AS max_id FROM patient";
-    $result = mysqli_query($conn, $sql);
-    $row = mysqli_fetch_assoc($result);
-
-    // If no patient exists, start with P0001
-    if (empty($row['max_id'])) {
-        return 'P0001';
-    }
-
-    // Extract the numeric part and increment
-    $lastID = $row['max_id'];
-    $numPart = intval(substr($lastID, 1));
-    $newNumPart = $numPart + 1;
-
-    // Format the new ID with leading zeros
-    return 'P' . str_pad($newNumPart, 4, '0', STR_PAD_LEFT);
-}
-
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $first_name = mysqli_real_escape_string($conn, $_POST['first_name']);
-    $last_name = mysqli_real_escape_string($conn, $_POST['last_name']);
-    $gender = mysqli_real_escape_string($conn, $_POST['gender']);
-    $dob = mysqli_real_escape_string($conn, $_POST['dob']);
+    $user_name = mysqli_real_escape_string($conn, $_POST['user_name']);
     $email = mysqli_real_escape_string($conn, $_POST['email']);
     $phone = mysqli_real_escape_string($conn, $_POST['phone']);
     $password = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
 
     // Validation
-    if (empty($first_name)) $errors[] = "First name is required";
-    if (empty($last_name)) $errors[] = "Last name is required";
-    if (empty($gender)) $errors[] = "Gender is required";
+    if (empty($user_name)) $errors[] = "Username is required";
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = "Invalid email format";
-
-    // Replace the existing phone validation with:
     if (!preg_match('/^20\d{8}$/', $phone)) {
         $errors[] = "Phone must start with 20 and be 10 digits (e.g., 2012345678)";
     }
-    // if (!preg_match('/^\d{10}$/', $phone)) $errors[] = "Phone must be 10 digits";
     if (strlen($password) < 8) $errors[] = "Password must be at least 8 characters";
     if ($password !== $confirm_password) $errors[] = "Passwords do not match";
 
-    // Replace the existing date validation with:
-    if (empty($dob)) {
-        $errors[] = "Date of birth is required";
-    } else {
-        $dobTime = strtotime($dob);
-        $currentTime = time();
-        $minTime = strtotime('-120 years', $currentTime);
-
-        if ($dobTime > $currentTime) {
-            $errors[] = "Date of birth cannot be in the future";
-        } elseif ($dobTime < $minTime) {
-            $errors[] = "Age cannot be more than 120 years";
-        }
-    }
-
     // Check if email exists
-    $email_check = "SELECT * FROM patient WHERE email = '$email'";
+    $email_check = "SELECT * FROM user WHERE email = '$email'";
     $result = mysqli_query($conn, $email_check);
     if (mysqli_num_rows($result) > 0) {
         $errors[] = "Email already registered";
     }
 
     // Check if phone exists
-    $phone_check = "SELECT * FROM patient WHERE phone = '$phone'";
+    $phone_check = "SELECT * FROM user WHERE phone = '$phone'";
     $phone_result = mysqli_query($conn, $phone_check);
     if (mysqli_num_rows($phone_result) > 0) {
         $errors[] = "Phone number already registered";
     }
 
     if (empty($errors)) {
-        // $patient_id = 'P' . str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
-        // Generate new patient ID
-        $patient_id = generatePatientID($conn);
-
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-        $sql = "INSERT INTO patient (patient_id, first_name, last_name, gender, dob, email, phone, password) 
-                VALUES ('$patient_id', '$first_name', '$last_name', '$gender', '$dob', '$email', '$phone', '$hashed_password')";
+        $sql = "INSERT INTO user (user_name, email, phone, password) 
+                VALUES ('$user_name', '$email', '$phone', '$hashed_password')";
 
+        // Change this part in patient_register.php
         if (mysqli_query($conn, $sql)) {
-            $success = "Registration successful! Redirecting to login...";
-            header("Refresh: 3; url=patient_login.php");
+            $_SESSION['registered_phone'] = $phone; // Store phone in session
+            header("Location: user_info.php"); // Redirect immediately
+            exit();
         } else {
             $errors[] = "Error: " . mysqli_error($conn);
         }
@@ -108,9 +62,8 @@ $conn->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Patient Registration - Vision Care</title>
-    <link rel="stylesheet" href="patient_login.css"> <!-- Using patient styles -->
+    <link rel="stylesheet" href="user_login.css">
     <style>
-        /* Additional styles for registration form */
         .password-strength {
             height: 5px;
             margin-top: 5px;
@@ -132,15 +85,6 @@ $conn->close();
             margin-top: 0.3rem;
         }
 
-        .form-row {
-            display: flex;
-            gap: 15px;
-        }
-
-        .form-row .input-group {
-            flex: 1;
-        }
-
         .success-message {
             background-color: #d4edda;
             color: #155724;
@@ -152,31 +96,30 @@ $conn->close();
             text-align: center;
         }
 
-        .gender-options {
-            display: flex;
-            gap: 15px;
-            margin-top: 5px;
-        }
-
-        .gender-option {
-            display: flex;
-            align-items: center;
-        }
-
-        .gender-option input {
-            margin-right: 5px;
-        }
-
-        /* Add to your existing styles */
         .error-message {
             color: #e74c3c;
             font-size: 0.8rem;
             margin-top: 5px;
         }
 
-        /* Make the date input show red when invalid */
-        input:invalid {
-            border-color: #e74c3c;
+        .password-input {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .eye-icon {
+            width: 20px;
+            height: 20px;
         }
     </style>
 </head>
@@ -191,8 +134,8 @@ $conn->close();
                 <span>Vision Care</span>
             </div>
             <div class="auth-links">
-                <a href="patient_login.php">Login</a>
-                <a href="patient_register.php" class="active">Register</a>
+                <a href="user_login.php">Login</a>
+                <a href="user_register.php" class="active">Register</a>
             </div>
         </div>
     </header>
@@ -207,7 +150,7 @@ $conn->close();
             </div>
 
             <h1>Patient Registration</h1>
-            <p class="create-account">Already have an account? <a href="patient_login.php">Sign in here</a></p>
+            <p class="create-account">Already have an account? <a href="user_login.php">Sign in here</a></p>
 
             <?php if (!empty($errors)): ?>
                 <div class="error-message">
@@ -221,40 +164,11 @@ $conn->close();
                 <div class="success-message"><?php echo htmlspecialchars($success); ?></div>
             <?php endif; ?>
 
-            <form method="POST" action="patient_register.php">
-                <div class="form-row">
-                    <div class="input-group">
-                        <label for="first_name">First Name</label>
-                        <input type="text" id="first_name" name="first_name" required
-                            value="<?php echo htmlspecialchars($_POST['first_name'] ?? ''); ?>">
-                    </div>
-                    <div class="input-group">
-                        <label for="last_name">Last Name</label>
-                        <input type="text" id="last_name" name="last_name" required
-                            value="<?php echo htmlspecialchars($_POST['last_name'] ?? ''); ?>">
-                    </div>
-                </div>
-
+            <form method="POST" action="user_register.php">
                 <div class="input-group">
-                    <label>Gender</label>
-                    <div class="gender-options">
-                        <label class="gender-option">
-                            <input type="radio" name="gender" value="Male" required
-                                <?php echo (isset($_POST['gender']) && $_POST['gender'] == 'Male') ? 'checked' : ''; ?>> Male
-                        </label>
-                        <label class="gender-option">
-                            <input type="radio" name="gender" value="Female"
-                                <?php echo (isset($_POST['gender']) && $_POST['gender'] == 'Female') ? 'checked' : ''; ?>> Female
-                        </label>
-                    </div>
-                </div>
-
-                <div class="input-group">
-                    <label for="dob">Date of Birth</label>
-                    <input type="date" id="dob" name="dob" required
-                        min="<?php echo date('Y-m-d', strtotime('-120 years')); ?>"
-                        max="<?php echo date('Y-m-d'); ?>"
-                        value="<?php echo htmlspecialchars($_POST['dob'] ?? ''); ?>">
+                    <label for="user_name">Username</label>
+                    <input type="text" id="user_name" name="user_name" required
+                        value="<?php echo htmlspecialchars($_POST['user_name'] ?? ''); ?>">
                 </div>
 
                 <div class="input-group">
@@ -266,9 +180,9 @@ $conn->close();
                 <div class="input-group">
                     <label for="phone">Phone Number</label>
                     <input type="text" id="phone" name="phone" required
-                        placeholder="10 digits only" maxlength="10"
+                        placeholder="10 digits starting with 20" maxlength="10"
                         value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>">
-                    <small class="hint">Must start with 20 and be 10 digits (e.g., 20xxxxxxx)</small>
+                    <small class="hint">Must start with 20 and be 10 digits (e.g., 2012345678)</small>
                 </div>
 
                 <div class="input-group">
@@ -299,7 +213,7 @@ $conn->close();
                             </svg>
                         </button>
                     </div>
-                    <p class="error-message" id="password-match-error" style="display:none;color:#e74c3c;">Passwords do not match</p>
+                    <p class="error-message" id="password-match-error" style="display:none;">Passwords do not match</p>
                 </div>
 
                 <button type="submit" class="sign-in-button">
@@ -374,9 +288,9 @@ $conn->close();
             }
         }
 
-        // Replace the existing phone input event listener with this enhanced version:
+        // Phone number validation
         document.getElementById('phone').addEventListener('input', function(e) {
-            // Remove all non-digit characters immediately
+            // Remove all non-digit characters
             this.value = this.value.replace(/\D/g, '');
 
             // Ensure it starts with 20
@@ -392,45 +306,12 @@ $conn->close();
             }
         });
 
-        // Add this to prevent paste of non-numeric characters
+        // Prevent paste of non-numeric characters
         document.getElementById('phone').addEventListener('paste', function(e) {
             e.preventDefault();
             const text = (e.clipboardData || window.clipboardData).getData('text');
             const numbers = text.replace(/\D/g, '');
             document.execCommand('insertText', false, numbers);
-        });
-
-        // Replace the existing date validation with:
-        document.getElementById('dob').addEventListener('change', function(e) {
-            const dobInput = this;
-            const selectedDate = new Date(dobInput.value);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0); // Reset time part
-
-            // Calculate minimum date (120 years ago)
-            const minDate = new Date();
-            minDate.setFullYear(today.getFullYear() - 120);
-            minDate.setHours(0, 0, 0, 0);
-
-            const errorElement = document.createElement('div');
-            errorElement.className = 'error-message';
-            errorElement.id = 'dob-error';
-
-            // Remove any existing error message
-            const existingError = document.getElementById('dob-error');
-            if (existingError) existingError.remove();
-
-            if (selectedDate > today) {
-                errorElement.textContent = 'Date of birth cannot be in the future';
-                dobInput.parentNode.appendChild(errorElement);
-                dobInput.setCustomValidity('Date of birth cannot be in the future');
-            } else if (selectedDate < minDate) {
-                errorElement.textContent = 'Age cannot be more than 120 years';
-                dobInput.parentNode.appendChild(errorElement);
-                dobInput.setCustomValidity('Age cannot be more than 120 years');
-            } else {
-                dobInput.setCustomValidity('');
-            }
         });
     </script>
 </body>

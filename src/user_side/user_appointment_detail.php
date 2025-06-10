@@ -2,19 +2,21 @@
 session_start();
 include("../db_config.php");
 
-// Check if patient is logged in
-if (!isset($_SESSION['patient_id'])) {
-    header("Location: patient_login.php");
+// Check if patient is logged in (use registered_phone)
+if (!isset($_SESSION['registered_phone'])) {
+    header("Location: user_login.php");
     exit();
 }
 
+// Use consistent session variables
+$patient_id = $_SESSION['registered_phone'];
+
 if (!isset($_GET['id'])) {
-    header("Location: patient_history.php");
+    header("Location: user_history.php");
     exit();
 }
 
 $appointment_id = $_GET['id'];
-$patient_id = $_SESSION['patient_id'];
 
 // Fetch appointment details
 $sql = "SELECT a.*, s.service_name 
@@ -25,7 +27,7 @@ $result = mysqli_query($conn, $sql);
 $appointment = mysqli_fetch_assoc($result);
 
 if (!$appointment) {
-    header("Location: patient_history.php");
+    header("Location: user_history.php");
     exit();
 }
 
@@ -212,7 +214,7 @@ $conn->close();
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
         <div class="action-buttons">
-            <a href="patient_history.php" class="back-btn">Back to History</a>
+            <a href="user_history.php" class="back-btn">Back to History</a>
 
             <?php if (in_array(strtolower($appointment['status']), ['pending', 'scheduled'])): ?>
                 <form method="POST" id="cancelForm" style="display: inline;">

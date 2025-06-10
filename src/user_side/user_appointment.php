@@ -2,14 +2,15 @@
 session_start();
 include("../db_config.php");
 
-// Check if patient is logged in
-if (!isset($_SESSION['patient_id'])) {
-    header("Location: patient_login.php");
+// Check if patient is logged in (use registered_phone)
+if (!isset($_SESSION['registered_phone'])) {
+    header("Location: user_login.php");
     exit();
 }
 
-$patient_id = $_SESSION['patient_id'];
-$patient_name = $_SESSION['patient_name'];
+// Use consistent session variables
+$patient_id = $_SESSION['registered_phone'];
+$patient_name = $_SESSION['user_name']; // Changed from patient_name
 
 $errors = [];
 $success = '';
@@ -89,7 +90,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         if (mysqli_query($conn, $sql)) {
             // Redirect to history page after successful booking
-            header("Location: patient_history.php");
+            header("Location: user_history.php");
             exit();
         } else {
             $errors[] = "Error: " . mysqli_error($conn);
@@ -107,7 +108,7 @@ $conn->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Book Appointment - Vision Care</title>
-    <link rel="stylesheet" href="patient_login.css">
+    <link rel="stylesheet" href="user_login.css">
     <style>
         /* Base styles */
         body {
@@ -372,7 +373,7 @@ $conn->close();
     </header>
 
     <main class="container appointment-container">
-        <a href="patient_history.php" class="back-button">
+        <a href="user_history.php" class="back-button">
             <svg viewBox="0 0 24 24" fill="currentColor">
                 <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path>
             </svg>
@@ -396,7 +397,7 @@ $conn->close();
         <?php endif; ?>
 
         <div class="appointment-card">
-            <form method="POST" action="patient_appointment.php">
+            <form method="POST" action="user_appointment.php">
                 <div class="form-group">
                     <label for="service_type_id">Service</label>
                     <select id="service_type_id" name="service_type_id" required>

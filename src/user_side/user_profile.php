@@ -2,45 +2,50 @@
 session_start();
 include("../db_config.php");
 
-// Check if patient is logged in
-if (!isset($_SESSION['patient_id'])) {
-    header("Location: patient_login.php");
+// Check if user is logged in - UPDATED SESSION VARIABLE
+if (!isset($_SESSION['registered_phone'])) {
+    header("Location: user_login.php");
     exit();
 }
 
 $edit_mode = false;
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_profile'])) {
-    $edit_mode = true; // Stay in edit mode if there are errors
+    $edit_mode = true;
 } elseif (!empty($errors)) {
-    $edit_mode = true; // Also stay in edit mode if there are other errors
+    $edit_mode = true;
 }
-$patient_id = $_SESSION['patient_id'];
+
+// UPDATED SESSION VARIABLE
+$user_phone = $_SESSION['registered_phone'];
 $errors = [];
 $success = '';
 $password_errors = [];
 $password_success = '';
 
-// Fetch patient data
-$sql = "SELECT * FROM patient WHERE patient_id = '$patient_id'";
+// Fetch user data with patient info
+$sql = "SELECT u.*, p.first_name, p.last_name, p.gender, p.dob, p.address 
+        FROM user u 
+        LEFT JOIN patient p ON u.phone = p.phone 
+        WHERE u.phone = '$user_phone'";
 $result = mysqli_query($conn, $sql);
-$patient = mysqli_fetch_assoc($result);
+$user = mysqli_fetch_assoc($result);
 
 // Handle profile update
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_profile'])) {
+    $user_name = mysqli_real_escape_string($conn, $_POST['user_name']);
     $first_name = mysqli_real_escape_string($conn, $_POST['first_name']);
     $last_name = mysqli_real_escape_string($conn, $_POST['last_name']);
     $gender = mysqli_real_escape_string($conn, $_POST['gender']);
     $dob = mysqli_real_escape_string($conn, $_POST['dob']);
     $email = mysqli_real_escape_string($conn, $_POST['email']);
-    $phone = mysqli_real_escape_string($conn, $_POST['phone']);
     $address = mysqli_real_escape_string($conn, $_POST['address']);
 
     // Validation
+    if (empty($user_name)) $errors[] = "Username is required";
     if (empty($first_name)) $errors[] = "First name is required";
     if (empty($last_name)) $errors[] = "Last name is required";
     if (empty($gender)) $errors[] = "Gender is required";
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = "Invalid email format";
-    if (!preg_match('/^20\d{8}$/', $phone)) $errors[] = "Phone must start with 20 and be 10 digits";
 
     // Date validation
     if (empty($dob)) {
@@ -58,36 +63,37 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_profile'])) {
     }
 
     // Check if email exists (excluding current user)
-    $email_check = "SELECT * FROM patient WHERE email = '$email' AND patient_id != '$patient_id'";
+    $email_check = "SELECT * FROM user WHERE email = '$email' AND phone != '$user_phone'";
     $result = mysqli_query($conn, $email_check);
     if (mysqli_num_rows($result) > 0) {
         $errors[] = "Email already registered";
     }
 
-    // Check if phone exists (excluding current user)
-    $phone_check = "SELECT * FROM patient WHERE phone = '$phone' AND patient_id != '$patient_id'";
-    $phone_result = mysqli_query($conn, $phone_check);
-    if (mysqli_num_rows($phone_result) > 0) {
-        $errors[] = "Phone number already registered";
-    }
-
     if (empty($errors)) {
-        $sql = "UPDATE patient SET 
-                first_name = '$first_name', 
-                last_name = '$last_name', 
-                gender = '$gender', 
-                dob = '$dob', 
-                email = '$email', 
-                phone = '$phone', 
-                address = '$address' 
-                WHERE patient_id = '$patient_id'";
+        // Update user table
+        $user_sql = "UPDATE user SET 
+                    user_name = '$user_name', 
+                    email = '$email' 
+                    WHERE phone = '$user_phone'";
 
-        if (mysqli_query($conn, $sql)) {
+        // Update patient table
+        $patient_sql = "UPDATE patient SET 
+                       first_name = '$first_name', 
+                       last_name = '$last_name', 
+                       gender = '$gender', 
+                       dob = '$dob', 
+                       address = '$address' 
+                       WHERE phone = '$user_phone'";
+
+        if (mysqli_query($conn, $user_sql) && mysqli_query($conn, $patient_sql)) {
             $success = "Profile updated successfully!";
-            $edit_mode = false; // Add this line to exit edit mode after successful update
-            // Refresh patient data
-            $result = mysqli_query($conn, "SELECT * FROM patient WHERE patient_id = '$patient_id'");
-            $patient = mysqli_fetch_assoc($result);
+            $edit_mode = false;
+            // Refresh user data
+            $result = mysqli_query($conn, "SELECT u.*, p.first_name, p.last_name, p.gender, p.dob, p.address 
+                                         FROM user u 
+                                         LEFT JOIN patient p ON u.phone = p.phone 
+                                         WHERE u.phone = '$user_phone'");
+            $user = mysqli_fetch_assoc($result);
         } else {
             $errors[] = "Error updating profile: " . mysqli_error($conn);
         }
@@ -101,7 +107,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['change_password'])) {
     $confirm_password = $_POST['confirm_password'];
 
     // Verify current password
-    if (!password_verify($current_password, $patient['password'])) {
+    if (!password_verify($current_password, $user['password'])) {
         $password_errors[] = "Current password is incorrect";
     }
     if (strlen($new_password) < 8) {
@@ -113,36 +119,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['change_password'])) {
 
     if (empty($password_errors)) {
         $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-        $sql = "UPDATE patient SET password = '$hashed_password' WHERE patient_id = '$patient_id'";
+        $sql = "UPDATE user SET password = '$hashed_password' WHERE phone = '$user_phone'";
 
         if (mysqli_query($conn, $sql)) {
             $password_success = "Password changed successfully!";
         } else {
             $password_errors[] = "Error changing password: " . mysqli_error($conn);
         }
-    }
-}
-
-// Handle account deletion
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_account'])) {
-    $confirm_delete = $_POST['confirm_delete'];
-
-    if ($confirm_delete === 'DELETE') {
-        // Delete all appointments first to maintain referential integrity
-        $delete_appointments = "DELETE FROM appointment WHERE patient_id = '$patient_id'";
-        mysqli_query($conn, $delete_appointments);
-
-        // Then delete the patient
-        $delete_patient = "DELETE FROM patient WHERE patient_id = '$patient_id'";
-        if (mysqli_query($conn, $delete_patient)) {
-            session_destroy();
-            header("Location: patient_login.php");
-            exit();
-        } else {
-            $errors[] = "Error deleting account: " . mysqli_error($conn);
-        }
-    } else {
-        $errors[] = "Please type DELETE to confirm account deletion";
     }
 }
 
@@ -155,8 +138,8 @@ $conn->close();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Patient Profile - Vision Care</title>
-    <link rel="stylesheet" href="patient_login.css">
+    <title>User Profile - Vision Care</title>
+    <link rel="stylesheet" href="user_login.css">
     <style>
         /* Base styles */
         body {
@@ -345,23 +328,6 @@ $conn->close();
             border: 1px solid #f5c6cb;
         }
 
-        /* Responsive adjustments */
-        @media (max-width: 600px) {
-            .form-row {
-                flex-direction: column;
-                gap: 0;
-            }
-
-            .gender-options {
-                /* flex-direction: column; */
-                gap: 5px;
-            }
-
-            .profile-section {
-                padding: 15px;
-            }
-        }
-
         /* Form rows for side-by-side fields */
         .form-row {
             display: flex;
@@ -456,74 +422,6 @@ $conn->close();
         input[disabled]::placeholder {
             color: #ccc;
         }
-
-        /* Modal styles for delete confirmation */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            display: none;
-        }
-
-        .modal-content {
-            background-color: white;
-            padding: 25px;
-            border-radius: 8px;
-            max-width: 500px;
-            width: 90%;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        }
-
-        .modal-title {
-            font-size: 1.2rem;
-            margin-bottom: 15px;
-            font-weight: 600;
-        }
-
-        .modal-message {
-            margin-bottom: 25px;
-            line-height: 1.5;
-        }
-
-        .modal-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-        }
-
-        .modal-btn {
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: all 0.2s;
-            border: none;
-        }
-
-        .modal-btn-cancel {
-            background-color: #f1f1f1;
-            color: #333;
-        }
-
-        .modal-btn-cancel:hover {
-            background-color: #e1e1e1;
-        }
-
-        .modal-btn-danger {
-            background-color: #e74c3c;
-            color: white;
-        }
-
-        .modal-btn-danger:hover {
-            background-color: #c0392b;
-        }
     </style>
 </head>
 
@@ -537,14 +435,14 @@ $conn->close();
                 <span>Vision Care</span>
             </div>
             <div class="auth-links">
-                <a href="patient_history.php">Appointments</a>
-                <a href="patient_logout.php">Logout</a>
+                <a href="user_history.php">Appointments</a>
+                <a href="user_logout.php">Logout</a>
             </div>
         </div>
     </header>
 
     <main class="container profile-container">
-        <h1>Patient Profile</h1>
+        <h1>User Profile</h1>
 
         <?php if (!empty($errors)): ?>
             <div class="alert alert-error">
@@ -562,21 +460,26 @@ $conn->close();
         <div class="profile-section">
             <div class="profile-header">
                 <h2>Personal Information</h2>
-                <!-- And add this instead -->
                 <button type="button" class="edit-btn" id="editBtn">Edit Profile</button>
             </div>
 
-            <form method="POST" action="patient_profile.php" id="profileForm">
+            <form method="POST" action="user_profile.php" id="profileForm">
+                <div class="form-group">
+                    <label for="user_name">Username</label>
+                    <input type="text" id="user_name" name="user_name" required disabled
+                        value="<?php echo htmlspecialchars($user['user_name'] ?? ''); ?>">
+                </div>
+
                 <div class="form-row">
                     <div class="form-group">
                         <label for="first_name">First Name</label>
                         <input type="text" id="first_name" name="first_name" required disabled
-                            value="<?php echo htmlspecialchars($patient['first_name'] ?? ''); ?>">
+                            value="<?php echo htmlspecialchars($user['first_name'] ?? ''); ?>">
                     </div>
                     <div class="form-group">
                         <label for="last_name">Last Name</label>
                         <input type="text" id="last_name" name="last_name" required disabled
-                            value="<?php echo htmlspecialchars($patient['last_name'] ?? ''); ?>">
+                            value="<?php echo htmlspecialchars($user['last_name'] ?? ''); ?>">
                     </div>
                 </div>
 
@@ -585,12 +488,12 @@ $conn->close();
                     <div class="gender-options">
                         <label class="gender-option">
                             <input type="radio" name="gender" value="Male" required
-                                <?php echo ($patient['gender'] ?? '') == 'Male' ? 'checked' : ''; ?>
+                                <?php echo ($user['gender'] ?? '') == 'Male' ? 'checked' : ''; ?>
                                 <?php echo !$edit_mode ? 'disabled' : ''; ?>> Male
                         </label>
                         <label class="gender-option">
                             <input type="radio" name="gender" value="Female" required
-                                <?php echo ($patient['gender'] ?? '') == 'Female' ? 'checked' : ''; ?>
+                                <?php echo ($user['gender'] ?? '') == 'Female' ? 'checked' : ''; ?>
                                 <?php echo !$edit_mode ? 'disabled' : ''; ?>> Female
                         </label>
                     </div>
@@ -601,26 +504,24 @@ $conn->close();
                     <input type="date" id="dob" name="dob" required disabled
                         min="<?php echo date('Y-m-d', strtotime('-120 years')); ?>"
                         max="<?php echo date('Y-m-d'); ?>"
-                        value="<?php echo htmlspecialchars($patient['dob'] ?? ''); ?>">
+                        value="<?php echo htmlspecialchars($user['dob'] ?? ''); ?>">
                 </div>
 
                 <div class="form-group">
                     <label for="email">Email Address</label>
                     <input type="email" id="email" name="email" required disabled
-                        value="<?php echo htmlspecialchars($patient['email'] ?? ''); ?>">
+                        value="<?php echo htmlspecialchars($user['email'] ?? ''); ?>">
                 </div>
 
                 <div class="form-group">
                     <label for="phone">Phone Number</label>
                     <input type="text" id="phone" name="phone" required disabled
-                        placeholder="20xxxxxxxx" maxlength="10"
-                        value="<?php echo htmlspecialchars($patient['phone'] ?? ''); ?>">
-                    <small>Must start with 20 and be 10 digits (e.g., 2012345678)</small>
+                        value="<?php echo htmlspecialchars($user['phone'] ?? ''); ?>">
                 </div>
 
                 <div class="form-group">
                     <label for="address">Address</label>
-                    <textarea id="address" name="address" disabled><?php echo htmlspecialchars($patient['address'] ?? ''); ?></textarea>
+                    <textarea id="address" name="address" disabled><?php echo htmlspecialchars($user['address'] ?? ''); ?></textarea>
                 </div>
 
                 <div class="form-group">
@@ -646,7 +547,7 @@ $conn->close();
                 <div class="alert alert-success"><?php echo htmlspecialchars($password_success); ?></div>
             <?php endif; ?>
 
-            <form method="POST" action="patient_profile.php">
+            <form method="POST" action="user_profile.php">
                 <div class="form-group">
                     <label for="current_password">Current Password</label>
                     <div class="password-input">
@@ -693,29 +594,6 @@ $conn->close();
                 <button type="submit" name="change_password" class="btn btn-primary">Change Password</button>
             </form>
         </div>
-
-        <!-- Delete Account Section - Simplified -->
-        <div class="profile-section">
-            <h2>Delete Account</h2>
-            <p>Warning: This action is permanent and cannot be undone. All your appointments and data will be deleted.</p>
-            <button type="button" id="delete-account-btn" class="btn btn-danger">Delete My Account</button>
-        </div>
-    </main>
-
-    <!-- Delete Confirmation Modal -->
-    <div class="modal-overlay" id="delete-modal">
-        <div class="modal-content">
-            <div class="modal-title">Delete Personal Account</div>
-            <div class="modal-message">Are you sure to delete this account? This action is not reversible, so please continue with caution.</div>
-            <div class="modal-actions">
-                <button type="button" class="modal-btn modal-btn-cancel" id="cancel-delete">Cancel</button>
-                <form method="POST" action="patient_profile.php" style="display: inline;">
-                    <input type="hidden" name="confirm_delete" value="DELETE">
-                    <button type="submit" name="delete_account" class="modal-btn modal-btn-danger">Delete Account</button>
-                </form>
-            </div>
-        </div>
-    </div>
     </main>
 
     <script>
@@ -775,24 +653,6 @@ $conn->close();
             }
         }
 
-        // Phone number validation
-        document.getElementById('phone').addEventListener('input', function(e) {
-            // Remove all non-digit characters
-            this.value = this.value.replace(/\D/g, '');
-
-            // Ensure it starts with 20
-            if (this.value.length === 1 && this.value !== '2') {
-                this.value = '2';
-            } else if (this.value.length === 2 && !this.value.startsWith('20')) {
-                this.value = '20';
-            }
-
-            // Limit to 10 digits
-            if (this.value.length > 10) {
-                this.value = this.value.slice(0, 10);
-            }
-        });
-
         // Edit toggle functionality
         document.getElementById('editBtn').addEventListener('click', function() {
             enableEditMode();
@@ -802,9 +662,11 @@ $conn->close();
             const inputs = document.querySelectorAll('#profileForm input, #profileForm textarea, #profileForm select');
             const radioInputs = document.querySelectorAll('#profileForm input[type="radio"]');
 
-            // Enable all inputs
+            // Enable all inputs except phone (which shouldn't be changed)
             inputs.forEach(input => {
-                input.disabled = false;
+                if (input.id !== 'phone') {
+                    input.disabled = false;
+                }
             });
 
             // Enable radio buttons
@@ -815,6 +677,7 @@ $conn->close();
             // Toggle button visibility
             document.getElementById('editBtn').style.display = 'none';
             document.getElementById('update-btn').style.display = 'block';
+            document.getElementById('cancel-edit').style.display = 'inline-block';
         }
 
         function disableEditMode() {
@@ -834,6 +697,7 @@ $conn->close();
             // Toggle button visibility
             document.getElementById('editBtn').style.display = 'block';
             document.getElementById('update-btn').style.display = 'none';
+            document.getElementById('cancel-edit').style.display = 'none';
         }
 
         // Reset form when there are errors
@@ -846,26 +710,6 @@ $conn->close();
                 disableEditMode();
             });
         <?php endif; ?>
-
-        // Delete account modal
-        const deleteBtn = document.getElementById('delete-account-btn');
-        const deleteModal = document.getElementById('delete-modal');
-        const cancelDelete = document.getElementById('cancel-delete');
-
-        deleteBtn.addEventListener('click', function() {
-            deleteModal.style.display = 'flex';
-        });
-
-        cancelDelete.addEventListener('click', function() {
-            deleteModal.style.display = 'none';
-        });
-
-        // Close modal when clicking outside
-        deleteModal.addEventListener('click', function(e) {
-            if (e.target === deleteModal) {
-                deleteModal.style.display = 'none';
-            }
-        });
     </script>
 </body>
 

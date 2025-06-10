@@ -1,8 +1,8 @@
 <?php
 session_start(); // Start the session to store user information upon successful login
 
-if (isset($_SESSION['patient_id'])) {
-    header('Location: patient_history.php');
+if (isset($_SESSION['registered_phone'])) {
+    header('Location: user_history.php');
     exit();
 }
 
@@ -13,34 +13,34 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = $_POST["email"];
     $password = $_POST["password"];
 
-    // Prepare SQL query to fetch patient by email
-    $sql = "SELECT * FROM patient WHERE email = ?";
+    // Prepare SQL query to fetch user by email
+    $sql = "SELECT * FROM user WHERE email = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
 
     if ($result->num_rows == 1) {
-        // Patient found, now verify the password
+        // User found, now verify the password
         $row = $result->fetch_assoc();
         if (password_verify($password, $row["password"])) {
             // Password is correct, set session variables and redirect
-            $_SESSION["patient_id"] = $row["patient_id"];
-            $_SESSION["patient_name"] = $row["first_name"] . " " . $row["last_name"];
-            header("Location: patient_history.php?id=" . $row["patient_id"]);
+            $_SESSION["registered_phone"] = $row["phone"]; // Use phone as patient_id as it's the primary key
+            $_SESSION["user_name"] = $row["user_name"]; // Use user_name as patient_name
+            header("Location: user_history.php?id=" . $row["phone"]); //Redirect to patient history using phone
             exit();
         } else {
             // Incorrect password
             $_SESSION['login_error'] = "Incorrect password.";
             $_SESSION['login_email'] = $email;
-            header("Location: patient_login.php");
+            header("Location: user_login.php");
             exit();
         }
     } else {
-        // Patient not found
+        // User not found
         $_SESSION['login_error'] = "Incorrect email.";
         $_SESSION['login_email'] = $email;
-        header("Location: patient_login.php");
+        header("Location: user_login.php");
         exit();
     }
 
@@ -57,7 +57,7 @@ $conn->close();
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Patient Login - Vision Care</title>
-    <link rel="stylesheet" href="patient_login.css">
+    <link rel="stylesheet" href="user_login.css">
 </head>
 
 <body>
@@ -71,8 +71,8 @@ $conn->close();
                 <span>Vision Care</span>
             </div>
             <div class="auth-links">
-                <a href="#">Login</a>
-                <a href="#">Register</a>
+                <a href="user_login.php">Login</a>
+                <a href="user_register.php">Register</a>
             </div>
         </div>
     </header>
@@ -86,7 +86,7 @@ $conn->close();
                 <h2>Vision Care</h2>
             </div>
             <h1>Patient Login</h1>
-            <p class="create-account">Don't have an account? <a href="patient_register.php">Register here</a></p>
+            <p class="create-account">Don't have an account? <a href="user_register.php">Register here</a></p>
             <?php
             // Display error message (if any)
             if (isset($_SESSION['login_error'])) {
@@ -118,7 +118,7 @@ $conn->close();
                         <input type="checkbox" name="remember">
                         Remember me
                     </label>
-                    <a href="patient_forgot_password.php" class="forgot-password">Forgot your password?</a>
+                    <a href="user_forgot_password.php" class="forgot-password">Forgot your password?</a>
                 </div>
                 <button type="submit" class="sign-in-button">
                     <svg viewBox="0 0 24 24" fill="currentColor" class="arrow-icon">
