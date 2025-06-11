@@ -2,6 +2,19 @@
 session_start();
 include("../db_config.php");
 
+// If user is already logged in, redirect to dashboard or home page
+if (isset($_SESSION['user_name'])) {
+    header("Location: user_history.php"); // Replace with your dashboard page
+    exit();
+}
+
+// If user is already registered and has a session, redirect to user_info.php
+if (isset($_SESSION['registered_phone'])) {
+    header("Location: user_info.php");
+    exit();
+}
+
+
 $errors = [];
 $success = '';
 
@@ -21,33 +34,67 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (strlen($password) < 8) $errors[] = "Password must be at least 8 characters";
     if ($password !== $confirm_password) $errors[] = "Passwords do not match";
 
-    // Check if email exists
-    $email_check = "SELECT * FROM user WHERE email = '$email'";
-    $result = mysqli_query($conn, $email_check);
-    if (mysqli_num_rows($result) > 0) {
-        $errors[] = "Email already registered";
-    }
-
-    // Check if phone exists
-    $phone_check = "SELECT * FROM user WHERE phone = '$phone'";
-    $phone_result = mysqli_query($conn, $phone_check);
-    if (mysqli_num_rows($phone_result) > 0) {
-        $errors[] = "Phone number already registered";
+    // Check if email exists (for both new and existing users)
+    $email_check = "SELECT * FROM user WHERE email = '$email' AND phone != '$phone'";
+    $email_result = mysqli_query($conn, $email_check);
+    if (mysqli_num_rows($email_result) > 0) {
+        $errors[] = "Email already registered with another account";
     }
 
     if (empty($errors)) {
-        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+        // Check if phone exists in user table
+        $phone_check = "SELECT * FROM user WHERE phone = '$phone'";
+        $phone_result = mysqli_query($conn, $phone_check);
 
-        $sql = "INSERT INTO user (user_name, email, phone, password) 
-                VALUES ('$user_name', '$email', '$phone', '$hashed_password')";
+        if (mysqli_num_rows($phone_result) > 0) {
+            // Phone exists - check if it's a complete registration or walk-in record
+            $user = mysqli_fetch_assoc($phone_result);
 
-        // Change this part in patient_register.php
-        if (mysqli_query($conn, $sql)) {
-            $_SESSION['registered_phone'] = $phone; // Store phone in session
-            header("Location: user_info.php"); // Redirect immediately
-            exit();
+            if ($user['user_name'] !== NULL && $user['email'] !== NULL && $user['password'] !== NULL) {
+                $errors[] = "This phone number is already registered. Please login instead.";
+            } else {
+                // Walk-in patient - update their record with registration details
+                $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
+                $sql = "UPDATE user SET 
+                        user_name = '$user_name', 
+                        email = '$email', 
+                        password = '$hashed_password' 
+                        WHERE phone = '$phone'";
+
+                if (mysqli_query($conn, $sql)) {
+                    // Check if patient exists in patient table
+                    $patient_check = "SELECT * FROM patient WHERE phone = '$phone'";
+                    $patient_result = mysqli_query($conn, $patient_check);
+
+                    if (mysqli_num_rows($patient_result) > 0) {
+                        // Walk-in patient exists - redirect to login
+                        $success = "Registration completed successfully! You can now login.";
+                        header("Refresh: 3; url=user_login.php");
+                    } else {
+                        // New patient - redirect to info page
+                        $_SESSION['registered_phone'] = $phone;
+                        header("Location: user_info.php");
+                        exit();
+                    }
+                } else {
+                    $errors[] = "Error updating your registration. Please try again.";
+                }
+            }
         } else {
-            $errors[] = "Error: " . mysqli_error($conn);
+            // Phone doesn't exist in user table - new registration
+            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
+            $sql = "INSERT INTO user (user_name, email, phone, password) 
+                    VALUES ('$user_name', '$email', '$phone', '$hashed_password')";
+
+            if (mysqli_query($conn, $sql)) {
+                $_SESSION['registered_phone'] = $phone;
+                header("Location: user_info.php");
+                exit();
+            } else {
+                $errors[] = "Error creating your account. Please try again.";
+            }
         }
     }
 }

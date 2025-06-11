@@ -2,6 +2,12 @@
 session_start();
 include("../db_config.php");
 
+// Redirect logged-in users to their dashboard
+if (isset($_SESSION['user_name'])) {
+    header("Location: user_history.php"); // Or user_profile.php
+    exit();
+}
+
 // Check if user came from registration
 if (!isset($_SESSION['registered_phone'])) {
     header("Location: user_register.php");
