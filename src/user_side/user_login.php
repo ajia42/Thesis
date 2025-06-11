@@ -6,6 +6,11 @@ if (isset($_SESSION['registered_phone'])) {
     exit();
 }
 
+// Add at the top of user_login.php
+if (isset($_GET['phone_changed'])) {
+    echo '<div class="success-message">Phone number changed successfully. Please login with your new phone number.</div>';
+}
+
 include("../db_config.php");
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {

@@ -129,6 +129,49 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['change_password'])) {
     }
 }
 
+// Handle phone number change
+$errors_phone = [];
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['change_phone'])) {
+    $new_phone = mysqli_real_escape_string($conn, $_POST['new_phone']);
+
+    // Validation
+    if (!preg_match('/^20\d{8}$/', $new_phone)) {
+        $errors_phone[] = "Phone must start with 20 and be 10 digits (e.g., 2012345678)";
+    } elseif ($new_phone === $user_phone) {
+        $errors_phone[] = "New phone number cannot be the same as current phone number";
+    } else {
+        // Check if new phone exists
+        $phone_check = "SELECT * FROM user WHERE phone = '$new_phone' AND phone != '$user_phone'";
+        $result = mysqli_query($conn, $phone_check);
+        if (mysqli_num_rows($result) > 0) {
+            $errors_phone[] = "Phone number already registered";
+        }
+    }
+
+    if (empty($errors_phone)) {
+        // Start transaction for atomic update
+        mysqli_begin_transaction($conn);
+
+        // Update user table
+        $user_sql = "UPDATE user SET phone = '$new_phone' WHERE phone = '$user_phone'";
+
+        // Update patient table
+        $patient_sql = "UPDATE patient SET phone = '$new_phone' WHERE phone = '$user_phone'";
+
+        if (mysqli_query($conn, $user_sql) && mysqli_query($conn, $patient_sql)) {
+            mysqli_commit($conn);
+            // Destroy session and redirect to login
+            session_destroy();
+            header("Location: user_login.php?phone_changed=1");
+            exit();
+        } else {
+            mysqli_rollback($conn);
+            $errors_phone[] = "Error updating phone number: " . mysqli_error($conn);
+        }
+    }
+}
+
+
 $conn->close();
 ?>
 
@@ -422,6 +465,75 @@ $conn->close();
         input[disabled]::placeholder {
             color: #ccc;
         }
+
+        /* Add to existing styles */
+        .critical-section {
+            border-left: 4px solid #e74c3c;
+            padding-left: 15px;
+            margin-top: 30px;
+        }
+
+        .critical-warning {
+            background-color: #fdecea;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            /* Changed from flex to none (hidden by default) */
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 25px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            position: relative;
+            /* Added for better positioning */
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal h3 {
+            color: #e74c3c;
+            margin-top: 0;
+        }
+
+        .modal p {
+            margin-bottom: 5px;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+
+        .hint {
+            color: #7f8c8d;
+            font-size: 0.8rem;
+            display: block;
+            margin-top: 5px;
+        }
     </style>
 </head>
 
@@ -594,7 +706,58 @@ $conn->close();
                 <button type="submit" name="change_password" class="btn btn-primary">Change Password</button>
             </form>
         </div>
+
+        <!-- Critical: Phone Number Change Section -->
+        <div class="profile-section critical-section">
+            <h2 style="color: #e74c3c;">Change Phone Number</h2>
+            <div class="critical-warning">
+                <strong>Important:</strong> Changing your phone number will require you to re-login.
+                This is a security-sensitive operation.
+            </div>
+
+            <?php if (!empty($errors_phone)): ?>
+                <div class="alert alert-error">
+                    <?php foreach ($errors_phone as $error): ?>
+                        <p><?php echo htmlspecialchars($error); ?></p>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <form method="POST" action="user_profile.php" id="phoneForm">
+                <div class="form-group">
+                    <label for="current_phone">Current Phone Number</label>
+                    <input type="text" id="current_phone" disabled
+                        value="<?php echo htmlspecialchars($user['phone'] ?? ''); ?>">
+                </div>
+
+                <div class="form-group">
+                    <label for="new_phone">New Phone Number</label>
+                    <input type="text" id="new_phone" name="new_phone" required
+                        pattern="^20\d{8}$"
+                        title="Must start with 20 and be 10 digits (e.g., 2012345678)"
+                        maxlength="10"
+                        oninput="validatePhoneInput(this)">
+                    <small class="hint">Must start with 20 and be exactly 10 digits (e.g., 2012345678)</small>
+                    <div id="phoneError" class="error-message" style="display:none;"></div>
+                </div>
+
+                <button type="button" class="btn btn-primary" id="changePhoneBtn">Change Phone Number</button>
+                <button type="submit" name="change_phone" id="phoneSubmitBtn" style="display:none;"></button>
+            </form>
+        </div>
     </main>
+
+    <div id="phoneChangeModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <h3>Confirm Phone Number Change</h3>
+            <p>⚠️ Are you sure you want to change your phone number?</p>
+            <p>You will be immediately logged out and must login again with your new phone number.</p>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="cancelPhoneChange">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmPhoneChange">Yes, Change It</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         // Toggle password visibility
@@ -710,7 +873,105 @@ $conn->close();
                 disableEditMode();
             });
         <?php endif; ?>
+
+
+        // Phone number validation
+        function validatePhoneInput(input) {
+            // Remove any non-digit characters
+            input.value = input.value.replace(/\D/g, '');
+
+            // Ensure it starts with 20
+            if (input.value.length >= 1 && !input.value.startsWith('2')) {
+                input.value = '2' + input.value.slice(0, 9);
+            }
+            if (input.value.length >= 2 && !input.value.startsWith('20')) {
+                input.value = '20' + input.value.slice(1, 8);
+            }
+
+            // Limit to 10 characters
+            if (input.value.length > 10) {
+                input.value = input.value.slice(0, 10);
+            }
+
+            const errorElement = document.getElementById('phoneError');
+            errorElement.style.display = 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const phoneInput = document.getElementById('new_phone');
+
+            phoneInput.addEventListener('keydown', function(e) {
+                // Allow: backspace, delete, tab, escape, enter
+                if ([46, 8, 9, 27, 13].includes(e.keyCode) ||
+                    // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                    (e.keyCode == 65 && e.ctrlKey === true) ||
+                    (e.keyCode == 67 && e.ctrlKey === true) ||
+                    (e.keyCode == 86 && e.ctrlKey === true) ||
+                    (e.keyCode == 88 && e.ctrlKey === true) ||
+                    // Allow: home, end, left, right
+                    (e.keyCode >= 35 && e.keyCode <= 39)) {
+                    return;
+                }
+
+                // Ensure it's a number and stop the keypress if not
+                if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+                    e.preventDefault();
+                }
+            });
+
+            const changePhoneBtn = document.getElementById('changePhoneBtn');
+            const phoneForm = document.getElementById('phoneForm');
+            const phoneSubmitBtn = document.getElementById('phoneSubmitBtn');
+            const modal = document.getElementById('phoneChangeModal');
+            const cancelBtn = document.getElementById('cancelPhoneChange');
+            const confirmBtn = document.getElementById('confirmPhoneChange');
+            const errorElement = document.getElementById('phoneError');
+
+            changePhoneBtn.addEventListener('click', function() {
+                const newPhone = document.getElementById('new_phone').value;
+                const currentPhone = document.getElementById('current_phone').value;
+
+                // Clear previous errors
+                errorElement.style.display = 'none';
+                errorElement.textContent = '';
+
+                // Validate phone format
+                if (!/^20\d{8}$/.test(newPhone)) {
+                    errorElement.textContent = "Phone must start with 20 and be 10 digits (e.g., 2012345678)";
+                    errorElement.style.display = 'block';
+                    return;
+                }
+
+                // Validate not same as current phone
+                if (newPhone === currentPhone) {
+                    errorElement.textContent = "New phone number cannot be the same as current phone number";
+                    errorElement.style.display = 'block';
+                    return;
+                }
+
+                // Show modal if validation passes
+                modal.style.display = 'flex';
+            });
+
+            cancelBtn.addEventListener('click', function() {
+                modal.style.display = 'none';
+            });
+
+            confirmBtn.addEventListener('click', function() {
+                // Trigger form submission
+                phoneSubmitBtn.click();
+            });
+
+            // Close modal when clicking outside
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        });
     </script>
+
+
 </body>
 
 </html>
