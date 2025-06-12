@@ -6,45 +6,43 @@ $errors = [];
 $success = '';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $first_name = mysqli_real_escape_string($conn, $_POST['first_name']);
-    $last_name = mysqli_real_escape_string($conn, $_POST['last_name']);
+    $user_name = mysqli_real_escape_string($conn, $_POST['user_name']);
     $email = mysqli_real_escape_string($conn, $_POST['email']);
-    $phone = mysqli_real_escape_string($conn, $_POST['phone']);
-    $doD = mysqli_real_escape_string($conn, $_POST['doD']);
     $password = $_POST['password'];
     $confirm_password = $_POST['confirm_password'];
 
-    if (empty($first_name)) $errors[] = "First name is required";
-    if (empty($last_name)) $errors[] = "Last name is required";
+    // Input validation
+    if (empty($user_name)) $errors[] = "Username is required";
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = "Invalid email format";
-    if (!preg_match('/^20\d{8}$/', $phone)) $errors[] = "Phone must start with 20 and be 10 digits";
     if (strlen($password) < 8) $errors[] = "Password must be at least 8 characters";
     if ($password !== $confirm_password) $errors[] = "Passwords do not match";
 
-    // Add doD validation
-    if (empty($doD)) $errors[] = "Date of birth is required";
-    if (strtotime($doD) > time()) $errors[] = "Date of birth cannot be in the future";
-
+    // Check if email already exists
     $email_check = "SELECT * FROM admin WHERE email = '$email'";
     $result = mysqli_query($conn, $email_check);
     if (mysqli_num_rows($result) > 0) {
         $errors[] = "Email already registered";
     }
 
-    // NEW: Check if phone exists
-    $phone_check = "SELECT * FROM admin WHERE phone = '$phone'";
-    $phone_result = mysqli_query($conn, $phone_check);
-    if (mysqli_num_rows($phone_result) > 0) {
-        $errors[] = "Phone number already registered";
+    // Check if username already exists
+    $username_check = "SELECT * FROM admin WHERE user_name = '$user_name'";
+    $username_result = mysqli_query($conn, $username_check);
+    if (mysqli_num_rows($username_result) > 0) {
+        $errors[] = "Username already taken";
     }
 
     if (empty($errors)) {
-        $admin_id = 'A' . str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
+        // Get the highest existing admin_id and increment it
+        $id_query = "SELECT MAX(CAST(SUBSTRING(admin_id, 2) AS UNSIGNED)) as max_id FROM admin";
+        $id_result = mysqli_query($conn, $id_query);
+        $row = mysqli_fetch_assoc($id_result);
+        $next_id = ($row['max_id']) ? $row['max_id'] + 1 : 1;
+        $admin_id = 'A' . str_pad($next_id, 4, '0', STR_PAD_LEFT);
 
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-        $sql = "INSERT INTO admin (admin_id, first_name, last_name, email, phone, dob, password) 
-                VALUES ('$admin_id', '$first_name', '$last_name', '$email', '$phone', '$doD', '$hashed_password')";
+        $sql = "INSERT INTO admin (admin_id, user_name, email, password) 
+                VALUES ('$admin_id', '$user_name', '$email', '$hashed_password')";
 
         if (mysqli_query($conn, $sql)) {
             $success = "Registration successful! Redirecting to login...";
@@ -65,9 +63,8 @@ $conn->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register Admin - Vision Care</title>
-    <link rel="stylesheet" href="signin_admin.css"> <!-- Reusing the same styles -->
+    <link rel="stylesheet" href="signin_admin.css">
     <style>
-        /* Additional styles for registration form */
         .password-strength {
             height: 5px;
             margin-top: 5px;
@@ -87,15 +84,6 @@ $conn->close();
             font-size: 0.8rem;
             color: #7f8c8d;
             margin-top: 0.3rem;
-        }
-
-        .form-row {
-            display: flex;
-            gap: 15px;
-        }
-
-        .form-row .input-group {
-            flex: 1;
         }
 
         .success-message {
@@ -152,38 +140,16 @@ $conn->close();
             <?php endif; ?>
 
             <form method="POST" action="register_admin.php">
-                <div class="form-row">
-                    <div class="input-group">
-                        <label for="first_name">First Name</label>
-                        <input type="text" id="first_name" name="first_name" required
-                            value="<?php echo htmlspecialchars($_POST['first_name'] ?? ''); ?>">
-                    </div>
-                    <div class="input-group">
-                        <label for="last_name">Last Name</label>
-                        <input type="text" id="last_name" name="last_name" required
-                            value="<?php echo htmlspecialchars($_POST['last_name'] ?? ''); ?>">
-                    </div>
+                <div class="input-group">
+                    <label for="user_name">Username</label>
+                    <input type="text" id="user_name" name="user_name" required
+                        value="<?php echo htmlspecialchars($_POST['user_name'] ?? ''); ?>">
                 </div>
 
                 <div class="input-group">
                     <label for="email">Email Address</label>
                     <input type="email" id="email" name="email" required
                         value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
-                </div>
-
-                <div class="input-group">
-                    <label for="phone">Phone Number</label>
-                    <input type="text" id="phone" name="phone" required
-                        placeholder="20xxxxxxxx" maxlength="10"
-                        value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>">
-                    <small class="hint">Must start with 20 and be 10 digits</small>
-                </div>
-
-                <div class="input-group">
-                    <label for="doD">Date of Birth</label>
-                    <input type="date" id="doD" name="doD" required
-                        max="<?php echo date('Y-m-d'); ?>"
-                        value="<?php echo htmlspecialchars($_POST['doD'] ?? ''); ?>">
                 </div>
 
                 <div class="input-group">
@@ -288,14 +254,6 @@ $conn->close();
                 error.style.display = 'none';
             }
         }
-
-        // Phone number validation
-        document.getElementById('phone').addEventListener('input', function(e) {
-            this.value = this.value.replace(/\D/g, '');
-            if (this.value.length > 10) {
-                this.value = this.value.slice(0, 10);
-            }
-        });
     </script>
 </body>
 
