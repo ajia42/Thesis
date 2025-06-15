@@ -1,5 +1,4 @@
 <?php
-
 session_start();
 if (!isset($_SESSION['admin_id'])) {
     header('Location: signin_admin.php');
@@ -290,6 +289,19 @@ if (!$is_search && empty($search_results)) {
                             <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                         </svg>
                         Patients</a></li>
+
+                <li><a href="reception_management.php">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-notebook-text-icon lucide-notebook-text">
+                            <path d="M2 6h4" />
+                            <path d="M2 10h4" />
+                            <path d="M2 14h4" />
+                            <path d="M2 18h4" />
+                            <rect width="16" height="20" x="4" y="2" rx="2" />
+                            <path d="M9.5 8h5" />
+                            <path d="M9.5 12H16" />
+                            <path d="M9.5 16H14" />
+                        </svg>
+                        reception</a></li>
 
                 <li><a href="staff_management.php">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
