@@ -6,11 +6,6 @@ if (!isset($_SESSION['admin_id'])) {
     exit();
 }
 
-// Security headers to prevent caching
-header("Cache-Control: no-cache, no-store, must-revalidate");
-header("Pragma: no-cache");
-header("Expires: 0");
-
 // Include database configuration
 include("../db_config.php");
 
@@ -36,8 +31,6 @@ function generatePatientID($conn)
 }
 
 // Validation checks
-$validate_email = "";
-$validate_phone = "";
 $errors = '';
 $message = '';
 
@@ -47,85 +40,125 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $first_name = mysqli_real_escape_string($conn, $_POST['first_name']);
     $last_name = mysqli_real_escape_string($conn, $_POST['last_name']);
     $gender = mysqli_real_escape_string($conn, $_POST['gender']);
-    $email = mysqli_real_escape_string($conn, $_POST['email']);
     $phone = mysqli_real_escape_string($conn, $_POST['phone']);
     $dob = mysqli_real_escape_string($conn, $_POST['dob']);
     $address = mysqli_real_escape_string($conn, $_POST['address']);
 
-
     // Action based on button click
     if (isset($_POST['save_button'])) {
-
-        // Check email uniqueness
-        $email_check = "SELECT * FROM patient WHERE email = '$email'";
-        $email_result = mysqli_query($conn, $email_check);
-        if (mysqli_num_rows($email_result) > 0) {
-            $errors = "Email already exists.";
-        }
-
-        // Check phone uniqueness
+        // Check if phone exists in patient table
         $phone_check = "SELECT * FROM patient WHERE phone = '$phone'";
         $phone_result = mysqli_query($conn, $phone_check);
         if (mysqli_num_rows($phone_result) > 0) {
-            $errors = "Phone number already exists.";
+            $errors = "Phone number already exists in patient records.";
         }
 
         if (empty($errors)) {
-            // Generate new patient ID
-            $patient_id = generatePatientID($conn);
+            // Start transaction
+            mysqli_begin_transaction($conn);
 
-            // Prepare INSERT query
-            $insert_query = "INSERT INTO patient (patient_id, first_name, last_name, gender, email, phone, dob, address) 
-                         VALUES ('$patient_id', '$first_name', '$last_name', '$gender', '$email', '$phone', '$dob', '$address')";
+            try {
+                // Check if phone exists in user table
+                $user_check = "SELECT * FROM user WHERE phone = '$phone'";
+                $user_result = mysqli_query($conn, $user_check);
 
-            if (mysqli_query($conn, $insert_query)) {
-                $message = "Patient added successfully!";
-                // echo "<script>alert('Patient added successfully!');</script>";
-                $patient_id = $first_name = $last_name = $gender = $email = $phone = $dob = $address = '';
-            } else {
-                // echo "<script>alert('Error adding patient: " . mysqli_error($conn) . "');</script>";
-                $errors = "Error adding patient: " . mysqli_error($conn);
+                // If phone doesn't exist in user table, insert it
+                if (mysqli_num_rows($user_result) == 0) {
+                    $insert_user = "INSERT INTO user (phone) VALUES ('$phone')";
+                    if (!mysqli_query($conn, $insert_user)) {
+                        throw new Exception("Error adding phone to user table: " . mysqli_error($conn));
+                    }
+                }
+
+                // Generate new patient ID
+                $patient_id = generatePatientID($conn);
+
+                // Prepare INSERT query for patient
+                $insert_patient = "INSERT INTO patient (patient_id, first_name, last_name, gender, phone, dob, address) 
+                                 VALUES ('$patient_id', '$first_name', '$last_name', '$gender', '$phone', '$dob', '$address')";
+
+                if (mysqli_query($conn, $insert_patient)) {
+                    mysqli_commit($conn);
+                    $message = "Patient added successfully!";
+                    $patient_id = $first_name = $last_name = $gender = $phone = $dob = $address = '';
+                } else {
+                    throw new Exception("Error adding patient: " . mysqli_error($conn));
+                }
+            } catch (Exception $e) {
+                mysqli_rollback($conn);
+                $errors = $e->getMessage();
             }
         }
     }
 
-    // Update functionality
+    // Handle update functionality
     if (isset($_POST['update_button']) && !empty($_POST['patient_id'])) {
         $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id']);
+        $first_name = mysqli_real_escape_string($conn, $_POST['first_name']);
+        $last_name = mysqli_real_escape_string($conn, $_POST['last_name']);
+        $gender = mysqli_real_escape_string($conn, $_POST['gender']);
+        $new_phone = mysqli_real_escape_string($conn, $_POST['phone']);
+        $original_phone = mysqli_real_escape_string($conn, $_POST['original_phone']);
+        $dob = mysqli_real_escape_string($conn, $_POST['dob']);
+        $address = mysqli_real_escape_string($conn, $_POST['address']);
 
-        // Check if email exists but exclude the current patient
-        $email_check = "SELECT * FROM patient WHERE email = '$email' AND patient_id != '$patient_id'";
-        $email_result = mysqli_query($conn, $email_check);
-        if (mysqli_num_rows($email_result) > 0) {
-            $errors = "Email already exists.";
-        }
+        // Validate phone number
+        if (!preg_match('/^20\d{8}$/', $new_phone)) {
+            $errors = "Phone must start with 20 and be 10 digits (e.g., 2012345678)";
+        } else {
+            // Start transaction
+            mysqli_begin_transaction($conn);
 
-        // Check if phone exists but exclude the current patient
-        $phone_check = "SELECT * FROM patient WHERE phone = '$phone' AND patient_id != '$patient_id'";
-        $phone_result = mysqli_query($conn, $phone_check);
-        if (mysqli_num_rows($phone_result) > 0) {
-            $errors = "Phone number already exists.";
-        }
+            try {
+                // Check if phone number is being changed
+                if ($new_phone != $original_phone) {
+                    // Check if new phone exists in user table (excluding current record)
+                    $user_check = "SELECT * FROM user WHERE phone = '$new_phone' AND phone != '$original_phone'";
+                    $user_result = mysqli_query($conn, $user_check);
 
-        if (empty($errors)) {
-            // Prepare UPDATE query
-            $update_query = "UPDATE patient 
-        SET first_name = '$first_name', 
-            last_name = '$last_name', 
-            gender = '$gender', 
-            email = '$email', 
-            phone = '$phone', 
-            dob = '$dob', 
-            address = '$address' 
-        WHERE patient_id = '$patient_id'";
+                    if (mysqli_num_rows($user_result) > 0) {
+                        throw new Exception("Phone number already registered in user records");
+                    }
 
-            if (mysqli_query($conn, $update_query)) {
-                // echo "<script>alert('Patient updated successfully!');</script>";
+                    // Check if new phone exists in patient table (excluding current record)
+                    $patient_check = "SELECT * FROM patient WHERE phone = '$new_phone' AND phone != '$original_phone'";
+                    $patient_result = mysqli_query($conn, $patient_check);
+
+                    if (mysqli_num_rows($patient_result) > 0) {
+                        throw new Exception("Phone number already registered in patient records");
+                    }
+
+                    // Update user table first (if exists)
+                    $update_user = "UPDATE user SET phone = '$new_phone' WHERE phone = '$original_phone'";
+                    if (!mysqli_query($conn, $update_user)) {
+                        throw new Exception("Error updating user phone: " . mysqli_error($conn));
+                    }
+                }
+
+                // Update patient table
+                $update_patient = "UPDATE patient SET 
+                              first_name = '$first_name', 
+                              last_name = '$last_name', 
+                              gender = '$gender', 
+                              phone = '$new_phone', 
+                              dob = '$dob', 
+                              address = '$address' 
+                              WHERE patient_id = '$patient_id'";
+
+                if (!mysqli_query($conn, $update_patient)) {
+                    throw new Exception("Error updating patient: " . mysqli_error($conn));
+                }
+
+                // If we got here, all queries were successful - commit transaction
+                mysqli_commit($conn);
                 $message = "Patient updated successfully!";
-                $patient_id = $first_name = $last_name = $gender = $email = $phone = $dob = $address = '';
-            } else {
-                // echo "<script>alert('Error updating patient: " . mysqli_error($conn) . "');</script>";
-                $errors = "Error adding patient: " . mysqli_error($conn);
+
+                // Clear the form
+                $patient_id = $first_name = $last_name = $gender = $new_phone = $dob = $address = '';
+            } catch (Exception $e) {
+                // Something went wrong - rollback transaction
+                mysqli_rollback($conn);
+                $errors = $e->getMessage();
             }
         }
     }
@@ -133,21 +166,38 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Delete functionality
     if (isset($_POST['delete_button']) && !empty($_POST['patient_id'])) {
         $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id']);
+        $phone = mysqli_real_escape_string($conn, $_POST['phone']);
 
-        // Prepare DELETE query
-        $delete_query = "DELETE FROM patient WHERE patient_id = '$patient_id'";
+        // Start transaction
+        mysqli_begin_transaction($conn);
 
-        if (mysqli_query($conn, $delete_query)) {
-            // echo "<script>alert('Patient deleted successfully!');</script>";
+        try {
+            // First delete the patient
+            $delete_patient = "DELETE FROM patient WHERE patient_id = '$patient_id'";
+            if (!mysqli_query($conn, $delete_patient)) {
+                throw new Exception("Error deleting patient: " . mysqli_error($conn));
+            }
+
+            // Check if phone is used by any other patient
+            $patient_check = "SELECT * FROM patient WHERE phone = '$phone'";
+            $patient_result = mysqli_query($conn, $patient_check);
+
+            // If no other patient uses this phone, remove from user table
+            if (mysqli_num_rows($patient_result) == 0) {
+                $delete_user = "DELETE FROM user WHERE phone = '$phone'";
+                mysqli_query($conn, $delete_user);
+            }
+
+            mysqli_commit($conn);
             $message = "Patient deleted successfully!";
-        } else {
-            // echo "<script>alert('Error deleting patient: " . mysqli_error($conn) . "');</script>";
-            $errors = "Error adding patient: " . mysqli_error($conn);
+        } catch (Exception $e) {
+            mysqli_rollback($conn);
+            $errors = $e->getMessage();
         }
     }
 }
 
-// Search functionality - REPLACE your current search code with this block
+// Search functionality
 $search_query = "";
 $search_results = [];
 $no_results_message = "";
@@ -159,8 +209,7 @@ if (isset($_GET['search']) && !empty($_GET['search'])) {
     $search_query = "SELECT * FROM patient 
                      WHERE patient_id LIKE '%$search_term%' 
                      OR first_name LIKE '%$search_term%' 
-                     OR last_name LIKE '%$search_term%' 
-                     OR email LIKE '%$search_term%'
+                     OR last_name LIKE '%$search_term%'
                      OR phone LIKE '%$search_term%'";
     $search_result = mysqli_query($conn, $search_query);
 
@@ -197,8 +246,6 @@ if (!$is_search && empty($search_results)) {
 </head>
 
 <body>
-
-
     <div class="container">
         <aside class="sidebar">
             <!-- Sidebar content remains the same as in the original HTML -->
@@ -222,7 +269,7 @@ if (!$is_search && empty($search_results)) {
                                 <circle cx="12" cy="10" r="4" />
                                 <circle cx="12" cy="12" r="10" />
                             </svg>
-                            <p><?php echo htmlspecialchars($_SESSION['staff_name']); ?></p>
+                            <p><?php echo htmlspecialchars($_SESSION['admin_user_name']); ?></p>
                         </div>
                     </a>
                 </li>
@@ -324,7 +371,6 @@ if (!$is_search && empty($search_results)) {
             </ul>
         </aside>
         <main class="main-content">
-
             <div class="header">
                 <h1>Patient Management</h1>
                 <button class="new-patient-button" name="new_patient" onclick="clearForm()">+ New Patient</button>
@@ -339,6 +385,7 @@ if (!$is_search && empty($search_results)) {
 
             <!-- Patient Form -->
             <form method="POST" action="" id="patientForm">
+                <input type="hidden" id="original_phone" name="original_phone">
                 <div class="patient-form">
                     <div class="form-group">
                         <label for="patientID">Patient ID</label>
@@ -360,12 +407,7 @@ if (!$is_search && empty($search_results)) {
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="email">Email</label>
-                        <input type="email" id="email" name="email" required>
-                    </div>
-                    <div class="form-group">
                         <label for="phone">Phone</label>
-                        <!-- <input type="number" id="phone" name="phone" required> -->
                         <input
                             type="text"
                             id="phone"
@@ -396,7 +438,7 @@ if (!$is_search && empty($search_results)) {
             <!-- Search Form -->
             <div class="patient-list-header">
                 <form method="GET" action="">
-                    <input type="search" name="search" placeholder="Search patients by name or email..."
+                    <input type="search" name="search" placeholder="Search patients by name or phone..."
                         value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
                     <button type="submit">Search</button>
                 </form>
@@ -417,7 +459,6 @@ if (!$is_search && empty($search_results)) {
                             <th>FIRST NAME</th>
                             <th>LAST NAME</th>
                             <th>GENDER</th>
-                            <th>EMAIL</th>
                             <th>PHONE</th>
                             <th>DATE OF BIRTH</th>
                             <th>ADDRESS</th>
@@ -431,7 +472,6 @@ if (!$is_search && empty($search_results)) {
                                 <td><?php echo htmlspecialchars($patient['first_name']); ?></td>
                                 <td><?php echo htmlspecialchars($patient['last_name']); ?></td>
                                 <td><?php echo htmlspecialchars($patient['gender']); ?></td>
-                                <td><?php echo htmlspecialchars($patient['email']); ?></td>
                                 <td><?php echo htmlspecialchars($patient['phone']); ?></td>
                                 <td><?php echo htmlspecialchars($patient['dob']); ?></td>
                                 <td><?php echo htmlspecialchars($patient['address']); ?></td>
@@ -440,7 +480,6 @@ if (!$is_search && empty($search_results)) {
                                 '<?php echo htmlspecialchars($patient['first_name']); ?>', 
                                 '<?php echo htmlspecialchars($patient['last_name']); ?>', 
                                 '<?php echo htmlspecialchars($patient['gender']); ?>', 
-                                '<?php echo htmlspecialchars($patient['email']); ?>', 
                                 '<?php echo htmlspecialchars($patient['phone']); ?>', 
                                 '<?php echo htmlspecialchars($patient['dob']); ?>', 
                                 '<?php echo htmlspecialchars($patient['address']); ?>')">Edit</a>
@@ -454,13 +493,13 @@ if (!$is_search && empty($search_results)) {
     </div>
 
     <script>
-        function fillForm(patientId, firstName, lastName, gender, email, phone, dob, address) {
+        function fillForm(patientId, firstName, lastName, gender, phone, dob, address) {
             document.getElementById('patientID').value = patientId;
             document.getElementById('firstName').value = firstName;
             document.getElementById('lastName').value = lastName;
             document.getElementById('gender').value = gender;
-            document.getElementById('email').value = email;
             document.getElementById('phone').value = phone;
+            document.getElementById('original_phone').value = phone;
             document.getElementById('dob').value = dob;
             document.getElementById('address').value = address;
 
@@ -476,15 +515,14 @@ if (!$is_search && empty($search_results)) {
         }
 
         function clearForm() {
-            document.getElementById('patientID').value = ''; // Clear Patient ID
-            document.getElementById('firstName').value = ''; // Clear First Name
-            document.getElementById('lastName').value = ''; // Clear Last Name
-            document.getElementById('gender').selectedIndex = 0; // Reset Gender to default
-            document.getElementById('email').value = ''; // Clear Email
-            document.getElementById('phone').value = ''; // Clear Phone
-            document.getElementById('dob').value = ''; // Clear Date of Birth
-            document.getElementById('address').value = ''; // Clear Address
-            // Focus on first name input
+            document.getElementById('patientID').value = '';
+            document.getElementById('firstName').value = '';
+            document.getElementById('lastName').value = '';
+            document.getElementById('gender').selectedIndex = 0;
+            document.getElementById('phone').value = '';
+            document.getElementById('original_phone').value = '';
+            document.getElementById('dob').value = '';
+            document.getElementById('address').value = '';
             document.getElementById('firstName').focus();
 
             // Enable save button, disable update and delete
@@ -526,8 +564,6 @@ if (!$is_search && empty($search_results)) {
                 alert("Error: No patient selected. Please select a patient to edit first.");
                 return;
             }
-
-            // Additional validation can be added here
         });
 
         // Prevent form resubmission on page refresh
@@ -557,6 +593,9 @@ if (!$is_search && empty($search_results)) {
                 };
             }
 
+            return {
+                valid: true
+            };
         }
 
         // Show error message
@@ -619,7 +658,6 @@ if (!$is_search && empty($search_results)) {
                 }
             }
         });
-
 
         // Date of birth validation
         const dobInput = document.getElementById("dob");

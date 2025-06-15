@@ -1,7 +1,7 @@
 <?php
 session_start(); // Start the session to store user information upon successful login
 
-if (isset($_SESSION['admin_id'])) {  // Keeping same session name for consistency
+if (isset($_SESSION['admin_id'])) {
   header('Location: patient_management.php');
   exit();
 }
@@ -10,10 +10,10 @@ include("../db_config.php");
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
   // Get user input from the form
-  $email = $_POST["email_1"];
+  $email = $_POST["email"];
   $password = $_POST["password"];
 
-  // Prepare SQL query to fetch user by email - CHANGED FROM staff TO admin
+  // Prepare SQL query to fetch admin by email
   $sql = "SELECT * FROM admin WHERE email = ?";
   $stmt = $conn->prepare($sql);
   $stmt->bind_param("s", $email);
@@ -21,13 +21,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
   $result = $stmt->get_result();
 
   if ($result->num_rows == 1) {
-    // User found, now verify the password
+    // Admin found, now verify the password
     $row = $result->fetch_assoc();
-    if (password_verify($password, $row["password"])) { // In a real application, use password_verify() with hashed passwords
+    if (password_verify($password, $row["password"])) {
       // Password is correct, set session variables and redirect
-      $_SESSION["admin_id"] = $row["admin_id"];  // Using admin_id but keeping staff_id as session name
-      $_SESSION["staff_name"] = $row["first_name"] . " " . $row["last_name"];
-      header("Location: patient_management.php?id=" . $row["admin_id"]);
+      $_SESSION["admin_id"] = $row["admin_id"];
+      $_SESSION["admin_user_name"] = $row["user_name"];
+      header("Location: patient_management.php");
       exit();
     } else {
       // Incorrect password
@@ -37,7 +37,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       exit();
     }
   } else {
-    // User not found
+    // Admin not found
     $_SESSION['login_error'] = "Incorrect email.";
     $_SESSION['login_email'] = $email;
     header("Location: signin_admin.php");
@@ -65,14 +65,13 @@ $conn->close();
     <div class="container header-content">
       <div class="logo">
         <svg viewBox="0 0 24 24" fill="currentColor" class="icon">
-          <path
-            d="M12 4a4 4 0 100 8 4 4 0 000-8zM2 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10S2 17.514 2 12z"></path>
+          <path d="M12 4a4 4 0 100 8 4 4 0 000-8zM2 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10S2 17.514 2 12z"></path>
         </svg>
         <span>Vision Care</span>
       </div>
       <div class="auth-links">
-        <a href="#">Login</a>
-        <a href="#">Register</a>
+        <a href="signin_admin.php">Login</a>
+        <a href="register_admin.php">Register</a>
       </div>
     </div>
   </header>
@@ -80,8 +79,7 @@ $conn->close();
     <div class="sign-in-card">
       <div class="logo-center">
         <svg viewBox="0 0 24 24" fill="currentColor" class="icon-large">
-          <path
-            d="M12 4a4 4 0 100 8 4 4 0 000-8zM2 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10S2 17.514 2 12z"></path>
+          <path d="M12 4a4 4 0 100 8 4 4 0 000-8zM2 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10S2 17.514 2 12z"></path>
         </svg>
         <h2>Vision Care</h2>
       </div>
@@ -98,7 +96,7 @@ $conn->close();
       <form action="#" method="POST">
         <div class="input-group">
           <label for="email">Email Address</label>
-          <input type="email" id="email" name="email_1" required
+          <input type="email" id="email" name="email" required
             value="<?php echo isset($_SESSION['login_email']) ? htmlspecialchars($_SESSION['login_email']) : ''; ?>" />
         </div>
         <div class="input-group">
@@ -107,8 +105,7 @@ $conn->close();
             <input type="password" id="password" name="password" required />
             <button type="button" class="toggle-password" onclick="togglePasswordVisibility()">
               <svg viewBox="0 0 24 24" fill="currentColor" class="eye-icon" id="eye-icon">
-                <path
-                  d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"></path>
+                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"></path>
               </svg>
             </button>
           </div>
@@ -123,8 +120,7 @@ $conn->close();
         <button type="submit" class="sign-in-button">
           <svg viewBox="0 0 24 24" fill="currentColor" class="arrow-icon">
             <path d="M10 17l5-5-5-5v10z"></path>
-            <path
-              d="M19 12c0 4.14-3.36 7.5-7.5 7.5S4 16.14 4 12 7.36 4.5 12 4.5s7.5 3.36 7.5 7.5zM12 6.5c-3.04 0-5.5 2.46-5.5 5.5s2.46 5.5 5.5 5.5 5.5-2.46 5.5-5.5-2.46-5.5-5.5-5.5z"></path>
+            <path d="M19 12c0 4.14-3.36 7.5-7.5 7.5S4 16.14 4 12 7.36 4.5 12 4.5s7.5 3.36 7.5 7.5zM12 6.5c-3.04 0-5.5 2.46-5.5 5.5s2.46 5.5 5.5 5.5 5.5-2.46 5.5-5.5-2.46-5.5-5.5-5.5z"></path>
           </svg>
           Sign in
         </button>

@@ -2,17 +2,21 @@
 session_start();
 include("../db_config.php");
 
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 // If user is already logged in, redirect to dashboard or home page
 if (isset($_SESSION['user_name'])) {
     header("Location: user_history.php"); // Replace with your dashboard page
     exit();
 }
 
-// If user is already registered and has a session, redirect to user_info.php
-if (isset($_SESSION['registered_phone'])) {
+if (isset($_SESSION['registered_phone']) && !isset($_SESSION['user_name'])) {
+    // User started registration but didn't complete it
     header("Location: user_info.php");
     exit();
 }
+
 
 
 $errors = [];

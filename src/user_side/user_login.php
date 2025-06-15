@@ -1,6 +1,10 @@
 <?php
 session_start(); // Start the session to store user information upon successful login
 
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+
 if (isset($_SESSION['registered_phone'])) {
     header('Location: user_history.php');
     exit();

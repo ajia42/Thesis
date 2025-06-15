@@ -2,9 +2,13 @@
 session_start();
 include("../db_config.php");
 
-// Check if user is logged in - UPDATED SESSION VARIABLE
-if (!isset($_SESSION['registered_phone'])) {
-    header("Location: user_login.php");
+// Replace the current check with:
+if (!isset($_SESSION['user_name'])) {
+    if (isset($_SESSION['registered_phone'])) {
+        header("Location: user_info.php");
+    } else {
+        header("Location: user_login.php");
+    }
     exit();
 }
 

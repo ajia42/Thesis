@@ -2,15 +2,16 @@
 session_start();
 include("../db_config.php");
 
-// Check if user is properly authenticated
-if (!isset($_SESSION['registered_phone']) && !isset($_SESSION['user_name'])) {
-    header("Location: user_login.php");
-    exit();
-}
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
-// If coming from registration but hasn't completed info
-if (isset($_SESSION['registered_phone']) && !isset($_SESSION['user_name'])) {
-    header("Location: user_info.php");
+// Replace the current checks with:
+if (!isset($_SESSION['user_name'])) {
+    if (isset($_SESSION['registered_phone'])) {
+        header("Location: user_info.php");
+    } else {
+        header("Location: user_login.php");
+    }
     exit();
 }
 

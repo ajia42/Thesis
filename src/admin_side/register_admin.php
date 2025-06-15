@@ -2,6 +2,11 @@
 session_start();
 include("../db_config.php");
 
+if (isset($_SESSION['admin_id'])) {
+    header('Location: patient_management.php');
+    exit();
+}
+
 $errors = [];
 $success = '';
 
@@ -24,12 +29,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $errors[] = "Email already registered";
     }
 
-    // Check if username already exists
-    $username_check = "SELECT * FROM admin WHERE user_name = '$user_name'";
-    $username_result = mysqli_query($conn, $username_check);
-    if (mysqli_num_rows($username_result) > 0) {
-        $errors[] = "Username already taken";
-    }
+    // // Check if username already exists
+    // $username_check = "SELECT * FROM admin WHERE user_name = '$user_name'";
+    // $username_result = mysqli_query($conn, $username_check);
+    // if (mysqli_num_rows($username_result) > 0) {
+    //     $errors[] = "Username already taken";
+    // }
 
     if (empty($errors)) {
         // Get the highest existing admin_id and increment it
