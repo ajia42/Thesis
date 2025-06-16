@@ -20,19 +20,35 @@ function generateAppointmentID($conn)
     $result = mysqli_query($conn, $sql);
     $row = mysqli_fetch_assoc($result);
 
-    // If no appointment exists, start with APP0001
+    // If no appointment exists, start with A0001
     if (empty($row['max_id'])) {
-        return 'AP001';
+        return 'A0001';
     }
 
     // Extract the numeric part and increment
     $lastID = $row['max_id'];
-    $numPart = intval(substr($lastID, 2));
+    $numPart = intval(substr($lastID, 1));
     $newNumPart = $numPart + 1;
 
     // Format the new ID with leading zeros
-    return 'AP' . str_pad($newNumPart, 3, '0', STR_PAD_LEFT);
+    return 'A' . str_pad($newNumPart, 4, '0', STR_PAD_LEFT);
 }
+
+// Define available time slots in 24-hour format
+$time_slots = [
+    '08:00:00',
+    '08:30:00',
+    '09:00:00',
+    '09:30:00',
+    '10:00:00',
+    '10:30:00',
+    '13:00:00',
+    '13:30:00',
+    '14:00:00',
+    '14:30:00',
+    '15:00:00',
+    '15:30:00'
+];
 
 // Validation checks
 $errors = '';
@@ -41,38 +57,44 @@ $message = '';
 // Check if form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Sanitize and validate input
-    $appointment_id = isset($_POST['appointment_id']) ? mysqli_real_escape_string($conn, $_POST['appointment_id']) : '';
     $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id']);
-    $staff_id = mysqli_real_escape_string($conn, $_POST['staff_id']);
     $service_type_id = mysqli_real_escape_string($conn, $_POST['service_type_id']);
     $booking_time = mysqli_real_escape_string($conn, $_POST['booking_time']);
     $booking_date = mysqli_real_escape_string($conn, $_POST['booking_date']);
-    $symptoms = mysqli_real_escape_string($conn, $_POST['symptoms']);
-    $comment = mysqli_real_escape_string($conn, $_POST['comment']);
+    $symptoms = isset($_POST['symptoms']) ? mysqli_real_escape_string($conn, substr($_POST['symptoms'], 0, 30)) : '';
+    $comment = isset($_POST['comment']) ? mysqli_real_escape_string($conn, substr($_POST['comment'], 0, 30)) : '';
     $status = mysqli_real_escape_string($conn, $_POST['status']);
+    $admin_id = $_SESSION['admin_id']; // Get admin_id from session
 
     // Action based on button click
     if (isset($_POST['save_button'])) {
-        // Check if appointment time is available
-        $time_check = "SELECT * FROM appointment WHERE booking_date = '$booking_date' AND booking_time = '$booking_time'";
-        $time_result = mysqli_query($conn, $time_check);
-        if (mysqli_num_rows($time_result) > 0) {
-            $errors = "This time slot is already booked for the selected staff.";
+        // Check for existing appointment at same time
+        $check_query = "SELECT * FROM appointment 
+                        WHERE booking_date = '$booking_date' 
+                        AND booking_time = '$booking_time'";
+        $check_result = mysqli_query($conn, $check_query);
+
+        if (mysqli_num_rows($check_result) > 0) {
+            $errors = "An appointment already exists at this time.";
         }
 
         if (empty($errors)) {
             // Generate new appointment ID
             $appointment_id = generateAppointmentID($conn);
+            $created_at = date('Y-m-d H:i:s');
 
             // Prepare INSERT query
-            $insert_query = "INSERT INTO appointment (appointment_id, patient_id, staff_id, service_type_id, booking_time, booking_date, symptoms, comment, status) 
-                         VALUES ('$appointment_id', '$patient_id', '$staff_id', '$service_type_id', '$booking_time', '$booking_date', '$symptoms', '$comment', '$status')";
+            $insert_query = "INSERT INTO appointment 
+                            (appointment_id, patient_id, service_type_id, 
+                             booking_time, booking_date, symptoms, comment, status, created_at) 
+                            VALUES ('$appointment_id', '$patient_id', 
+                                    '$service_type_id', '$booking_time', '$booking_date', 
+                                    '$symptoms', '$comment', '$status', '$created_at')";
 
             if (mysqli_query($conn, $insert_query)) {
                 $message = "Appointment added successfully!";
-                // Clear form fields
-                $appointment_id = $patient_id = $staff_id = $service_type_id = $booking_time = $booking_date = $symptoms = $comment = '';
-                $status = 'pending';
+                $appointment_id = $patient_id = $service_type_id = $booking_time =
+                    $booking_date = $symptoms = $comment = $status = '';
             } else {
                 $errors = "Error adding appointment: " . mysqli_error($conn);
             }
@@ -83,30 +105,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (isset($_POST['update_button']) && !empty($_POST['appointment_id'])) {
         $appointment_id = mysqli_real_escape_string($conn, $_POST['appointment_id']);
 
-        // Check if the new time is available (excluding the current appointment)
-        $time_check = "SELECT * FROM appointment WHERE booking_date = '$booking_date' AND booking_time = '$booking_time' AND staff_id = '$staff_id' AND appointment_id != '$appointment_id'";
-        $time_result = mysqli_query($conn, $time_check);
-        if (mysqli_num_rows($time_result) > 0) {
-            $errors = "This time slot is already booked for the selected staff.";
+        // Check for existing appointment at same time (excluding current appointment)
+        $check_query = "SELECT * FROM appointment 
+                        WHERE booking_date = '$booking_date' 
+                        AND booking_time = '$booking_time'
+                        AND appointment_id != '$appointment_id'";
+        $check_result = mysqli_query($conn, $check_query);
+
+        if (mysqli_num_rows($check_result) > 0) {
+            $errors = "An appointment already exists at this time.";
         }
 
         if (empty($errors)) {
             // Prepare UPDATE query
             $update_query = "UPDATE appointment 
-                SET patient_id = '$patient_id', 
-                    staff_id = '$staff_id', 
-                    service_type_id = '$service_type_id', 
-                    booking_time = '$booking_time', 
-                    booking_date = '$booking_date', 
-                    symptoms = '$symptoms', 
-                    comment = '$comment', 
-                    status = '$status' 
-                WHERE appointment_id = '$appointment_id'";
+                            SET patient_id = '$patient_id',
+                                service_type_id = '$service_type_id',
+                                booking_time = '$booking_time',
+                                booking_date = '$booking_date',
+                                symptoms = '$symptoms',
+                                comment = '$comment',
+                                status = '$status'
+                            WHERE appointment_id = '$appointment_id'";
 
             if (mysqli_query($conn, $update_query)) {
                 $message = "Appointment updated successfully!";
-                $appointment_id = $patient_id = $staff_id = $service_type_id = $booking_time = $booking_date = $symptoms = $comment = '';
-                $status = 'pending';
+                $appointment_id = $patient_id = $service_type_id = $booking_time =
+                    $booking_date = $symptoms = $comment = $status = '';
             } else {
                 $errors = "Error updating appointment: " . mysqli_error($conn);
             }
@@ -128,6 +153,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 
+// Fetch all patients for dropdown with ID and name
+$patients = [];
+$patients_query = "SELECT patient_id, first_name, last_name FROM patient ORDER BY first_name, last_name";
+$patients_result = mysqli_query($conn, $patients_query);
+while ($row = mysqli_fetch_assoc($patients_result)) {
+    $patients[$row['patient_id']] = $row['patient_id'] . ' - ' . $row['first_name'] . ' ' . $row['last_name'];
+}
+
+// Fetch all service types for dropdown
+$service_types = [];
+$service_types_query = "SELECT service_type_id, service_name FROM service_type";
+$service_types_result = mysqli_query($conn, $service_types_query);
+while ($row = mysqli_fetch_assoc($service_types_result)) {
+    $service_types[$row['service_type_id']] = $row['service_name'];
+}
+
+
 // Search functionality
 $search_query = "";
 $search_results = [];
@@ -137,18 +179,16 @@ $is_search = false;
 if (isset($_GET['search']) && !empty($_GET['search'])) {
     $is_search = true;
     $search_term = mysqli_real_escape_string($conn, $_GET['search']);
-    $search_query = "SELECT a.*, p.first_name, p.last_name, s.first_name AS staff_fname, s.last_name AS staff_lname, st.service_name 
+    $search_query = "SELECT a.*, p.first_name, p.last_name, s.service_name
                      FROM appointment a
-                     LEFT JOIN patient p ON a.patient_id = p.patient_id
-                     LEFT JOIN staff s ON a.staff_id = s.staff_id
-                     LEFT JOIN service_type st ON a.service_type_id = st.service_type_id
+                     JOIN patient p ON a.patient_id = p.patient_id
+                     JOIN service_type s ON a.service_type_id = s.service_type_id
                      WHERE a.appointment_id LIKE '%$search_term%' 
                      OR p.first_name LIKE '%$search_term%' 
-                     OR p.last_name LIKE '%$search_term%'
-                     OR s.first_name LIKE '%$search_term%'
-                     OR s.last_name LIKE '%$search_term%'
-                     OR st.service_name LIKE '%$search_term%'
-                     OR a.status LIKE '%$search_term%'";
+                     OR p.last_name LIKE '%$search_term%' 
+                     OR s.service_name LIKE '%$search_term%'
+                     OR a.booking_date LIKE '%$search_term%'
+                     OR a.created_at LIKE '%$search_term%'";
     $search_result = mysqli_query($conn, $search_query);
 
     if ($search_result) {
@@ -156,60 +196,25 @@ if (isset($_GET['search']) && !empty($_GET['search'])) {
             $search_results[] = $row;
         }
 
-        // Display message if no records found for the search
         if (empty($search_results)) {
             $no_results_message = "No results found for: '" . htmlspecialchars($_GET['search']) . "'";
         }
     }
 }
 
-// Fetch all appointments if no search is performed
+// Fetch all appointments only if no search is performed
 if (!$is_search && empty($search_results)) {
-    $all_appointments_query = "SELECT a.*, p.first_name, p.last_name, s.first_name AS staff_fname, s.last_name AS staff_lname, st.service_name 
+    $all_appointments_query = "SELECT a.*, p.first_name, p.last_name, s.service_name
                               FROM appointment a
-                              LEFT JOIN patient p ON a.patient_id = p.patient_id
-                              LEFT JOIN staff s ON a.staff_id = s.staff_id
-                              LEFT JOIN service_type st ON a.service_type_id = st.service_type_id
+                              JOIN patient p ON a.patient_id = p.patient_id
+                              JOIN service_type s ON a.service_type_id = s.service_type_id
                               ORDER BY a.booking_date DESC, a.booking_time DESC";
     $all_appointments_result = mysqli_query($conn, $all_appointments_query);
 
-    if ($all_appointments_result) {
-        while ($row = mysqli_fetch_assoc($all_appointments_result)) {
-            $search_results[] = $row;
-        }
+    while ($row = mysqli_fetch_assoc($all_appointments_result)) {
+        $search_results[] = $row;
     }
 }
-
-// Fetch all patients for dropdown
-$patients_query = "SELECT patient_id, first_name, last_name FROM patient ORDER BY first_name, last_name";
-$patients_result = mysqli_query($conn, $patients_query);
-$patients = [];
-while ($row = mysqli_fetch_assoc($patients_result)) {
-    $patients[] = $row;
-}
-
-// Fetch all staff for dropdown
-$staff_query = "SELECT staff_id, first_name, last_name FROM staff ORDER BY first_name, last_name";
-$staff_result = mysqli_query($conn, $staff_query);
-$staff = [];
-while ($row = mysqli_fetch_assoc($staff_result)) {
-    $staff[] = $row;
-}
-
-// Fetch all service types for dropdown
-$service_types_query = "SELECT service_type_id, service_name FROM service_type ORDER BY service_name";
-$service_types_result = mysqli_query($conn, $service_types_query);
-$service_types = [];
-while ($row = mysqli_fetch_assoc($service_types_result)) {
-    $service_types[] = $row;
-}
-
-// Get current date and time
-$current_date = date('Y-m-d');
-$current_time = date('H:i:s');
-
-// Available time slots
-$time_slots = ['08:00:00', '09:00:00', '10:00:00', '13:00:00', '14:00:00', '15:00:00'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -218,61 +223,75 @@ $time_slots = ['08:00:00', '09:00:00', '10:00:00', '13:00:00', '14:00:00', '15:0
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Appointment Management</title>
-    <link rel="stylesheet" href="appointment_management.css">
+    <link rel="stylesheet" href="patient_management.css">
+
     <style>
-        .searchable-dropdown {
+        .readonly-field {
+            background-color: #f5f5f5;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        .custom-dropdown {
             position: relative;
             width: 100%;
         }
 
-        .searchable-dropdown input[type="text"] {
-            width: 100%;
-            padding: 10px;
+        .dropdown-input {
+            width: calc(100% - 24px);
+            padding: 10px 12px;
             border: 1px solid #ddd;
             border-radius: 3px;
-            box-sizing: border-box;
+            font-size: 14px;
+            background-color: white;
+            cursor: pointer;
         }
 
-        .dropdown-list {
-            display: none;
+        .dropdown-options {
             position: absolute;
-            width: 100%;
+            top: 100%;
+            left: 0;
+            right: 0;
             max-height: 200px;
             overflow-y: auto;
             border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 3px 3px;
             background: white;
             z-index: 1000;
-            margin-top: 5px;
-            border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            scrollbar-width: thin;
-            scrollbar-color: #ccc #f5f5f5;
+            display: none;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
 
-        .dropdown-list::-webkit-scrollbar {
-            width: 8px;
+        .dropdown-options.show {
+            display: block;
         }
 
-        .dropdown-list::-webkit-scrollbar-track {
-            background: #f5f5f5;
-            border-radius: 4px;
-        }
-
-        .dropdown-list::-webkit-scrollbar-thumb {
-            background-color: #ccc;
-            border-radius: 4px;
-        }
-
-        .dropdown-item {
-            padding: 8px 12px;
+        .dropdown-option {
+            padding: 10px 15px;
             cursor: pointer;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            transition: background-color 0.2s;
+            background-color: white;
         }
 
-        .dropdown-item:hover {
-            background-color: #f5f5f5;
+        .dropdown-option:hover {
+            background-color: #3f51b5 !important;
+            color: white !important;
+        }
+
+        .dropdown-option.selected {
+            background-color: #e1f0ff;
+            color: #000;
+        }
+
+        .hidden-select {
+            display: none;
+        }
+
+        /* Limit textarea sizes to match database field lengths */
+        textarea {
+            max-width: 100%;
+            max-height: 100px;
         }
     </style>
 </head>
@@ -289,7 +308,22 @@ $time_slots = ['08:00:00', '09:00:00', '10:00:00', '13:00:00', '14:00:00', '15:0
                 </svg>
                 Vision Care
             </div>
+
             <ul class="menu">
+
+                <!-- NEW STAFF INFO SECTION -->
+                <li>
+                    <a href="admin_profile.php">
+                        <div class="staff-info">
+                            <svg xmlns="http://www.w3.org/2000/svg" style="color: #2c3e50;" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-user-round-icon lucide-circle-user-round">
+                                <path d="M18 20a6 6 0 0 0-12 0" />
+                                <circle cx="12" cy="10" r="4" />
+                                <circle cx="12" cy="12" r="10" />
+                            </svg>
+                            <p><?php echo htmlspecialchars($_SESSION['admin_user_name']); ?></p>
+                        </div>
+                    </a>
+                </li>
 
                 <li><a href="#">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -307,6 +341,19 @@ $time_slots = ['08:00:00', '09:00:00', '10:00:00', '13:00:00', '14:00:00', '15:0
                             <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                         </svg>
                         Patients</a></li>
+
+                <li><a href="reception_management.php">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-notebook-text-icon lucide-notebook-text">
+                            <path d="M2 6h4" />
+                            <path d="M2 10h4" />
+                            <path d="M2 14h4" />
+                            <path d="M2 18h4" />
+                            <rect width="16" height="20" x="4" y="2" rx="2" />
+                            <path d="M9.5 8h5" />
+                            <path d="M9.5 12H16" />
+                            <path d="M9.5 16H14" />
+                        </svg>
+                        reception</a></li>
 
                 <li><a href="staff_management.php">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -375,13 +422,22 @@ $time_slots = ['08:00:00', '09:00:00', '10:00:00', '13:00:00', '14:00:00', '15:0
                             <line x1="6" y1="20" x2="6" y2="14"></line>
                         </svg>
                         Reports</a></li>
+
+                <li><a href="logout.php">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-log-out-icon lucide-log-out">
+                            <path d="m16 17 5-5-5-5" />
+                            <path d="M21 12H9" />
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        </svg>
+                        Log out</a></li>
+
                 </li>
             </ul>
         </aside>
         <main class="main-content">
             <div class="header">
                 <h1>Appointment Management</h1>
-                <button class="new-appointment-button" onclick="clearForm()">+ New Appointment</button>
+                <button class="new-patient-button" name="new_appointment" onclick="clearForm()">+ New Appointment</button>
             </div>
 
             <?php if ($message): ?>
@@ -393,100 +449,93 @@ $time_slots = ['08:00:00', '09:00:00', '10:00:00', '13:00:00', '14:00:00', '15:0
 
             <!-- Appointment Form -->
             <form method="POST" action="" id="appointmentForm">
-                <div class="appointment-form">
+                <div class="patient-form">
                     <div class="form-group">
                         <label for="appointmentID">Appointment ID</label>
                         <input type="text" id="appointmentID" name="appointment_id" readonly>
                     </div>
 
-
                     <div class="form-group">
-                        <label for="patientSearch">Patient</label>
-                        <div class="searchable-dropdown">
-                            <input type="text" id="patientSearch" placeholder="Type a name" autocomplete="off" onclick="showPatientDropdown()">
-                            <input type="hidden" id="patientID" name="patient_id" required>
-                            <div class="dropdown-list" id="patientDropdown">
-                                <?php foreach ($patients as $patient): ?>
-                                    <div class="dropdown-item"
-                                        data-value="<?php echo $patient['patient_id']; ?>"
-                                        onclick="selectPatient(this, '<?php echo $patient['patient_id']; ?>', '<?php echo $patient['first_name'] . ' ' . $patient['last_name'] . ' (' . $patient['patient_id'] . ')'; ?>')">
-                                        <?php echo $patient['first_name'] . ' ' . $patient['last_name'] . ' (' . $patient['patient_id'] . ')'; ?>
-                                    </div>
+                        <label for="patient_id">Patient</label>
+                        <div class="custom-dropdown">
+                            <input type="text" id="patient_search" class="dropdown-input" placeholder="Type a name..." autocomplete="off">
+                            <select id="patient_id" name="patient_id" class="hidden-select" required>
+                                <option value="">Select Patient</option>
+                                <?php foreach ($patients as $id => $name): ?>
+                                    <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <div id="patient_options" class="dropdown-options">
+                                <?php foreach ($patients as $id => $name): ?>
+                                    <div class="dropdown-option" data-value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></div>
                                 <?php endforeach; ?>
                             </div>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="staffID">Staff</label>
-                        <select id="staffID" name="staff_id" required>
-                            <option value="">Select Staff</option>
-                            <?php foreach ($staff as $staff_member): ?>
-                                <option value="<?php echo $staff_member['staff_id']; ?>">
-                                    <?php echo $staff_member['first_name'] . ' ' . $staff_member['last_name'] . ' (' . $staff_member['staff_id'] . ')'; ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="serviceTypeID">Service Type</label>
-                        <select id="serviceTypeID" name="service_type_id" required>
+                        <label for="service_type_id">Service Type</label>
+                        <select id="service_type_id" name="service_type_id" required>
                             <option value="">Select Service</option>
-                            <?php foreach ($service_types as $service): ?>
-                                <option value="<?php echo $service['service_type_id']; ?>">
-                                    <?php echo $service['service_name']; ?>
-                                </option>
+                            <?php foreach ($service_types as $id => $name): ?>
+                                <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
+
                     <div class="form-group">
-                        <label for="bookingDate">Booking Date</label>
-                        <input type="date" id="bookingDate" name="booking_date"
-                            min="<?php echo (isset($_POST['delete_button']) ? '' : $current_date); ?>"
-                            required>
-                    </div>
-                    <div class="form-group">
-                        <label for="bookingTime">Booking Time</label>
-                        <select id="bookingTime" name="booking_time" required>
+                        <label for="booking_time">Time</label>
+                        <select id="booking_time" name="booking_time" required>
                             <option value="">Select Time</option>
-                            <?php foreach ($time_slots as $slot):
-                                $disabled = ($booking_date == $current_date && $slot < $current_time) ? 'disabled' : '';
-                                $class = ($booking_date == $current_date && $slot < $current_time) ? 'class="time-slot-disabled"' : '';
-                            ?>
-                                <option value="<?php echo $slot; ?>" <?php echo $disabled; ?> <?php echo $class; ?>>
-                                    <?php echo date('h:i A', strtotime($slot)); ?>
-                                </option>
+                            <?php foreach ($time_slots as $time): ?>
+                                <option value="<?php echo htmlspecialchars($time); ?>"><?php echo htmlspecialchars(substr($time, 0, 5)); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
+
                     <div class="form-group">
-                        <label for="symptoms">Symptoms</label>
-                        <textarea id="symptoms" name="symptoms" rows="3"></textarea>
+                        <label for="booking_date">Date</label>
+                        <input type="date" id="booking_date" name="booking_date" required>
+                        <div id="dateError" class="error-message" style="display: none;"></div>
                     </div>
+
                     <div class="form-group">
-                        <label for="comment">Staff Comment</label>
-                        <textarea id="comment" name="comment" rows="3"></textarea>
+                        <label for="symptoms">Symptoms (max 30 chars)</label>
+                        <textarea id="symptoms" name="symptoms" rows="3" maxlength="30"></textarea>
                     </div>
+
+                    <div class="form-group">
+                        <label for="comment">Comment (max 30 chars)</label>
+                        <textarea id="comment" name="comment" rows="3" maxlength="30"></textarea>
+                    </div>
+
                     <div class="form-group">
                         <label for="status">Status</label>
                         <select id="status" name="status" required>
-                            <option value="pending">Pending</option>
-                            <option value="accepted">Accepted</option>
-                            <option value="canceled">Canceled</option>
+                            <option value="scheduled" selected>Scheduled</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                            <option value="no_show">No-show</option>
                         </select>
                     </div>
+
+                    <div class="form-group">
+                        <label for="created_at">Created At</label>
+                        <input type="text" id="created_at" name="created_at" readonly class="readonly-field">
+                    </div>
+
                     <div class="form-actions">
-                        <button type="submit" class="save-button" name="save_button">Save</button>
-                        <button type="submit" class="update-button" name="update_button">Update</button>
-                        <button type="submit" class="delete-button" name="delete_button">Delete</button>
+                        <button type="submit" class="save-button" name="save_button" id="saveButton">Save</button>
+                        <button type="submit" class="update-button" name="update_button" id="updateButton">Update</button>
+                        <button type="submit" class="delete-button" name="delete_button" id="deleteButton">Delete</button>
                     </div>
                 </div>
             </form>
 
             <!-- Search Form -->
-            <div class="appointment-list-header">
+            <div class="patient-list-header">
                 <form method="GET" action="">
-                    <input type="search" name="search" placeholder="Search appointments..."
+                    <input type="search" name="search" placeholder="Search appointments by patient, service or date..."
                         value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
                     <button type="submit">Search</button>
                 </form>
@@ -499,144 +548,248 @@ $time_slots = ['08:00:00', '09:00:00', '10:00:00', '13:00:00', '14:00:00', '15:0
             <?php endif; ?>
 
             <!-- Appointment Table -->
-            <table class="appointment-table">
+            <table class="patient-table">
                 <?php if (!empty($search_results)): ?>
                     <thead>
                         <tr>
                             <th>APPOINTMENT ID</th>
                             <th>PATIENT</th>
-                            <th>STAFF</th>
                             <th>SERVICE</th>
                             <th>DATE</th>
                             <th>TIME</th>
-                            <th>SYMPTOMS</th>
-                            <th>COMMENT</th>
                             <th>STATUS</th>
+                            <th>CREATED AT</th>
                             <th>ACTIONS</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($search_results as $appointment):
-                            $status_class = "status-" . $appointment['status'];
-                        ?>
+                        <?php foreach ($search_results as $appointment): ?>
                             <tr>
                                 <td><?php echo htmlspecialchars($appointment['appointment_id']); ?></td>
                                 <td><?php echo htmlspecialchars($appointment['first_name'] . ' ' . $appointment['last_name']); ?></td>
-                                <td><?php echo htmlspecialchars($appointment['staff_fname'] . ' ' . $appointment['staff_lname']); ?></td>
                                 <td><?php echo htmlspecialchars($appointment['service_name']); ?></td>
-                                <td><?php echo htmlspecialchars(date('Y-m-d', strtotime($appointment['booking_date']))); ?></td>
-                                <td><?php echo htmlspecialchars(date('h:i A', strtotime($appointment['booking_time']))); ?></td>
-                                <td><?php echo htmlspecialchars($appointment['symptoms']); ?></td>
-                                <td><?php echo htmlspecialchars($appointment['comment']); ?></td>
-                                <td class="<?php echo $status_class; ?>"><?php echo htmlspecialchars(ucfirst($appointment['status'])); ?></td>
+                                <td><?php echo htmlspecialchars($appointment['booking_date']); ?></td>
+                                <td><?php echo htmlspecialchars(substr($appointment['booking_time'], 0, 5)); ?></td>
+                                <td><?php echo htmlspecialchars(ucfirst($appointment['status'])); ?></td>
+                                <td><?php echo htmlspecialchars($appointment['created_at']); ?></td>
                                 <td>
-                                    <a href="#" onclick="fillForm('<?php echo htmlspecialchars($appointment['appointment_id']); ?>', 
-    '<?php echo htmlspecialchars($appointment['patient_id']); ?>', 
-    '<?php echo htmlspecialchars($appointment['staff_id']); ?>', 
-    '<?php echo htmlspecialchars($appointment['service_type_id']); ?>', 
-    '<?php echo htmlspecialchars($appointment['booking_time']); ?>', 
-    '<?php echo htmlspecialchars($appointment['booking_date']); ?>', 
-    '<?php echo htmlspecialchars(addslashes($appointment['symptoms'])); ?>', 
-    '<?php echo htmlspecialchars(addslashes($appointment['comment'])); ?>', 
-    '<?php echo htmlspecialchars($appointment['status']); ?>',
-    '<?php echo htmlspecialchars($appointment['first_name'] . ' ' . $appointment['last_name'] . ' (' . $appointment['patient_id'] . ')'); ?>')">Edit</a>
+                                    <a href="#" onclick="fillForm(
+                                        '<?php echo htmlspecialchars($appointment['appointment_id']); ?>',
+                                        '<?php echo htmlspecialchars($appointment['patient_id']); ?>',
+                                        '<?php echo htmlspecialchars($appointment['service_type_id']); ?>',
+                                        '<?php echo htmlspecialchars($appointment['booking_time']); ?>',
+                                        '<?php echo htmlspecialchars($appointment['booking_date']); ?>',
+                                        '<?php echo htmlspecialchars($appointment['symptoms']); ?>',
+                                        '<?php echo htmlspecialchars($appointment['comment']); ?>',
+                                        '<?php echo htmlspecialchars($appointment['status']); ?>',
+                                        '<?php echo htmlspecialchars($appointment['created_at']); ?>'
+                                    )">Edit</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
+                <?php endif; ?>
             </table>
-        <?php endif; ?>
         </main>
     </div>
 
     <script>
-        // Fill form with data for editing
-        function fillForm(appointmentId, patientId, staffId, serviceTypeId, bookingTime, bookingDate, symptoms, comment, status, patientName) {
-            document.getElementById('appointmentID').value = appointmentId;
-            document.getElementById('patientID').value = patientId;
-            document.getElementById('patientSearch').value = patientName; // This sets the patient name in the input field
-            document.getElementById('staffID').value = staffId;
-            document.getElementById('serviceTypeID').value = serviceTypeId;
-            document.getElementById('bookingTime').value = bookingTime;
-            document.getElementById('bookingDate').value = bookingDate;
-            document.getElementById('symptoms').value = symptoms;
-            document.getElementById('comment').value = comment;
-            document.getElementById('status').value = status;
+        // Custom dropdown functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const patientSearch = document.getElementById('patient_search');
+            const patientOptions = document.getElementById('patient_options');
+            const hiddenSelect = document.getElementById('patient_id');
+            const dropdownOptions = patientOptions.querySelectorAll('.dropdown-option');
 
-            // When filling form for existing appointment, remove min date restriction
-            document.getElementById('bookingDate').removeAttribute('min');
-        }
+            // Show options when input is focused or clicked
+            patientSearch.addEventListener('focus', function() {
+                dropdownOptions.forEach(option => {
+                    option.style.display = 'block';
+                });
+                patientOptions.classList.add('show');
+            });
 
-        function clearForm() {
-            document.getElementById('appointmentID').value = "";
-            document.getElementById('patientID').value = "";
-            document.getElementById('patientSearch').value = ""; // Clear the patient search field
-            document.getElementById('staffID').value = "";
-            document.getElementById('serviceTypeID').value = "";
-            document.getElementById('bookingTime').value = "";
-            document.getElementById('bookingDate').value = "";
-            document.getElementById('symptoms').value = "";
-            document.getElementById('comment').value = "";
-            document.getElementById('status').value = "";
-            // Focus on first name input
-            document.getElementById('patientSearch').focus();
+            function filterOptions() {
+                const searchTerm = patientSearch.value.toLowerCase();
+                let hasVisibleOptions = false;
 
-            // Set min date only for new appointments
-            document.getElementById('bookingDate').min = "<?php echo $current_date; ?>";
-        }
+                dropdownOptions.forEach(option => {
+                    const optionText = option.textContent.toLowerCase();
+                    if (optionText.includes(searchTerm)) {
+                        option.style.display = 'block';
+                        hasVisibleOptions = true;
+                    } else {
+                        option.style.display = 'none';
+                    }
+                });
 
-        // Add event listener to handle delete button differently
-        document.getElementById('appointmentForm').addEventListener('submit', function(e) {
-            if (e.submitter && e.submitter.name === 'delete_button') {
-                // For delete operation, bypass all validation
-                return true;
+                if (hasVisibleOptions || searchTerm.length === 0) {
+                    patientOptions.classList.add('show');
+                } else {
+                    patientOptions.classList.remove('show');
+                }
             }
 
-            // For save/update operations, proceed with normal validation
-        });
+            patientSearch.addEventListener('input', function() {
+                filterOptions();
 
-        // Patient search functionality
-        const patientSearch = document.getElementById('patientSearch');
-        const patientDropdown = document.getElementById('patientDropdown');
-        const patientIDInput = document.getElementById('patientID');
-
-        function showPatientDropdown() {
-            patientDropdown.style.display = 'block';
-            // Show all items when dropdown is opened
-            const items = patientDropdown.querySelectorAll('.dropdown-item');
-            items.forEach(item => {
-                item.style.display = 'block';
-            });
-        }
-
-        patientSearch.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            const items = patientDropdown.querySelectorAll('.dropdown-item');
-            let hasMatches = false;
-
-            items.forEach(item => {
-                const text = item.textContent.toLowerCase();
-                if (text.includes(searchTerm)) {
-                    item.style.display = 'block';
-                    hasMatches = true;
-                } else {
-                    item.style.display = 'none';
+                if (this.value === '') {
+                    dropdownOptions.forEach(option => {
+                        option.style.display = 'block';
+                    });
+                    patientOptions.classList.add('show');
                 }
             });
 
-            patientDropdown.style.display = hasMatches ? 'block' : 'none';
-        });
+            dropdownOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    const value = this.getAttribute('data-value');
+                    const text = this.textContent;
 
-        function selectPatient(element, id, name) {
-            patientSearch.value = name;
-            patientIDInput.value = id;
-            patientDropdown.style.display = 'none';
-        }
+                    patientSearch.value = text;
+                    hiddenSelect.value = value;
+                    patientOptions.classList.remove('show');
 
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.searchable-dropdown')) {
-                patientDropdown.style.display = 'none';
+                    dropdownOptions.forEach(opt => {
+                        opt.classList.remove('selected');
+                    });
+                    this.classList.add('selected');
+                });
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.custom-dropdown')) {
+                    patientOptions.classList.remove('show');
+                }
+            });
+
+            if (hiddenSelect.value) {
+                const selectedOption = hiddenSelect.querySelector('option:checked');
+                if (selectedOption) {
+                    patientSearch.value = selectedOption.textContent;
+                    const selectedDiv = patientOptions.querySelector(`.dropdown-option[data-value="${selectedOption.value}"]`);
+                    if (selectedDiv) {
+                        selectedDiv.classList.add('selected');
+                    }
+                }
             }
         });
+
+        function fillForm(appointmentId, patientId, serviceTypeId, bookingTime, bookingDate, symptoms, comment, status, createdAt) {
+            document.getElementById('appointmentID').value = appointmentId;
+            document.getElementById('patient_id').value = patientId;
+            document.getElementById('service_type_id').value = serviceTypeId;
+            document.getElementById('booking_time').value = bookingTime;
+            document.getElementById('booking_date').value = bookingDate;
+            document.getElementById('symptoms').value = symptoms || '';
+            document.getElementById('comment').value = comment || '';
+            document.getElementById('status').value = status;
+            document.getElementById('created_at').value = createdAt;
+
+            const selectedOption = document.querySelector(`#patient_id option[value="${patientId}"]`);
+            if (selectedOption) {
+                document.getElementById('patient_search').value = selectedOption.textContent;
+            }
+
+            document.getElementById('saveButton').disabled = true;
+            document.getElementById('updateButton').disabled = false;
+            document.getElementById('deleteButton').disabled = false;
+        }
+
+        function clearForm() {
+            document.getElementById('appointmentID').value = '';
+            document.getElementById('patient_id').selectedIndex = 0;
+            document.getElementById('patient_search').value = '';
+            document.getElementById('service_type_id').selectedIndex = 0;
+            document.getElementById('booking_time').selectedIndex = 0;
+            document.getElementById('booking_date').value = '';
+            document.getElementById('symptoms').value = '';
+            document.getElementById('comment').value = '';
+            document.getElementById('status').selectedIndex = 0;
+            document.getElementById('created_at').value = '';
+
+            const patientSearch = document.getElementById('patient_search');
+            const patientOptions = document.getElementById('patient_options');
+
+            const dropdownOptions = patientOptions.querySelectorAll('.dropdown-option');
+            dropdownOptions.forEach(option => {
+                option.style.display = 'block';
+                option.classList.remove('selected');
+            });
+
+            patientOptions.classList.add('show');
+
+            setTimeout(() => {
+                patientSearch.focus();
+            }, 10);
+
+            document.getElementById('saveButton').disabled = false;
+            document.getElementById('updateButton').disabled = true;
+            document.getElementById('deleteButton').disabled = true;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('updateButton').disabled = true;
+            document.getElementById('deleteButton').disabled = true;
+
+            if (document.getElementById('appointmentID').value) {
+                document.getElementById('saveButton').disabled = true;
+                document.getElementById('updateButton').disabled = false;
+                document.getElementById('deleteButton').disabled = false;
+            }
+
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            const minDate = `${yyyy}-${mm}-${dd}`;
+            document.getElementById('booking_date').setAttribute('min', minDate);
+        });
+
+        document.getElementById('appointmentForm').addEventListener('submit', function(e) {
+            const appointmentId = document.getElementById('appointmentID').value;
+            const isSave = e.submitter.name === 'save_button';
+            const isUpdate = e.submitter.name === 'update_button';
+            const isDelete = e.submitter.name === 'delete_button';
+
+            if (isSave && appointmentId) {
+                e.preventDefault();
+                alert("Error: You're trying to save an existing record. Use Update instead.");
+                return;
+            }
+
+            if ((isUpdate || isDelete) && !appointmentId) {
+                e.preventDefault();
+                alert("Error: No appointment selected. Please select an appointment to edit first.");
+                return;
+            }
+
+            const bookingDate = document.getElementById('booking_date').value;
+            if (bookingDate) {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const selectedDate = new Date(bookingDate);
+
+                if (selectedDate < today) {
+                    e.preventDefault();
+                    document.getElementById('dateError').textContent = "Date cannot be in the past";
+                    document.getElementById('dateError').style.display = "block";
+                    document.getElementById('booking_date').classList.add("error");
+                    document.getElementById('booking_date').focus();
+                    return;
+                }
+            }
+        });
+
+        document.getElementById('booking_date').addEventListener('change', function() {
+            document.getElementById('dateError').style.display = "none";
+            this.classList.remove("error");
+        });
+
+        if (window.history.replaceState) {
+            window.history.replaceState(null, null, window.location.href);
+        }
     </script>
+</body>
+
+</html>
