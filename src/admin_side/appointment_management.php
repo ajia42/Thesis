@@ -561,6 +561,12 @@ $current_time = date('H:i:s');
                     </div>
 
                     <div class="form-group">
+                        <label for="booking_date">Date</label>
+                        <input type="date" id="booking_date" name="booking_date" required>
+                        <div id="dateError" class="error-message" style="display: none;"></div>
+                    </div>
+
+                    <div class="form-group">
                         <label for="booking_time">Time</label>
                         <select id="booking_time" name="booking_time" required>
                             <option value="">Select Time</option>
@@ -568,12 +574,6 @@ $current_time = date('H:i:s');
                                 <option value="<?php echo htmlspecialchars($time); ?>"><?php echo htmlspecialchars(substr($time, 0, 5)); ?></option>
                             <?php endforeach; ?>
                         </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="booking_date">Date</label>
-                        <input type="date" id="booking_date" name="booking_date" required>
-                        <div id="dateError" class="error-message" style="display: none;"></div>
                     </div>
 
                     <div class="form-group">
@@ -702,6 +702,11 @@ $current_time = date('H:i:s');
                     </div>
 
                     <div class="form-group">
+                        <label for="modal_booking_date">Date</label>
+                        <input type="date" id="modal_booking_date" name="booking_date" required>
+                    </div>
+
+                    <div class="form-group">
                         <label for="modal_booking_time">Time</label>
                         <select id="modal_booking_time" name="booking_time" required>
                             <option value="">Select Time</option>
@@ -711,10 +716,6 @@ $current_time = date('H:i:s');
                         </select>
                     </div>
 
-                    <div class="form-group">
-                        <label for="modal_booking_date">Date</label>
-                        <input type="date" id="modal_booking_date" name="booking_date" required>
-                    </div>
 
                     <div class="form-group">
                         <label for="modal_symptoms">Symptoms (max 30 chars)</label>
