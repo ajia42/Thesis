@@ -1,9 +1,5 @@
 <?php
 session_start();
-
-// Set Laos timezone
-date_default_timezone_set('Asia/Vientiane');
-
 if (!isset($_SESSION['admin_id'])) {
     header('Location: signin_admin.php');
     exit();
@@ -24,14 +20,17 @@ function generateAppointmentID($conn)
     $result = mysqli_query($conn, $sql);
     $row = mysqli_fetch_assoc($result);
 
+    // If no appointment exists, start with A0001
     if (empty($row['max_id'])) {
         return 'A0001';
     }
 
+    // Extract the numeric part and increment
     $lastID = $row['max_id'];
     $numPart = intval(substr($lastID, 1));
     $newNumPart = $numPart + 1;
 
+    // Format the new ID with leading zeros
     return 'A' . str_pad($newNumPart, 4, '0', STR_PAD_LEFT);
 }
 
@@ -48,33 +47,27 @@ $time_slots = [
     '14:00:00',
     '14:30:00',
     '15:00:00',
-    '15:30:00',
-    '22:00:00',
-    '22:30:00',
-    '23:00:00',
-    '23:30:00'
+    '15:30:00'
 ];
 
 // Validation checks
 $errors = '';
 $message = '';
 
-// Form processing code (same as original - not modified)
 // Check if form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Common sanitization for appointment_id if present
-    $appointment_id = isset($_POST['appointment_id']) ? mysqli_real_escape_string($conn, $_POST['appointment_id']) : '';
+    // Sanitize and validate input
+    $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id']);
+    $service_type_id = mysqli_real_escape_string($conn, $_POST['service_type_id']);
+    $booking_time = mysqli_real_escape_string($conn, $_POST['booking_time']);
+    $booking_date = mysqli_real_escape_string($conn, $_POST['booking_date']);
+    $symptoms = isset($_POST['symptoms']) ? mysqli_real_escape_string($conn, substr($_POST['symptoms'], 0, 30)) : '';
+    $comment = isset($_POST['comment']) ? mysqli_real_escape_string($conn, substr($_POST['comment'], 0, 30)) : '';
+    $status = mysqli_real_escape_string($conn, $_POST['status']);
+    $admin_id = $_SESSION['admin_id']; // Get admin_id from session
 
     // Action based on button click
     if (isset($_POST['save_button'])) {
-        // Sanitize and validate input fields for save operation
-        $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id']);
-        $service_type_id = mysqli_real_escape_string($conn, $_POST['service_type_id']);
-        $booking_time = mysqli_real_escape_string($conn, $_POST['booking_time']);
-        $booking_date = mysqli_real_escape_string($conn, $_POST['booking_date']);
-        $symptoms = isset($_POST['symptoms']) ? mysqli_real_escape_string($conn, substr($_POST['symptoms'], 0, 30)) : '';
-        $comment = isset($_POST['comment']) ? mysqli_real_escape_string($conn, substr($_POST['comment'], 0, 30)) : '';
-        $status = mysqli_real_escape_string($conn, $_POST['status']);
         // Check for existing appointment at same time
         $check_query = "SELECT * FROM appointment 
                         WHERE booking_date = '$booking_date' 
@@ -110,35 +103,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Update functionality
     if (isset($_POST['update_button']) && !empty($_POST['appointment_id'])) {
-        if (!isset($_POST['booking_time']) || !isset($_POST['booking_date'])) {
-            $errors = "Please fill in all required fields";
-        } else {
-            $appointment_id = mysqli_real_escape_string($conn, $_POST['appointment_id']);
-            $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id']);
-            $service_type_id = mysqli_real_escape_string($conn, $_POST['service_type_id']);
-            $booking_time = mysqli_real_escape_string($conn, $_POST['booking_time']);
-            $booking_date = mysqli_real_escape_string($conn, $_POST['booking_date']);
-            $symptoms = isset($_POST['symptoms']) ? mysqli_real_escape_string($conn, substr($_POST['symptoms'], 0, 30)) : '';
-            $comment = isset($_POST['comment']) ? mysqli_real_escape_string($conn, substr($_POST['comment'], 0, 30)) : '';
-            $status = mysqli_real_escape_string($conn, $_POST['status']);
+        $appointment_id = mysqli_real_escape_string($conn, $_POST['appointment_id']);
 
-            // Check for existing appointment at same time (excluding current appointment)
-            $check_query = "SELECT * FROM appointment 
+        // Check for existing appointment at same time (excluding current appointment)
+        $check_query = "SELECT * FROM appointment 
                         WHERE booking_date = '$booking_date' 
                         AND booking_time = '$booking_time'
                         AND appointment_id != '$appointment_id'";
-            $check_result = mysqli_query($conn, $check_query);
+        $check_result = mysqli_query($conn, $check_query);
 
-            if (mysqli_num_rows($check_result) > 0) {
-                $errors = "An appointment already exists at this time.";
-            }
+        if (mysqli_num_rows($check_result) > 0) {
+            $errors = "An appointment already exists at this time.";
+        }
 
-            if (empty($errors)) {
-
-                $created_at = date('Y-m-d H:i:s');
-
-                // Prepare UPDATE query
-                $update_query = "UPDATE appointment 
+        if (empty($errors)) {
+            // Prepare UPDATE query
+            $update_query = "UPDATE appointment 
                             SET patient_id = '$patient_id',
                                 service_type_id = '$service_type_id',
                                 booking_time = '$booking_time',
@@ -148,36 +128,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 status = '$status'
                             WHERE appointment_id = '$appointment_id'";
 
-                if (mysqli_query($conn, $update_query)) {
-                    $message = "Appointment updated successfully!";
-                    $appointment_id = $patient_id = $service_type_id = $booking_time =
-                        $booking_date = $symptoms = $comment = $status = '';
-                } else {
-                    $errors = "Error updating appointment: " . mysqli_error($conn);
-                }
+            if (mysqli_query($conn, $update_query)) {
+                $message = "Appointment updated successfully!";
+                $appointment_id = $patient_id = $service_type_id = $booking_time =
+                    $booking_date = $symptoms = $comment = $status = '';
+            } else {
+                $errors = "Error updating appointment: " . mysqli_error($conn);
             }
         }
     }
 
     // Delete functionality
-    if (isset($_POST['delete_button'])) {
-        // Only need appointment_id for delete
-        if (!empty($appointment_id)) {
-            // Prepare DELETE query
-            $delete_query = "DELETE FROM appointment WHERE appointment_id = '$appointment_id'";
+    if (isset($_POST['delete_button']) && !empty($_POST['appointment_id'])) {
+        $appointment_id = mysqli_real_escape_string($conn, $_POST['appointment_id']);
 
-            if (mysqli_query($conn, $delete_query)) {
-                $message = "Appointment deleted successfully!";
-            } else {
-                $errors = "Error deleting appointment: " . mysqli_error($conn);
-            }
+        // Prepare DELETE query
+        $delete_query = "DELETE FROM appointment WHERE appointment_id = '$appointment_id'";
+
+        if (mysqli_query($conn, $delete_query)) {
+            $message = "Appointment deleted successfully!";
         } else {
-            $errors = "No appointment selected for deletion";
+            $errors = "Error deleting appointment: " . mysqli_error($conn);
         }
     }
 }
 
-// Fetch patients and service types (same as original)
+// Fetch all patients for dropdown with ID and name
 $patients = [];
 $patients_query = "SELECT patient_id, first_name, last_name FROM patient ORDER BY first_name, last_name";
 $patients_result = mysqli_query($conn, $patients_query);
@@ -185,6 +161,7 @@ while ($row = mysqli_fetch_assoc($patients_result)) {
     $patients[$row['patient_id']] = $row['patient_id'] . ' - ' . $row['first_name'] . ' ' . $row['last_name'];
 }
 
+// Fetch all service types for dropdown
 $service_types = [];
 $service_types_query = "SELECT service_type_id, service_name FROM service_type";
 $service_types_result = mysqli_query($conn, $service_types_query);
@@ -192,7 +169,8 @@ while ($row = mysqli_fetch_assoc($service_types_result)) {
     $service_types[$row['service_type_id']] = $row['service_name'];
 }
 
-// Search functionality (same as original - truncated for brevity)
+
+// Search functionality
 $search_query = "";
 $search_results = [];
 $no_results_message = "";
@@ -224,6 +202,7 @@ if (isset($_GET['search']) && !empty($_GET['search'])) {
     }
 }
 
+// Fetch all appointments only if no search is performed
 if (!$is_search && empty($search_results)) {
     $all_appointments_query = "SELECT a.*, p.first_name, p.last_name, s.service_name
                               FROM appointment a
@@ -236,10 +215,6 @@ if (!$is_search && empty($search_results)) {
         $search_results[] = $row;
     }
 }
-
-// NEW: Get current date and time for JavaScript
-$current_date = date('Y-m-d');
-$current_time = date('H:i:s');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -250,7 +225,6 @@ $current_time = date('H:i:s');
     <title>Appointment Management</title>
     <link rel="stylesheet" href="patient_management.css">
 
-    <!-- CSS styles (same as original) -->
     <style>
         .readonly-field {
             background-color: #f5f5f5;
@@ -305,15 +279,22 @@ $current_time = date('H:i:s');
             color: white !important;
         }
 
+        .dropdown-option.selected {
+            background-color: #e1f0ff;
+            color: #000;
+        }
+
         .hidden-select {
             display: none;
         }
 
+        /* Limit textarea sizes to match database field lengths */
         textarea {
             max-width: 100%;
             max-height: 100px;
         }
 
+        /* Modal styles */
         .modal {
             display: none;
             position: fixed;
@@ -323,51 +304,143 @@ $current_time = date('H:i:s');
             width: 100%;
             height: 100%;
             overflow: auto;
-            background-color: rgba(0, 0, 0, 0.4);
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s;
         }
 
         .modal-content {
-            background-color: #fefefe;
+            background-color: #f8f9fa;
             margin: 5% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 60%;
-            border-radius: 5px;
-            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
-        }
-
-        .modal-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .modal-actions button {
-            padding: 10px 20px;
+            padding: 25px;
             border: none;
-            border-radius: 5px;
-            cursor: pointer;
+            width: 60%;
+            max-width: 700px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            position: relative;
         }
 
-        .modal-actions .update-button {
-            background-color: #1976d2;
-            color: white;
+        .modal h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e0e0e0;
         }
 
-        .modal-actions .cancel-button {
-            background-color: #f44336;
-            color: white;
+        .close {
+            color: #aaa;
+            position: absolute;
+            right: 20px;
+            top: 15px;
+            font-size: 28px;
+            font-weight: bold;
+            transition: color 0.2s;
         }
 
-        .delete-link {
-            color: #d32f2f;
+        .close:hover {
+            color: #333;
             text-decoration: none;
             cursor: pointer;
         }
 
-        .delete-link:hover {
-            text-decoration: underline;
+        /* Modal form styles */
+        #editForm .form-group {
+            margin-bottom: 15px;
+        }
+
+        #editForm label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        #editForm input[type="text"],
+        #editForm input[type="date"],
+        #editForm select,
+        #editForm textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.15s;
+        }
+
+        #editForm input[type="text"]:focus,
+        #editForm input[type="date"]:focus,
+        #editForm select:focus,
+        #editForm textarea:focus {
+            border-color: #80bdff;
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+
+        #editForm input[readonly] {
+            background-color: #e9ecef;
+        }
+
+        #editForm textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* Modal buttons */
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        #modalUpdateButton,
+        .cancel-button {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        #modalUpdateButton {
+            background-color: #3498db;
+            color: white;
+        }
+
+        #modalUpdateButton:hover {
+            background-color: #2980b9;
+        }
+
+        .cancel-button {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        .cancel-button:hover {
+            background-color: #c0392b;
+        }
+
+        /* Animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
         }
     </style>
 </head>
@@ -409,7 +482,7 @@ $current_time = date('H:i:s');
                         </svg>
                         Dashboard</a></li>
 
-                <li><a href="patient_management.php">
+                <li class="active"><a href="patient_management.php">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                             <circle cx="9" cy="7" r="4"></circle>
@@ -438,7 +511,7 @@ $current_time = date('H:i:s');
                         </svg>
                         Staff</a></li>
 
-                <li class="active"><a href="appointment_management.php">
+                <li><a href="appointment_management.php">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                             <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -510,7 +583,6 @@ $current_time = date('H:i:s');
                 </li>
             </ul>
         </aside>
-
         <main class="main-content">
             <div class="header">
                 <h1>Appointment Management</h1>
@@ -561,12 +633,6 @@ $current_time = date('H:i:s');
                     </div>
 
                     <div class="form-group">
-                        <label for="booking_date">Date</label>
-                        <input type="date" id="booking_date" name="booking_date" required>
-                        <div id="dateError" class="error-message" style="display: none;"></div>
-                    </div>
-
-                    <div class="form-group">
                         <label for="booking_time">Time</label>
                         <select id="booking_time" name="booking_time" required>
                             <option value="">Select Time</option>
@@ -574,6 +640,12 @@ $current_time = date('H:i:s');
                                 <option value="<?php echo htmlspecialchars($time); ?>"><?php echo htmlspecialchars(substr($time, 0, 5)); ?></option>
                             <?php endforeach; ?>
                         </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="booking_date">Date</label>
+                        <input type="date" id="booking_date" name="booking_date" required>
+                        <div id="dateError" class="error-message" style="display: none;"></div>
                     </div>
 
                     <div class="form-group">
@@ -609,16 +681,15 @@ $current_time = date('H:i:s');
                 </div>
             </form>
 
-            <!-- Search and Table (same as original - truncated) -->
+            <!-- Search Form -->
             <div class="patient-list-header">
                 <form method="GET" action="">
-                    <input type="search" name="search" placeholder="Search appointments..."
+                    <input type="search" name="search" placeholder="Search appointments by patient, service or date..."
                         value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
                     <button type="submit">Search</button>
                 </form>
             </div>
 
-            <!-- Table and modals (same structure - truncated for brevity) -->
             <?php if (!empty($no_results_message)): ?>
                 <div class="alert alert-info">
                     <?php echo $no_results_message; ?>
@@ -638,7 +709,6 @@ $current_time = date('H:i:s');
                             <th>STATUS</th>
                             <th>CREATED AT</th>
                             <th>ACTIONS</th>
-                            <th>DELETE</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -652,7 +722,7 @@ $current_time = date('H:i:s');
                                 <td><?php echo htmlspecialchars(ucfirst($appointment['status'])); ?></td>
                                 <td><?php echo htmlspecialchars($appointment['created_at']); ?></td>
                                 <td>
-                                    <a href="#" onclick="showEditModal(
+                                    <a href="#" onclick="fillForm(
                                         '<?php echo htmlspecialchars($appointment['appointment_id']); ?>',
                                         '<?php echo htmlspecialchars($appointment['patient_id']); ?>',
                                         '<?php echo htmlspecialchars($appointment['service_type_id']); ?>',
@@ -660,11 +730,9 @@ $current_time = date('H:i:s');
                                         '<?php echo htmlspecialchars($appointment['booking_date']); ?>',
                                         '<?php echo htmlspecialchars($appointment['symptoms']); ?>',
                                         '<?php echo htmlspecialchars($appointment['comment']); ?>',
-                                        '<?php echo htmlspecialchars($appointment['status']); ?>'
+                                        '<?php echo htmlspecialchars($appointment['status']); ?>',
+                                        '<?php echo htmlspecialchars($appointment['created_at']); ?>'
                                     )">Edit</a>
-                                </td>
-                                <td>
-                                    <a href="#" class="delete-link" onclick="confirmDelete('<?php echo htmlspecialchars($appointment['appointment_id']); ?>')">Delete</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -674,59 +742,37 @@ $current_time = date('H:i:s');
         </main>
     </div>
 
-    <!-- Edit Modal -->
-    <div id="editModal" class="modal">
+    <!-- Edit Appointment Modal -->
+    <div id="editModal" class="modal" style="display:none;">
         <div class="modal-content">
+            <span class="close">&times;</span>
             <h2>Edit Appointment</h2>
-            <form id="editForm" method="POST" action="">
-                <input type="hidden" id="modal_appointment_id" name="appointment_id">
-                <div class="patient-form">
+            <form id="editForm">
+                <div class="form-row">
                     <div class="form-group">
-                        <label for="modal_patient_id">Patient</label>
-                        <select id="modal_patient_id" name="patient_id" required>
-                            <option value="">Select Patient</option>
-                            <?php foreach ($patients as $id => $name): ?>
-                                <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                        <label>Appointment ID</label>
+                        <input type="text" id="modal_appointment_id" readonly>
                     </div>
+                    <div class="form-group">
+                        <label>Created At</label>
+                        <input type="text" id="modal_created_at" readonly>
+                    </div>
+                </div>
 
+                <div class="form-group">
+                    <label>Patient</label>
+                    <input type="text" id="modal_patient" readonly>
+                </div>
+
+                <div class="form-row">
                     <div class="form-group">
                         <label for="modal_service_type_id">Service Type</label>
                         <select id="modal_service_type_id" name="service_type_id" required>
-                            <option value="">Select Service</option>
                             <?php foreach ($service_types as $id => $name): ?>
                                 <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>
-
-                    <div class="form-group">
-                        <label for="modal_booking_date">Date</label>
-                        <input type="date" id="modal_booking_date" name="booking_date" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="modal_booking_time">Time</label>
-                        <select id="modal_booking_time" name="booking_time" required>
-                            <option value="">Select Time</option>
-                            <?php foreach ($time_slots as $time): ?>
-                                <option value="<?php echo htmlspecialchars($time); ?>"><?php echo htmlspecialchars(substr($time, 0, 5)); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-
-                    <div class="form-group">
-                        <label for="modal_symptoms">Symptoms (max 30 chars)</label>
-                        <textarea id="modal_symptoms" name="symptoms" rows="3" maxlength="30"></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="modal_comment">Comment (max 30 chars)</label>
-                        <textarea id="modal_comment" name="comment" rows="3" maxlength="30"></textarea>
-                    </div>
-
                     <div class="form-group">
                         <label for="modal_status">Status</label>
                         <select id="modal_status" name="status" required>
@@ -737,41 +783,49 @@ $current_time = date('H:i:s');
                         </select>
                     </div>
                 </div>
-                <div class="modal-actions">
-                    <button type="button" class="cancel-button" onclick="closeModal()">Cancel</button>
-                    <button type="submit" class="update-button" name="update_button">Update</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
-    <!-- Delete Confirmation Modal -->
-    <div id="deleteModal" class="modal">
-        <div class="modal-content" style="width: 40%;">
-            <h2>Confirm Delete</h2>
-            <p>Are you sure you want to delete this appointment?</p>
-            <form id="deleteForm" method="POST" action="">
-                <input type="hidden" id="delete_appointment_id" name="appointment_id">
-                <div class="modal-actions">
-                    <button type="button" class="cancel-button" onclick="closeDeleteModal()">Cancel</button>
-                    <button type="submit" class="delete-button" name="delete_button">Delete</button>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="modal_booking_date">Date</label>
+                        <input type="date" id="modal_booking_date" name="booking_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_booking_time">Time</label>
+                        <select id="modal_booking_time" name="booking_time" required>
+                            <?php foreach ($time_slots as $time): ?>
+                                <option value="<?php echo htmlspecialchars($time); ?>"><?php echo htmlspecialchars(substr($time, 0, 5)); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="modal_symptoms">Symptoms</label>
+                    <textarea id="modal_symptoms" name="symptoms" rows="3" maxlength="30"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="modal_comment">Comment</label>
+                    <textarea id="modal_comment" name="comment" rows="3" maxlength="30"></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="cancel-button" onclick="closeModal()">Cancel</button>
+                    <button type="button" id="modalUpdateButton">Update Appointment</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        // NEW: Add current date and time variables for JavaScript
-        const currentDate = '<?php echo $current_date; ?>';
-        const currentTime = '<?php echo $current_time; ?>';
-
-        // Custom dropdown functionality (same as original)
+        // Custom dropdown functionality
         document.addEventListener('DOMContentLoaded', function() {
             const patientSearch = document.getElementById('patient_search');
             const patientOptions = document.getElementById('patient_options');
             const hiddenSelect = document.getElementById('patient_id');
             const dropdownOptions = patientOptions.querySelectorAll('.dropdown-option');
 
+            // Show options when input is focused or clicked
             patientSearch.addEventListener('focus', function() {
                 dropdownOptions.forEach(option => {
                     option.style.display = 'block';
@@ -800,7 +854,16 @@ $current_time = date('H:i:s');
                 }
             }
 
-            patientSearch.addEventListener('input', filterOptions);
+            patientSearch.addEventListener('input', function() {
+                filterOptions();
+
+                if (this.value === '') {
+                    dropdownOptions.forEach(option => {
+                        option.style.display = 'block';
+                    });
+                    patientOptions.classList.add('show');
+                }
+            });
 
             dropdownOptions.forEach(option => {
                 option.addEventListener('click', function() {
@@ -836,163 +899,70 @@ $current_time = date('H:i:s');
             }
         });
 
-        // Modal functions
-        function showEditModal(appointmentId, patientId, serviceTypeId, bookingTime, bookingDate, symptoms, comment, status) {
+        function fillForm(appointmentId, patientId, serviceTypeId, bookingTime, bookingDate, symptoms, comment, status, createdAt) {
+            const modal = document.getElementById('editModal');
             document.getElementById('modal_appointment_id').value = appointmentId;
-            document.getElementById('modal_patient_id').value = patientId;
+            document.getElementById('modal_patient').value = document.querySelector(`#patient_id option[value="${patientId}"]`).textContent;
             document.getElementById('modal_service_type_id').value = serviceTypeId;
             document.getElementById('modal_booking_time').value = bookingTime;
             document.getElementById('modal_booking_date').value = bookingDate;
             document.getElementById('modal_symptoms').value = symptoms || '';
             document.getElementById('modal_comment').value = comment || '';
             document.getElementById('modal_status').value = status;
+            document.getElementById('modal_created_at').value = createdAt;
 
+            // Disable form if status is cancelled or no-show
+            if (status === 'cancelled' || status === 'no_show') {
+                document.getElementById('editForm').querySelectorAll('input, select, textarea').forEach(el => {
+                    if (!el.readOnly) el.disabled = true;
+                });
+                document.getElementById('modalUpdateButton').disabled = true;
+            } else {
+                document.getElementById('editForm').querySelectorAll('input, select, textarea').forEach(el => {
+                    el.disabled = false;
+                });
+                document.getElementById('modalUpdateButton').disabled = false;
+            }
 
-
-            document.getElementById('editModal').style.display = 'block';
-            updateTimeSlotsAvailability(); // Update time slots availability
+            modal.style.display = 'block';
         }
 
         function closeModal() {
             document.getElementById('editModal').style.display = 'none';
         }
 
-        function confirmDelete(appointmentId) {
-            document.getElementById('delete_appointment_id').value = appointmentId;
-            document.getElementById('deleteModal').style.display = 'block';
-        }
-
-        function closeDeleteModal() {
-            document.getElementById('deleteModal').style.display = 'none';
-        }
-
-        // Close modals when clicking outside
-        window.onclick = function(event) {
+        // Close modal when clicking X or outside
+        document.querySelector('.close').addEventListener('click', closeModal);
+        window.addEventListener('click', function(event) {
             if (event.target == document.getElementById('editModal')) {
                 closeModal();
             }
-            if (event.target == document.getElementById('deleteModal')) {
-                closeDeleteModal();
-            }
-        }
+        });
 
-        // MODIFIED: Enhanced time slot availability function with past time blocking
-        function updateTimeSlotsAvailability() {
-            const bookingDate = document.getElementById('booking_date').value;
-            const bookingTimeSelect = document.getElementById('booking_time');
-            const modalBookingDate = document.getElementById('modal_booking_date');
-            const modalBookingTimeSelect = document.getElementById('modal_booking_time');
+        // Handle modal update
+        document.getElementById('modalUpdateButton').addEventListener('click', function() {
+            const form = document.getElementById('editForm');
+            const formData = new FormData(form);
+            formData.append('appointment_id', document.getElementById('modal_appointment_id').value);
+            formData.append('update_button', 'true');
 
-            // Function to check if a time slot has passed today
-            function isTimePassed(timeSlot, selectedDate) {
-                if (selectedDate !== currentDate) {
-                    return false; // Not today, so no time restrictions
-                }
+            fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.reload();
+                    } else {
+                        alert('Error updating appointment');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error updating appointment');
+                });
+        });
 
-                // Compare time slots (format: HH:MM:SS vs HH:MM:SS)
-                return timeSlot <= currentTime;
-            }
-
-            if (bookingDate) {
-                // Fetch booked time slots for this date via AJAX
-                fetch('get_booked_times.php?date=' + bookingDate)
-                    .then(response => response.json())
-                    .then(bookedTimes => {
-                        // Enable all options first
-                        Array.from(bookingTimeSelect.options).forEach(option => {
-                            if (option.value) {
-                                option.disabled = false;
-                                option.style.color = '';
-                            }
-                        });
-
-                        // Disable already booked times
-                        bookedTimes.forEach(time => {
-                            const option = bookingTimeSelect.querySelector(`option[value="${time}"]`);
-                            if (option) {
-                                option.disabled = true;
-                                option.style.color = '#999';
-                                if (option.selected) {
-                                    option.selected = false;
-                                    bookingTimeSelect.selectedIndex = 0;
-                                }
-                            }
-                        });
-
-                        // NEW: Disable past time slots if selected date is today
-                        if (bookingDate === currentDate) {
-                            Array.from(bookingTimeSelect.options).forEach(option => {
-                                if (option.value && isTimePassed(option.value, bookingDate)) {
-                                    option.disabled = true;
-                                    option.style.color = '#ccc';
-                                    option.textContent = option.textContent + ' (Past)';
-                                    if (option.selected) {
-                                        option.selected = false;
-                                        bookingTimeSelect.selectedIndex = 0;
-                                    }
-                                }
-                            });
-                        } else {
-                            // Remove "(Past)" text if date is not today
-                            Array.from(bookingTimeSelect.options).forEach(option => {
-                                if (option.value) {
-                                    option.textContent = option.textContent.replace(' (Past)', '');
-                                }
-                            });
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching booked times:', error);
-                    });
-            }
-
-            // Same logic for modal if it exists
-            if (modalBookingDate && modalBookingDate.value) {
-                fetch('get_booked_times.php?date=' + modalBookingDate.value)
-                    .then(response => response.json())
-                    .then(bookedTimes => {
-                        Array.from(modalBookingTimeSelect.options).forEach(option => {
-                            if (option.value) {
-                                option.disabled = false;
-                                option.style.color = '';
-                            }
-                        });
-
-                        bookedTimes.forEach(time => {
-                            const option = modalBookingTimeSelect.querySelector(`option[value="${time}"]`);
-                            if (option && option.value !== modalBookingTimeSelect.dataset.currentTime) {
-                                option.disabled = true;
-                                option.style.color = '#999';
-                            }
-                        });
-
-                        // NEW: Disable past time slots in modal if selected date is today
-                        if (modalBookingDate.value === currentDate) {
-                            Array.from(modalBookingTimeSelect.options).forEach(option => {
-                                if (option.value &&
-                                    isTimePassed(option.value, modalBookingDate.value) &&
-                                    option.value !== modalBookingTimeSelect.dataset.currentTime) {
-                                    option.disabled = true;
-                                    option.style.color = '#ccc';
-                                    option.textContent = option.textContent.replace(' (Past)', '') + ' (Past)';
-                                }
-                            });
-                        } else {
-                            // Remove "(Past)" text if date is not today
-                            Array.from(modalBookingTimeSelect.options).forEach(option => {
-                                if (option.value) {
-                                    option.textContent = option.textContent.replace(' (Past)', '');
-                                }
-                            });
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error fetching booked times:', error);
-                    });
-            }
-        }
-
-        // Other functions (same as original)
         function clearForm() {
             document.getElementById('appointmentID').value = '';
             document.getElementById('patient_id').selectedIndex = 0;
@@ -1025,36 +995,24 @@ $current_time = date('H:i:s');
             document.getElementById('deleteButton').disabled = true;
         }
 
-        // Add event listeners for date changes
-        document.getElementById('booking_date')?.addEventListener('change', updateTimeSlotsAvailability);
-        document.getElementById('modal_booking_date')?.addEventListener('change', updateTimeSlotsAvailability);
-
-        // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
-            // Set min date to today
+            document.getElementById('updateButton').disabled = true;
+            document.getElementById('deleteButton').disabled = true;
+
+            if (document.getElementById('appointmentID').value) {
+                document.getElementById('saveButton').disabled = true;
+                document.getElementById('updateButton').disabled = false;
+                document.getElementById('deleteButton').disabled = false;
+            }
+
             const today = new Date();
             const yyyy = today.getFullYear();
             const mm = String(today.getMonth() + 1).padStart(2, '0');
             const dd = String(today.getDate()).padStart(2, '0');
             const minDate = `${yyyy}-${mm}-${dd}`;
             document.getElementById('booking_date').setAttribute('min', minDate);
-            document.getElementById('modal_booking_date')?.setAttribute('min', minDate);
-
-            // Initialize button states
-            document.getElementById('updateButton').disabled = true;
-            document.getElementById('deleteButton').disabled = true;
-
-            // Update time slots availability
-            updateTimeSlotsAvailability();
-
-            // For the edit modal, store the current time to avoid disabling it
-            const modalBookingTimeSelect = document.getElementById('modal_booking_time');
-            if (modalBookingTimeSelect) {
-                modalBookingTimeSelect.dataset.currentTime = modalBookingTimeSelect.value;
-            }
         });
 
-        // Form submission validation (same as original)
         document.getElementById('appointmentForm').addEventListener('submit', function(e) {
             const appointmentId = document.getElementById('appointmentID').value;
             const isSave = e.submitter.name === 'save_button';
