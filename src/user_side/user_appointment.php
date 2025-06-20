@@ -3,20 +3,24 @@ session_start();
 include("../db_config.php");
 
 // Check if user is properly authenticated
-if (!isset($_SESSION['registered_phone']) && !isset($_SESSION['user_name'])) {
+if (!isset($_SESSION['registered_phone'])) {
     header("Location: user_login.php");
     exit();
 }
 
-// If coming from registration but hasn't completed info
-if (isset($_SESSION['registered_phone']) && !isset($_SESSION['user_name'])) {
+// Get the patient record for this user
+$phone = $_SESSION['registered_phone'];
+$patient_query = "SELECT patient_id FROM patient WHERE phone = '$phone'";
+$patient_result = mysqli_query($conn, $patient_query);
+
+if (!$patient_result || mysqli_num_rows($patient_result) == 0) {
+    // Patient doesn't exist - redirect to complete profile
     header("Location: user_info.php");
     exit();
 }
 
-// Use consistent session variables
-$patient_id = $_SESSION['registered_phone'];
-$patient_name = $_SESSION['user_name']; // Changed from patient_name
+$patient_row = mysqli_fetch_assoc($patient_result);
+$patient_id = $patient_row['patient_id'];
 
 $errors = [];
 $success = '';
@@ -82,16 +86,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if (empty($errors)) {
         $appointment_id = generateAppointmentID($conn);
+        $status = 'scheduled'; // Default status
 
-        // Default admin_id (can be NULL or assign to a specific admin)
-        $admin_id = NULL;
-
-        // Default status
-        $status = 'Pending';
-
-        $sql = "INSERT INTO appointment (appointment_id, patient_id, admin_id, service_type_id, 
+        $sql = "INSERT INTO appointment (appointment_id, patient_id, service_type_id, 
                 booking_time, booking_date, symptoms, status) 
-                VALUES ('$appointment_id', '$patient_id', NULL, '$service_type_id', 
+                VALUES ('$appointment_id', '$patient_id', '$service_type_id', 
                 '$booking_time', '$booking_date', '$symptoms', '$status')";
 
         if (mysqli_query($conn, $sql)) {
@@ -103,8 +102,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     }
 }
-
-$conn->close();
 ?>
 
 <!DOCTYPE html>
@@ -369,7 +366,6 @@ $conn->close();
     <header>
         <div class="container header-content">
             <div class="logo">
-
                 <svg viewBox="0 0 24 24" fill="currentColor" class="icon">
                     <path d="M12 4a4 4 0 100 8 4 4 0 000-8zM2 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10S2 17.514 2 12z"></path>
                 </svg>
@@ -396,10 +392,6 @@ $conn->close();
                     <p><?php echo htmlspecialchars($error); ?></p>
                 <?php endforeach; ?>
             </div>
-        <?php endif; ?>
-
-        <?php if ($success): ?>
-            <div class="success-message"><?php echo htmlspecialchars($success); ?></div>
         <?php endif; ?>
 
         <div class="appointment-card">
@@ -554,6 +546,7 @@ $conn->close();
                 });
 
                 // Fetch already booked time slots for this date
+                // Modify the fetch response handling in both event listeners
                 fetch(`check_time_slots.php?date=${selectedDate}`)
                     .then(response => response.json())
                     .then(bookedSlots => {
@@ -561,18 +554,21 @@ $conn->close();
                             const slotValue = slot.value;
                             const isBooked = bookedSlots.includes(slotValue);
 
+                            // Disable both the radio button and the label
                             slot.disabled = isBooked;
-                            slot.parentElement.classList.toggle('disabled', isBooked);
+                            const label = slot.parentElement;
+                            label.classList.toggle('disabled', isBooked);
+
+                            // If this slot was selected but is now booked, unselect it
+                            if (isBooked && slot.checked) {
+                                slot.checked = false;
+                                label.classList.remove('selected');
+                            }
                         });
+
+                        // After checking booked slots, disable passed slots if today
+                        disablePassedTimeSlots();
                     })
-                    .catch(error => {
-                        console.error('Error checking time slots:', error);
-                        // Re-enable all slots if there's an error
-                        document.querySelectorAll('.time-slot input').forEach(slot => {
-                            slot.disabled = false;
-                            slot.parentElement.classList.remove('disabled');
-                        });
-                    });
             }
         });
 
@@ -684,19 +680,20 @@ $conn->close();
         });
 
         // Also call it when the page loads if the selected date is today
+        // Modify the DOMContentLoaded event listener
         document.addEventListener('DOMContentLoaded', function() {
             const today = new Date().toISOString().split('T')[0];
             const selectedDate = document.getElementById('booking_date').value;
 
-            if (selectedDate === today) {
+            if (selectedDate) {
                 // First disable all slots while checking
                 document.querySelectorAll('.time-slot input').forEach(slot => {
                     slot.disabled = true;
                     slot.parentElement.classList.add('disabled');
                 });
 
-                // Fetch already booked time slots for today
-                fetch(`check_time_slots.php?date=${today}`)
+                // Fetch already booked time slots for the selected date
+                fetch(`check_time_slots.php?date=${selectedDate}`)
                     .then(response => response.json())
                     .then(bookedSlots => {
                         document.querySelectorAll('.time-slot input').forEach(slot => {
@@ -705,10 +702,18 @@ $conn->close();
 
                             slot.disabled = isBooked;
                             slot.parentElement.classList.toggle('disabled', isBooked);
+
+                            // If this slot was selected but is now booked, unselect it
+                            if (isBooked && slot.checked) {
+                                slot.checked = false;
+                                slot.parentElement.classList.remove('selected');
+                            }
                         });
 
-                        // After checking booked slots, disable passed slots
-                        disablePassedTimeSlots();
+                        // After checking booked slots, disable passed slots if today
+                        if (selectedDate === today) {
+                            disablePassedTimeSlots();
+                        }
                     })
                     .catch(error => {
                         console.error('Error checking time slots:', error);
@@ -717,7 +722,9 @@ $conn->close();
                             slot.disabled = false;
                             slot.parentElement.classList.remove('disabled');
                         });
-                        disablePassedTimeSlots();
+                        if (selectedDate === today) {
+                            disablePassedTimeSlots();
+                        }
                     });
             }
         });

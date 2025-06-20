@@ -9,7 +9,7 @@ if (!isset($_SESSION['registered_phone'])) {
 }
 
 // Use consistent session variables
-$patient_id = $_SESSION['registered_phone'];
+$patient_phone = $_SESSION['registered_phone'];
 
 if (!isset($_GET['id'])) {
     header("Location: user_history.php");
@@ -18,7 +18,13 @@ if (!isset($_GET['id'])) {
 
 $appointment_id = $_GET['id'];
 
-// Fetch appointment details
+// Fetch patient_id from patient table using phone number
+$patient_query = "SELECT patient_id FROM patient WHERE phone = '$patient_phone'";
+$patient_result = mysqli_query($conn, $patient_query);
+$patient_row = mysqli_fetch_assoc($patient_result);
+$patient_id = $patient_row['patient_id'];
+
+// Fetch appointment details with service name
 $sql = "SELECT a.*, s.service_name 
         FROM appointment a
         JOIN service_type s ON a.service_type_id = s.service_type_id
@@ -34,11 +40,17 @@ if (!$appointment) {
 // Handle cancellation request
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_appointment'])) {
     if (in_array(strtolower($appointment['status']), ['pending', 'scheduled'])) {
-        $update_sql = "UPDATE appointment SET status = 'Cancelled' WHERE appointment_id = '$appointment_id'";
-        mysqli_query($conn, $update_sql);
-        // Refresh the appointment data
-        $result = mysqli_query($conn, $sql);
-        $appointment = mysqli_fetch_assoc($result);
+        $update_sql = "UPDATE appointment SET status = 'cancelled' WHERE appointment_id = '$appointment_id'";
+        if (mysqli_query($conn, $update_sql)) {
+            // Refresh the appointment data
+            $result = mysqli_query($conn, $sql);
+            $appointment = mysqli_fetch_assoc($result);
+            $success_message = "Appointment has been cancelled successfully.";
+        } else {
+            $error_message = "Error cancelling appointment: " . mysqli_error($conn);
+        }
+    } else {
+        $error_message = "Only pending or scheduled appointments can be cancelled.";
     }
 }
 
@@ -70,6 +82,11 @@ $conn->close();
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
+        h1 {
+            color: #3498db;
+            margin-bottom: 20px;
+        }
+
         .detail-item {
             margin-bottom: 15px;
             padding-bottom: 15px;
@@ -83,6 +100,11 @@ $conn->close();
         .detail-label {
             font-weight: bold;
             margin-bottom: 5px;
+            color: #555;
+        }
+
+        .detail-value {
+            color: #333;
         }
 
         .back-btn {
@@ -100,7 +122,6 @@ $conn->close();
             display: inline-block;
             margin-top: 20px;
             padding: 8px 15px;
-            /* Match back-btn padding */
             background-color: #e74c3c;
             color: white;
             text-decoration: none;
@@ -108,17 +129,15 @@ $conn->close();
             border: none;
             cursor: pointer;
             font-size: 0.9rem;
-            /* Match back-btn font size */
-            height: 34px;
-            /* Match back-btn height */
-            line-height: 1;
-            /* Ensure text alignment matches */
-            box-sizing: border-box;
-            /* Consistent sizing */
         }
 
         .cancel-btn:hover {
             background-color: #c0392b;
+        }
+
+        .cancel-btn:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
         }
 
         .status {
@@ -145,7 +164,6 @@ $conn->close();
         }
 
         .status-scheduled {
-
             background-color: #fff3cd;
             color: #856404;
         }
@@ -155,36 +173,62 @@ $conn->close();
             color: #721c24;
             text-transform: capitalize;
         }
+
+        .error-message {
+            color: #e74c3c;
+            background-color: #fdecea;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        .success-message {
+            color: #27ae60;
+            background-color: #e8f5e9;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
     </style>
+    <!-- Add SweetAlert library -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <body>
     <div class="container">
         <h1>Appointment Details</h1>
 
+        <?php if (isset($error_message)): ?>
+            <div class="error-message"><?php echo htmlspecialchars($error_message); ?></div>
+        <?php endif; ?>
+
+        <?php if (isset($success_message)): ?>
+            <div class="success-message"><?php echo htmlspecialchars($success_message); ?></div>
+        <?php endif; ?>
+
         <div class="detail-item">
             <div class="detail-label">Appointment ID</div>
-            <div><?php echo htmlspecialchars($appointment['appointment_id']); ?></div>
+            <div class="detail-value"><?php echo htmlspecialchars($appointment['appointment_id']); ?></div>
         </div>
 
         <div class="detail-item">
             <div class="detail-label">Service</div>
-            <div><?php echo htmlspecialchars($appointment['service_name']); ?></div>
+            <div class="detail-value"><?php echo htmlspecialchars($appointment['service_name']); ?></div>
         </div>
 
         <div class="detail-item">
             <div class="detail-label">Date</div>
-            <div><?php echo htmlspecialchars(date('d/m/Y', strtotime($appointment['booking_date']))); ?></div>
+            <div class="detail-value"><?php echo htmlspecialchars(date('d/m/Y', strtotime($appointment['booking_date']))); ?></div>
         </div>
 
         <div class="detail-item">
             <div class="detail-label">Time</div>
-            <div><?php echo htmlspecialchars(date('H:i', strtotime($appointment['booking_time']))); ?></div>
+            <div class="detail-value"><?php echo htmlspecialchars(date('H:i', strtotime($appointment['booking_time']))); ?></div>
         </div>
 
         <div class="detail-item">
             <div class="detail-label">Status</div>
-            <div>
+            <div class="detail-value">
                 <span class="status status-<?php echo strtolower($appointment['status']); ?>">
                     <?php echo htmlspecialchars($appointment['status']); ?>
                 </span>
@@ -193,25 +237,22 @@ $conn->close();
 
         <div class="detail-item">
             <div class="detail-label">Created At</div>
-            <div><?php echo htmlspecialchars(date('d/m/Y H:i', strtotime($appointment['created_at']))); ?></div>
+            <div class="detail-value"><?php echo htmlspecialchars(date('d/m/Y H:i', strtotime($appointment['created_at']))); ?></div>
         </div>
 
         <?php if (!empty($appointment['symptoms'])): ?>
             <div class="detail-item">
                 <div class="detail-label">Symptoms</div>
-                <div><?php echo htmlspecialchars($appointment['symptoms']); ?></div>
+                <div class="detail-value"><?php echo htmlspecialchars($appointment['symptoms']); ?></div>
             </div>
         <?php endif; ?>
 
         <?php if (!empty($appointment['comment'])): ?>
             <div class="detail-item">
                 <div class="detail-label">Admin Comment</div>
-                <div><?php echo htmlspecialchars($appointment['comment']); ?></div>
+                <div class="detail-value"><?php echo htmlspecialchars($appointment['comment']); ?></div>
             </div>
         <?php endif; ?>
-
-        <!-- Add SweetAlert library -->
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
         <div class="action-buttons">
             <a href="user_history.php" class="back-btn">Back to History</a>
@@ -228,7 +269,7 @@ $conn->close();
     </div>
 
     <script>
-        document.getElementById('cancelBtn').addEventListener('click', function() {
+        document.getElementById('cancelBtn')?.addEventListener('click', function() {
             Swal.fire({
                 title: 'Confirm Cancellation',
                 text: "Are you sure you want to cancel this appointment?",

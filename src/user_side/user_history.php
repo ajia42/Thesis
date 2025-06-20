@@ -21,10 +21,11 @@ $patient_name = $_SESSION['user_name'];
 // Fetch all appointments for the patient, newest first
 $appointments = [];
 
-$sql = "SELECT appointment_id, booking_date, booking_time, status 
-        FROM appointment 
-        WHERE patient_id = '$patient_id'
-        ORDER BY created_at DESC";
+$sql = "SELECT a.appointment_id, a.booking_date, a.booking_time, a.status 
+        FROM appointment a
+        JOIN patient p ON a.patient_id = p.patient_id
+        WHERE p.phone = '$patient_id'
+        ORDER BY a.created_at DESC";
 $result = mysqli_query($conn, $sql);
 if ($result) {
     while ($row = mysqli_fetch_assoc($result)) {
@@ -224,7 +225,6 @@ $conn->close();
         }
 
         .status-scheduled {
-
             background-color: #fff3cd;
             color: #856404;
         }

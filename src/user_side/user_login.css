@@ -37,7 +37,7 @@ header {
   width: 24px;
   height: 24px;
   margin-right: 8px;
-  fill: #4caf50; /* Changed to green */
+  fill: #3498db; /* Changed from #4caf50 (green) to #3498db (blue) */
 }
 
 nav ul {
@@ -90,7 +90,7 @@ nav ul li a {
 .logo-center .icon-large {
   width: 36px;
   height: 36px;
-  fill: #4caf50; /* Changed to green */
+  fill: #3498db; /* Changed from #4caf50 (green) to #3498db (blue) */
   margin-bottom: 5px;
 }
 
@@ -115,7 +115,7 @@ h1 {
 }
 
 .create-account a {
-  color: #4caf50; /* Changed to green */
+  color: #3498db; /* Changed from #4caf50 (green) to #3498db (blue) */
   text-decoration: none;
 }
 
@@ -190,12 +190,12 @@ h1 {
 }
 
 .forgot-password {
-  color: #4caf50; /* Changed to green */
+  color: #3498db; /* Changed from #4caf50 (green) to #3498db (blue) */
   text-decoration: none;
 }
 
 .sign-in-button {
-  background-color: #4caf50; /* Changed to green */
+  background-color: #3498db; /* Changed from #4caf50 (green) to #3498db (blue) */
   color: #fff;
   padding: 12px 20px;
   border: none;
@@ -210,7 +210,7 @@ h1 {
 }
 
 .sign-in-button:hover {
-  background-color: #3d8b40; /* Darker green for hover state */
+  background-color: #2980b9; /* Darker blue for hover state */
 }
 
 .arrow-icon {

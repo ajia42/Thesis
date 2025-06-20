@@ -165,7 +165,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['change_phone'])) {
         if (mysqli_query($conn, $user_sql) && mysqli_query($conn, $patient_sql)) {
             mysqli_commit($conn);
             // Destroy session and redirect to login
-            session_destroy();
+            unset($_SESSION['user_name']);
+            unset($_SESSION['registered_phone']);
             header("Location: user_login.php?phone_changed=1");
             exit();
         } else {
