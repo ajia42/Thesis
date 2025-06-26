@@ -735,6 +735,7 @@ $diseases_result = mysqli_query($conn, $diseases_query);
                             <th>DISEASES</th>
                             <th>ACTIONS</th>
                             <th>DELETE</th>
+                            <th>PRINT</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -768,6 +769,9 @@ $diseases_result = mysqli_query($conn, $diseases_query);
                                 </td>
                                 <td>
                                     <a href="#" class="delete-link" onclick="confirmDelete('<?php echo htmlspecialchars($treatment['treatment_id']); ?>')">Delete</a>
+                                </td>
+                                <td>
+                                    <a href="paper/print_treatment.php?id=<?php echo htmlspecialchars($treatment['treatment_id']); ?>" target="_blank" class="print-link">Print</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

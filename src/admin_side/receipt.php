@@ -811,6 +811,8 @@ $services_result = mysqli_query($conn, $services_query);
                             <th>SERVICES</th>
                             <th>REMARK</th>
                             <th>ACTIONS</th>
+                            <th>DELETE</th>
+                            <TH>PRINT</TH>
                         </tr>
                     </thead>
                     <tbody>
@@ -846,6 +848,9 @@ $services_result = mysqli_query($conn, $services_query);
                                 </td>
                                 <td>
                                     <a href="#" class="delete-link" onclick="confirmDelete('<?php echo htmlspecialchars($receipt['receipt_id']); ?>')">Delete</a>
+                                </td>
+                                <td>
+                                    <a href="paper/print_receipt.php?id=<?php echo htmlspecialchars($receipt['receipt_id']); ?>" target="_blank" class="print-link">Print</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
