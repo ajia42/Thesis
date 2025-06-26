@@ -40,20 +40,18 @@ function calculateTotalAmount($conn, $selected_services)
 {
     $total = 0;
     if (!empty($selected_services)) {
-        foreach ($selected_services as $service_data) {
-            $service_id = $service_data['service_id'];
-            $quantity = intval($service_data['quantity']);
-
+        foreach ($selected_services as $service_id) {
             // Get service price
             $price_query = "SELECT service_fee FROM service_type WHERE service_type_id = '$service_id'";
             $price_result = mysqli_query($conn, $price_query);
             if ($price_row = mysqli_fetch_assoc($price_result)) {
-                $total += ($price_row['service_fee'] * $quantity);
+                $total += $price_row['service_fee'];
             }
         }
     }
     return $total;
 }
+
 
 // Validation checks
 $errors = '';
@@ -71,14 +69,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $selected_services = [];
     if (isset($_POST['services']) && is_array($_POST['services'])) {
         foreach ($_POST['services'] as $service_id) {
-            $quantity_key = 'quantity_' . $service_id;
-            $quantity = isset($_POST[$quantity_key]) ? intval($_POST[$quantity_key]) : 1;
-            if ($quantity > 0) {
-                $selected_services[] = [
-                    'service_id' => mysqli_real_escape_string($conn, $service_id),
-                    'quantity' => $quantity
-                ];
-            }
+            $selected_services[] = mysqli_real_escape_string($conn, $service_id);
         }
     }
 
@@ -112,17 +103,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                 if (mysqli_query($conn, $insert_query)) {
                     // Insert selected services into receipt_service_type table
-                    foreach ($selected_services as $service_data) {
-                        $service_id = $service_data['service_id'];
-                        $quantity = $service_data['quantity'];
-
+                    foreach ($selected_services as $service_id) {
                         // Verify service exists before inserting
                         $verify_service = "SELECT service_type_id FROM service_type WHERE service_type_id = '$service_id'";
                         $verify_result = mysqli_query($conn, $verify_service);
 
                         if (mysqli_num_rows($verify_result) > 0) {
-                            $service_insert = "INSERT INTO receipt_service_type (receipt_id, service_type_id, quantity) 
-                                             VALUES ('$receipt_id', '$service_id', '$quantity')";
+                            $service_insert = "INSERT INTO receipt_service_type (receipt_id, service_type_id) 
+                                         VALUES ('$receipt_id', '$service_id')";
                             if (!mysqli_query($conn, $service_insert)) {
                                 throw new Exception("Error inserting service association: " . mysqli_error($conn));
                             }
@@ -130,7 +118,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     }
 
                     mysqli_commit($conn);
-                    $message = "Receipt created successfully! Total Amount: $" . number_format($total_amount, 2);
+                    $message = "Receipt created successfully! Total Amount: " . number_format($total_amount, 0) . " LAK";
 
                     // Clear form variables
                     $receipt_id = $patient_id = $staff_id = $receipt_date = $remark = '';
@@ -184,17 +172,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     mysqli_query($conn, $delete_services);
 
                     // Insert new service associations
-                    foreach ($selected_services as $service_data) {
-                        $service_id = $service_data['service_id'];
-                        $quantity = $service_data['quantity'];
-
+                    foreach ($selected_services as $service_id) {
                         // Verify service exists before inserting
                         $verify_service = "SELECT service_type_id FROM service_type WHERE service_type_id = '$service_id'";
                         $verify_result = mysqli_query($conn, $verify_service);
 
                         if (mysqli_num_rows($verify_result) > 0) {
-                            $service_insert = "INSERT INTO receipt_service_type (receipt_id, service_type_id, quantity) 
-                                             VALUES ('$receipt_id', '$service_id', '$quantity')";
+                            $service_insert = "INSERT INTO receipt_service_type (receipt_id, service_type_id) 
+                         VALUES ('$receipt_id', '$service_id')";
                             if (!mysqli_query($conn, $service_insert)) {
                                 throw new Exception("Error updating service association: " . mysqli_error($conn));
                             }
@@ -202,7 +187,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     }
 
                     mysqli_commit($conn);
-                    $message = "Receipt updated successfully! Total Amount: $" . number_format($total_amount, 2);
+                    $message = "Receipt updated successfully! Total Amount: " . number_format($total_amount, 0) . " LAK";
 
                     // Clear form variables
                     $receipt_id = $patient_id = $staff_id = $receipt_date = $remark = '';
@@ -376,6 +361,8 @@ $services_result = mysqli_query($conn, $services_query);
 <body>
     <div class="container">
         <aside class="sidebar">
+            <!-- Sidebar content remains the same as in the original HTML -->
+            <!-- ... (previous sidebar code) ... -->
             <div class="logo">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -395,7 +382,7 @@ $services_result = mysqli_query($conn, $services_query);
                                 <circle cx="12" cy="10" r="4" />
                                 <circle cx="12" cy="12" r="10" />
                             </svg>
-                            <p><?php echo htmlspecialchars($_SESSION['staff_name']); ?></p>
+                            <p><?php echo htmlspecialchars($_SESSION['admin_user_name']); ?></p>
                         </div>
                     </a>
                 </li>
@@ -416,6 +403,19 @@ $services_result = mysqli_query($conn, $services_query);
                             <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                         </svg>
                         Patients</a></li>
+
+                <li><a href="reception_management.php">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-notebook-text-icon lucide-notebook-text">
+                            <path d="M2 6h4" />
+                            <path d="M2 10h4" />
+                            <path d="M2 14h4" />
+                            <path d="M2 18h4" />
+                            <rect width="16" height="20" x="4" y="2" rx="2" />
+                            <path d="M9.5 8h5" />
+                            <path d="M9.5 12H16" />
+                            <path d="M9.5 16H14" />
+                        </svg>
+                        Reception</a></li>
 
                 <li><a href="staff_management.php">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -477,13 +477,24 @@ $services_result = mysqli_query($conn, $services_query);
                         </svg>
                         Receipts</a></li>
 
-                <li><a href="#">
+                <li class="has-submenu">
+                    <a href="#" onclick="toggleSubmenu(this)">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="18" y1="20" x2="18" y2="10"></line>
                             <line x1="12" y1="20" x2="12" y2="4"></line>
                             <line x1="6" y1="20" x2="6" y2="14"></line>
                         </svg>
-                        Reports</a></li>
+                        Reports
+                        <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </a>
+                    <ul class="submenu">
+                        <li><a href="report/patient_report.php">Patient Report</a></li>
+                        <li><a href="report/staff_report.php">Staff Report</a></li>
+                        <li><a href="report/income_report.php">Income Report</a></li>
+                    </ul>
+                </li>
 
                 <li><a href="logout.php">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-log-out-icon lucide-log-out">
@@ -552,7 +563,7 @@ $services_result = mysqli_query($conn, $services_query);
                         <textarea id="remark" name="remark" rows="2" placeholder="Enter any additional notes..."></textarea>
                     </div>
                     <div class="form-group services-group">
-                        <label>Services & Quantities</label>
+                        <label>Services</label>
                         <div class="services-container">
                             <?php
                             mysqli_data_seek($services_result, 0);
@@ -562,25 +573,19 @@ $services_result = mysqli_query($conn, $services_query);
                                         id="service_<?php echo $service['service_type_id']; ?>"
                                         name="services[]"
                                         value="<?php echo $service['service_type_id']; ?>"
+                                        data-price="<?php echo $service['service_fee']; ?>"
                                         onchange="updateTotalAmount()">
                                     <label for="service_<?php echo $service['service_type_id']; ?>">
                                         <?php echo htmlspecialchars($service['service_name']); ?>
-                                        <span class="service-price">($<?php echo number_format($service['service_fee'], 2); ?>)</span>
+                                        <span class="service-price">(<?php echo number_format($service['service_fee']); ?> LAK)</span>
                                     </label>
-                                    <input type="number"
-                                        class="quantity-input"
-                                        name="quantity_<?php echo $service['service_type_id']; ?>"
-                                        min="1"
-                                        value="1"
-                                        onchange="updateTotalAmount()"
-                                        data-price="<?php echo $service['service_fee']; ?>">
                                 </div>
                             <?php endwhile; ?>
                         </div>
                     </div>
                     <div class="form-group">
                         <label>Total Amount</label>
-                        <div class="total-amount-display" id="totalAmountDisplay">$0.00</div>
+                        <div class="total-amount-display" id="totalAmountDisplay">0 LAK</div>
                     </div>
                     <div class="form-actions">
                         <button type="submit" class="save-button" name="save_button">Save</button>
@@ -624,14 +629,14 @@ $services_result = mysqli_query($conn, $services_query);
                         <?php foreach ($search_results as $receipt): ?>
                             <?php
                             // Get associated services for this receipt
-                            $service_query = "SELECT st.service_name, rst.quantity, st.service_fee 
-                                            FROM receipt_service_type rst 
-                                            JOIN service_type st ON rst.service_type_id = st.service_type_id 
-                                            WHERE rst.receipt_id = '" . $receipt['receipt_id'] . "'";
+                            $service_query = "SELECT st.service_name, st.service_fee 
+                 FROM receipt_service_type rst 
+                 JOIN service_type st ON rst.service_type_id = st.service_type_id 
+                 WHERE rst.receipt_id = '" . $receipt['receipt_id'] . "'";
                             $service_result = mysqli_query($conn, $service_query);
                             $services = [];
                             while ($service_row = mysqli_fetch_assoc($service_result)) {
-                                $services[] = $service_row['service_name'] . ' (x' . $service_row['quantity'] . ')';
+                                $services[] = $service_row['service_name'];
                             }
                             ?>
                             <tr>
@@ -639,7 +644,7 @@ $services_result = mysqli_query($conn, $services_query);
                                 <td><?php echo htmlspecialchars($receipt['first_name'] . ' ' . $receipt['last_name']); ?></td>
                                 <td><?php echo htmlspecialchars($receipt['staff_first_name'] . ' ' . $receipt['staff_last_name']); ?></td>
                                 <td><?php echo htmlspecialchars($receipt['date']); ?></td>
-                                <td><strong>$<?php echo number_format($receipt['total_amount'], 2); ?></strong></td>
+                                <td><strong><?php echo number_format($receipt['total_amount'], 0); ?> LAK</strong></td>
                                 <td><?php echo htmlspecialchars(implode(', ', $services)); ?></td>
                                 <td><?php echo htmlspecialchars(substr($receipt['remark'], 0, 30)) . (strlen($receipt['remark']) > 30 ? '...' : ''); ?></td>
                                 <td>
@@ -660,19 +665,17 @@ $services_result = mysqli_query($conn, $services_query);
     <script>
         function updateTotalAmount() {
             let total = 0;
-            const serviceCheckboxes = document.querySelectorAll('input[name="services[]"]');
+            const serviceCheckboxes = document.querySelectorAll('input[name="services[]"]:checked');
 
             serviceCheckboxes.forEach(checkbox => {
-                if (checkbox.checked) {
-                    const serviceId = checkbox.value;
-                    const quantityInput = document.querySelector(`input[name="quantity_${serviceId}"]`);
-                    const price = parseFloat(quantityInput.getAttribute('data-price'));
-                    const quantity = parseInt(quantityInput.value) || 1;
-                    total += (price * quantity);
-                }
+                total += parseFloat(checkbox.dataset.price);
             });
 
-            document.getElementById('totalAmountDisplay').textContent = '$' + total.toFixed(2);
+            // Format the number with thousand separators (remove decimal places)
+            document.getElementById('totalAmountDisplay').textContent =
+                total.toLocaleString('en-US', {
+                    maximumFractionDigits: 0
+                }) + ' LAK';
         }
 
         function fillForm(receiptId, patientId, staffId, date, remark) {
@@ -687,27 +690,30 @@ $services_result = mysqli_query($conn, $services_query);
         }
 
         function loadReceiptServices(receiptId) {
-            // Clear all checkboxes and reset quantities first
+            // Clear all checkboxes first
             document.querySelectorAll('input[name="services[]"]').forEach(checkbox => {
                 checkbox.checked = false;
-            });
-            document.querySelectorAll('.quantity-input').forEach(input => {
-                input.value = 1;
             });
 
             // Fetch and check associated services via AJAX
             fetch('get_receipt_services.php?receipt_id=' + encodeURIComponent(receiptId))
                 .then(response => response.json())
                 .then(services => {
+                    let total = 0;
+
                     services.forEach(service => {
                         const checkbox = document.getElementById('service_' + service.service_type_id);
-                        const quantityInput = document.querySelector(`input[name="quantity_${service.service_type_id}"]`);
-                        if (checkbox && quantityInput) {
+                        if (checkbox) {
                             checkbox.checked = true;
-                            quantityInput.value = service.quantity;
+                            total += parseFloat(checkbox.dataset.price);
                         }
                     });
-                    updateTotalAmount();
+
+                    // Update total with formatted number
+                    document.getElementById('totalAmountDisplay').textContent =
+                        total.toLocaleString('en-US', {
+                            maximumFractionDigits: 0
+                        }) + ' LAK';
                 })
                 .catch(error => {
                     console.error('Error loading receipt services:', error);
@@ -721,12 +727,9 @@ $services_result = mysqli_query($conn, $services_query);
             document.getElementById('receiptDate').value = '';
             document.getElementById('remark').value = '';
 
-            // Clear all service checkboxes and reset quantities
+            // Clear all service checkboxes
             document.querySelectorAll('input[name="services[]"]').forEach(checkbox => {
                 checkbox.checked = false;
-            });
-            document.querySelectorAll('.quantity-input').forEach(input => {
-                input.value = 1;
             });
 
             updateTotalAmount();
@@ -787,6 +790,12 @@ $services_result = mysqli_query($conn, $services_query);
         // Prevent form resubmission on page refresh
         if (window.history.replaceState) {
             window.history.replaceState(null, null, window.location.href);
+        }
+
+        function toggleSubmenu(element) {
+            event.preventDefault();
+            const parent = element.parentElement;
+            parent.classList.toggle('active');
         }
     </script>
 </body>

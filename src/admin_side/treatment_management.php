@@ -41,14 +41,21 @@ $message = '';
 // Check if form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Sanitize and validate input
-    $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id']);
-    $date = mysqli_real_escape_string($conn, $_POST['date']);
-    $staff_id = mysqli_real_escape_string($conn, $_POST['staff_id']);
-    $detail = mysqli_real_escape_string($conn, $_POST['detail']);
-    $selected_diseases = isset($_POST['diseases']) ? $_POST['diseases'] : [];
+    // $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id']);
+    // $date = mysqli_real_escape_string($conn, $_POST['date']);
+    // $staff_id = mysqli_real_escape_string($conn, $_POST['staff_id']);
+    // $detail = mysqli_real_escape_string($conn, $_POST['detail']);
+    // $selected_diseases = isset($_POST['diseases']) ? $_POST['diseases'] : [];
 
     // Action based on button click
     if (isset($_POST['save_button'])) {
+        // Sanitize and validate input for save operation
+        $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id'] ?? '');
+        $date = mysqli_real_escape_string($conn, $_POST['date'] ?? '');
+        $staff_id = mysqli_real_escape_string($conn, $_POST['staff_id'] ?? '');
+        $detail = mysqli_real_escape_string($conn, $_POST['detail'] ?? '');
+        $selected_diseases = isset($_POST['diseases']) ? $_POST['diseases'] : [];
+
         // Validate required fields
         if (empty($patient_id)) {
             $errors = "Please select a patient.";
@@ -107,7 +114,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Update functionality
     if (isset($_POST['update_button']) && !empty($_POST['treatment_id'])) {
+        // Sanitize and validate input for update operation
         $treatment_id = mysqli_real_escape_string($conn, $_POST['treatment_id']);
+        $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id'] ?? '');
+        $date = mysqli_real_escape_string($conn, $_POST['date'] ?? '');
+        $staff_id = mysqli_real_escape_string($conn, $_POST['staff_id'] ?? '');
+        $detail = mysqli_real_escape_string($conn, $_POST['detail'] ?? '');
+        $selected_diseases = isset($_POST['diseases']) ? $_POST['diseases'] : [];
 
         // Validate required fields
         if (empty($patient_id)) {
@@ -172,6 +185,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Delete functionality
     if (isset($_POST['delete_button']) && !empty($_POST['treatment_id'])) {
+        // Only need treatment_id for delete
         $treatment_id = mysqli_real_escape_string($conn, $_POST['treatment_id']);
 
         // Start transaction
@@ -243,12 +257,22 @@ if (!$is_search && empty($search_results)) {
 }
 
 // Fetch patients for dropdown
-$patients_query = "SELECT patient_id, first_name, last_name FROM patient ORDER BY first_name";
+$patients_query = "SELECT patient_id, first_name, last_name FROM patient";
 $patients_result = mysqli_query($conn, $patients_query);
+$patients = [];
+while ($row = mysqli_fetch_assoc($patients_result)) {
+    $patients[$row['patient_id']] = $row['patient_id'] . ' - ' . $row['first_name'] . ' ' . $row['last_name'];
+}
 
-// Fetch staff for dropdown
-$staff_query = "SELECT staff_id, first_name, last_name FROM staff ORDER BY first_name";
+// Fetch staff for dropdown (only doctors and nurses)
+$staff_query = "SELECT staff_id, first_name, last_name, position FROM staff 
+                WHERE position IN ('Doctor', 'Nurse') 
+                ORDER BY position, first_name, last_name";
 $staff_result = mysqli_query($conn, $staff_query);
+$staff = [];
+while ($row = mysqli_fetch_assoc($staff_result)) {
+    $staff[$row['staff_id']] = $row['staff_id'] . ' - ' . $row['first_name'] . ' ' . $row['last_name'] . ' (' . $row['position'] . ')';
+}
 
 // Fetch diseases for checkboxes
 $diseases_query = "SELECT disease_id, disease_name FROM disease ORDER BY disease_name";
@@ -293,6 +317,156 @@ $diseases_result = mysqli_query($conn, $diseases_query);
             font-size: 14px;
             cursor: pointer;
         }
+
+        .readonly-field {
+            background-color: #f5f5f5;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        .custom-dropdown {
+            position: relative;
+            width: 100%;
+        }
+
+        .dropdown-input {
+            width: calc(100% - 24px);
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 14px;
+            background-color: white;
+            cursor: pointer;
+        }
+
+        .dropdown-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 3px 3px;
+            background: white;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .dropdown-options.show {
+            display: block;
+        }
+
+        .dropdown-option {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            background-color: white;
+        }
+
+        .dropdown-option:hover {
+            background-color: #3f51b5 !important;
+            color: white !important;
+        }
+
+        .hidden-select {
+            display: none;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 60%;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-actions button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .modal-actions .update-button {
+            background-color: #1976d2;
+            color: white;
+        }
+
+        .modal-actions .cancel-button {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .delete-link {
+            color: #d32f2f;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .delete-link:hover {
+            text-decoration: underline;
+        }
+
+        .readonly-field {
+            background-color: #f5f5f5;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        .modal .diseases-group {
+            grid-column: span 2;
+        }
+
+        .modal .diseases-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .modal .disease-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .modal .disease-checkbox input[type="checkbox"] {
+            margin: 0;
+        }
+
+        .modal .disease-checkbox label {
+            margin: 0;
+            font-size: 14px;
+            cursor: pointer;
+        }
     </style>
 </head>
 
@@ -320,7 +494,7 @@ $diseases_result = mysqli_query($conn, $diseases_query);
                                 <circle cx="12" cy="10" r="4" />
                                 <circle cx="12" cy="12" r="10" />
                             </svg>
-                            <p><?php echo htmlspecialchars($_SESSION['staff_name']); ?></p>
+                            <p><?php echo htmlspecialchars($_SESSION['admin_user_name']); ?></p>
                         </div>
                     </a>
                 </li>
@@ -341,6 +515,19 @@ $diseases_result = mysqli_query($conn, $diseases_query);
                             <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                         </svg>
                         Patients</a></li>
+
+                <li><a href="reception_management.php">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-notebook-text-icon lucide-notebook-text">
+                            <path d="M2 6h4" />
+                            <path d="M2 10h4" />
+                            <path d="M2 14h4" />
+                            <path d="M2 18h4" />
+                            <rect width="16" height="20" x="4" y="2" rx="2" />
+                            <path d="M9.5 8h5" />
+                            <path d="M9.5 12H16" />
+                            <path d="M9.5 16H14" />
+                        </svg>
+                        Reception</a></li>
 
                 <li><a href="staff_management.php">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -402,13 +589,24 @@ $diseases_result = mysqli_query($conn, $diseases_query);
                         </svg>
                         Receipts</a></li>
 
-                <li><a href="#">
+                <li class="has-submenu">
+                    <a href="#" onclick="toggleSubmenu(this)">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="18" y1="20" x2="18" y2="10"></line>
                             <line x1="12" y1="20" x2="12" y2="4"></line>
                             <line x1="6" y1="20" x2="6" y2="14"></line>
                         </svg>
-                        Reports</a></li>
+                        Reports
+                        <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </a>
+                    <ul class="submenu">
+                        <li><a href="report/patient_report.php">Patient Report</a></li>
+                        <li><a href="report/staff_report.php">Staff Report</a></li>
+                        <li><a href="report/income_report.php">Income Report</a></li>
+                    </ul>
+                </li>
 
                 <li><a href="logout.php">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-log-out-icon lucide-log-out">
@@ -442,34 +640,42 @@ $diseases_result = mysqli_query($conn, $diseases_query);
                         <input type="text" id="treatmentID" name="treatment_id" readonly>
                     </div>
                     <div class="form-group">
-                        <label for="patientSelect">Patient</label>
-                        <select id="patientSelect" name="patient_id" required>
-                            <option value="">Select Patient</option>
-                            <?php
-                            mysqli_data_seek($patients_result, 0);
-                            while ($patient = mysqli_fetch_assoc($patients_result)): ?>
-                                <option value="<?php echo $patient['patient_id']; ?>">
-                                    <?php echo $patient['patient_id'] . ' - ' . $patient['first_name'] . ' ' . $patient['last_name']; ?>
-                                </option>
-                            <?php endwhile; ?>
-                        </select>
+                        <label for="patient_id">Patient</label>
+                        <div class="custom-dropdown">
+                            <input type="text" id="patient_search" class="dropdown-input" placeholder="Type a name..." autocomplete="off">
+                            <select id="patient_id" name="patient_id" class="hidden-select" required>
+                                <option value="">Select Patient</option>
+                                <?php foreach ($patients as $id => $name): ?>
+                                    <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <div id="patient_options" class="dropdown-options">
+                                <?php foreach ($patients as $id => $name): ?>
+                                    <div class="dropdown-option" data-value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="treatmentDate">Treatment Date</label>
                         <input type="date" id="treatmentDate" name="date" required>
                     </div>
                     <div class="form-group">
-                        <label for="staffSelect">Staff</label>
-                        <select id="staffSelect" name="staff_id" required>
-                            <option value="">Select Staff</option>
-                            <?php
-                            mysqli_data_seek($staff_result, 0);
-                            while ($staff = mysqli_fetch_assoc($staff_result)): ?>
-                                <option value="<?php echo $staff['staff_id']; ?>">
-                                    <?php echo $staff['staff_id'] . ' - ' . $staff['first_name'] . ' ' . $staff['last_name']; ?>
-                                </option>
-                            <?php endwhile; ?>
-                        </select>
+                        <label for="staff_id">Staff</label>
+                        <div class="custom-dropdown">
+                            <input type="text" id="staff_search" class="dropdown-input" placeholder="Type a name..." autocomplete="off">
+                            <select id="staff_id" name="staff_id" class="hidden-select" required>
+                                <option value="">Select Staff</option>
+                                <?php foreach ($staff as $id => $name): ?>
+                                    <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <div id="staff_options" class="dropdown-options">
+                                <?php foreach ($staff as $id => $name): ?>
+                                    <div class="dropdown-option" data-value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="detail">Treatment Details</label>
@@ -528,6 +734,7 @@ $diseases_result = mysqli_query($conn, $diseases_query);
                             <th>DETAILS</th>
                             <th>DISEASES</th>
                             <th>ACTIONS</th>
+                            <th>DELETE</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -551,11 +758,16 @@ $diseases_result = mysqli_query($conn, $diseases_query);
                                 <td><?php echo htmlspecialchars(substr($treatment['detail'], 0, 50)) . (strlen($treatment['detail']) > 50 ? '...' : ''); ?></td>
                                 <td><?php echo htmlspecialchars(implode(', ', $diseases)); ?></td>
                                 <td>
-                                    <a href="#" onclick="fillForm('<?php echo htmlspecialchars($treatment['treatment_id']); ?>', 
-                                        '<?php echo htmlspecialchars($treatment['patient_id']); ?>', 
-                                        '<?php echo htmlspecialchars($treatment['date']); ?>', 
-                                        '<?php echo htmlspecialchars($treatment['staff_id']); ?>', 
-                                        '<?php echo htmlspecialchars($treatment['detail']); ?>')">Edit</a>
+                                    <a href="#" onclick="showEditModal(
+        '<?php echo htmlspecialchars($treatment['treatment_id']); ?>',
+        '<?php echo htmlspecialchars($treatment['patient_id']); ?>',
+        '<?php echo htmlspecialchars($treatment['date']); ?>',
+        '<?php echo htmlspecialchars($treatment['staff_id']); ?>',
+        '<?php echo htmlspecialchars($treatment['detail']); ?>'
+    )">Edit</a>
+                                </td>
+                                <td>
+                                    <a href="#" class="delete-link" onclick="confirmDelete('<?php echo htmlspecialchars($treatment['treatment_id']); ?>')">Delete</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -563,6 +775,86 @@ $diseases_result = mysqli_query($conn, $diseases_query);
             </table>
         <?php endif; ?>
         </main>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h2>Edit Treatment</h2>
+            <form id="editForm" method="POST" action="treatment_management.php">
+                <input type="hidden" id="modal_treatment_id" name="treatment_id">
+                <input type="hidden" id="modal_hidden_patient_id" name="patient_id">
+                <div class="patient-form">
+                    <div class="form-group">
+                        <label for="display_treatment_id">Treatment ID</label>
+                        <input type="text" id="display_treatment_id" name="display_treatment_id" readonly class="readonly-field">
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_patient_id">Patient</label>
+                        <select id="modal_patient_id" name="patient_id" disabled class="readonly-field">
+                            <option value="">Select Patient</option>
+                            <?php foreach ($patients as $id => $name): ?>
+                                <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_date">Date</label>
+                        <input type="date" id="modal_date" name="date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_staff_id">Staff</label>
+                        <select id="modal_staff_id" name="staff_id" required>
+                            <option value="">Select Staff</option>
+                            <?php foreach ($staff as $id => $name): ?>
+                                <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_detail">Details</label>
+                        <textarea id="modal_detail" name="detail" rows="3"></textarea>
+                    </div>
+                    <div class="form-group diseases-group">
+                        <label>Associated Diseases</label>
+                        <div class="diseases-container">
+                            <?php
+                            mysqli_data_seek($diseases_result, 0);
+                            while ($disease = mysqli_fetch_assoc($diseases_result)): ?>
+                                <div class="disease-checkbox">
+                                    <input type="checkbox"
+                                        id="modal_disease_<?php echo $disease['disease_id']; ?>"
+                                        name="diseases[]"
+                                        value="<?php echo $disease['disease_id']; ?>">
+                                    <label for="modal_disease_<?php echo $disease['disease_id']; ?>">
+                                        <?php echo htmlspecialchars($disease['disease_name']); ?>
+                                    </label>
+                                </div>
+                            <?php endwhile; ?>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="cancel-button" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="update-button" name="update_button">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content" style="width: 40%;">
+            <h2>Confirm Delete</h2>
+            <p>Are you sure you want to delete this treatment?</p>
+            <form id="deleteForm" method="POST" action="">
+                <input type="hidden" id="delete_treatment_id" name="treatment_id">
+                <div class="modal-actions">
+                    <button type="button" class="cancel-button" onclick="closeDeleteModal()">Cancel</button>
+                    <button type="submit" class="delete-button" name="delete_button">Delete</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script>
@@ -578,7 +870,7 @@ $diseases_result = mysqli_query($conn, $diseases_query);
         }
 
         function loadTreatmentDiseases(treatmentId) {
-            // Clear all checkboxes first
+            // Clear all checkboxes first (both in form and modal)
             document.querySelectorAll('input[name="diseases[]"]').forEach(checkbox => {
                 checkbox.checked = false;
             });
@@ -588,9 +880,15 @@ $diseases_result = mysqli_query($conn, $diseases_query);
                 .then(response => response.json())
                 .then(diseases => {
                     diseases.forEach(diseaseId => {
-                        const checkbox = document.getElementById('disease_' + diseaseId);
-                        if (checkbox) {
-                            checkbox.checked = true;
+                        // Check in main form
+                        const formCheckbox = document.getElementById('disease_' + diseaseId);
+                        if (formCheckbox) {
+                            formCheckbox.checked = true;
+                        }
+                        // Check in modal
+                        const modalCheckbox = document.getElementById('modal_disease_' + diseaseId);
+                        if (modalCheckbox) {
+                            modalCheckbox.checked = true;
                         }
                     });
                 })
@@ -601,9 +899,11 @@ $diseases_result = mysqli_query($conn, $diseases_query);
 
         function clearForm() {
             document.getElementById('treatmentID').value = '';
-            document.getElementById('patientSelect').selectedIndex = 0;
+            document.getElementById('patient_id').selectedIndex = 0;
+            document.getElementById('patient_search').value = '';
             document.getElementById('treatmentDate').value = '';
-            document.getElementById('staffSelect').selectedIndex = 0;
+            document.getElementById('staff_id').selectedIndex = 0;
+            document.getElementById('staff_search').value = '';
             document.getElementById('detail').value = '';
 
             // Clear all disease checkboxes
@@ -611,7 +911,7 @@ $diseases_result = mysqli_query($conn, $diseases_query);
                 checkbox.checked = false;
             });
 
-            document.getElementById('patientSelect').focus();
+            document.getElementById('patient_search').focus();
         }
 
         // Form validation before submission
@@ -658,6 +958,132 @@ $diseases_result = mysqli_query($conn, $diseases_query);
             const maxDate = `${yyyy}-${mm}-${dd}`;
             document.getElementById('treatmentDate').setAttribute('max', maxDate);
         });
+
+        // Custom dropdown functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Patient dropdown
+            const patientSearch = document.getElementById('patient_search');
+            const patientOptions = document.getElementById('patient_options');
+            const hiddenPatientSelect = document.getElementById('patient_id');
+            const patientDropdownOptions = patientOptions.querySelectorAll('.dropdown-option');
+
+            // Staff dropdown
+            const staffSearch = document.getElementById('staff_search');
+            const staffOptions = document.getElementById('staff_options');
+            const hiddenStaffSelect = document.getElementById('staff_id');
+            const staffDropdownOptions = staffOptions.querySelectorAll('.dropdown-option');
+
+            // Initialize both dropdowns
+            initDropdown(patientSearch, patientOptions, hiddenPatientSelect, patientDropdownOptions);
+            initDropdown(staffSearch, staffOptions, hiddenStaffSelect, staffDropdownOptions);
+
+            function initDropdown(searchInput, optionsContainer, hiddenSelect, dropdownOptions) {
+                searchInput.addEventListener('focus', function() {
+                    dropdownOptions.forEach(option => {
+                        option.style.display = 'block';
+                    });
+                    optionsContainer.classList.add('show');
+                });
+
+                searchInput.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase();
+                    let hasVisibleOptions = false;
+
+                    dropdownOptions.forEach(option => {
+                        const optionText = option.textContent.toLowerCase();
+                        if (optionText.includes(searchTerm)) {
+                            option.style.display = 'block';
+                            hasVisibleOptions = true;
+                        } else {
+                            option.style.display = 'none';
+                        }
+                    });
+
+                    if (hasVisibleOptions || searchTerm.length === 0) {
+                        optionsContainer.classList.add('show');
+                    } else {
+                        optionsContainer.classList.remove('show');
+                    }
+                });
+
+                dropdownOptions.forEach(option => {
+                    option.addEventListener('click', function() {
+                        const value = this.getAttribute('data-value');
+                        const text = this.textContent;
+
+                        searchInput.value = text;
+                        hiddenSelect.value = value;
+                        optionsContainer.classList.remove('show');
+
+                        dropdownOptions.forEach(opt => {
+                            opt.classList.remove('selected');
+                        });
+                        this.classList.add('selected');
+                    });
+                });
+
+                document.addEventListener('click', function(e) {
+                    if (!e.target.closest('.custom-dropdown')) {
+                        optionsContainer.classList.remove('show');
+                    }
+                });
+
+                if (hiddenSelect.value) {
+                    const selectedOption = hiddenSelect.querySelector('option:checked');
+                    if (selectedOption) {
+                        searchInput.value = selectedOption.textContent;
+                        const selectedDiv = optionsContainer.querySelector(`.dropdown-option[data-value="${selectedOption.value}"]`);
+                        if (selectedDiv) {
+                            selectedDiv.classList.add('selected');
+                        }
+                    }
+                }
+            }
+        });
+
+        function showEditModal(treatmentId, patientId, date, staffId, detail) {
+            document.getElementById('modal_treatment_id').value = treatmentId;
+            document.getElementById('display_treatment_id').value = treatmentId;
+            document.getElementById('modal_hidden_patient_id').value = patientId;
+            document.getElementById('modal_patient_id').value = patientId;
+            document.getElementById('modal_date').value = date;
+            document.getElementById('modal_staff_id').value = staffId;
+            document.getElementById('modal_detail').value = detail || '';
+
+            // Load associated diseases
+            loadTreatmentDiseases(treatmentId);
+
+            document.getElementById('editModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        function confirmDelete(treatmentId) {
+            document.getElementById('delete_treatment_id').value = treatmentId;
+            document.getElementById('deleteModal').style.display = 'block';
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').style.display = 'none';
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('editModal')) {
+                closeModal();
+            }
+            if (event.target == document.getElementById('deleteModal')) {
+                closeDeleteModal();
+            }
+        }
+
+        function toggleSubmenu(element) {
+            event.preventDefault();
+            const parent = element.parentElement;
+            parent.classList.toggle('active');
+        }
     </script>
 </body>
 

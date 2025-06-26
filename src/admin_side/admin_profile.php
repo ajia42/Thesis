@@ -19,23 +19,15 @@ $admin = mysqli_fetch_assoc($result);
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Handle form submission
-    $first_name = mysqli_real_escape_string($conn, $_POST['first_name']);
-    $last_name = mysqli_real_escape_string($conn, $_POST['last_name']);
+    $user_name = mysqli_real_escape_string($conn, $_POST['user_name']);
     $email = mysqli_real_escape_string($conn, $_POST['email']);
-    $phone = mysqli_real_escape_string($conn, $_POST['phone']);
-    $dob = mysqli_real_escape_string($conn, $_POST['dob']);
-    $address = mysqli_real_escape_string($conn, $_POST['address']);
     $current_password = $_POST['current_password'];
     $new_password = $_POST['new_password'];
     $confirm_password = $_POST['confirm_password'];
 
     // Basic validations
-    if (empty($first_name)) $errors[] = "First name is required";
-    if (empty($last_name)) $errors[] = "Last name is required";
+    if (empty($user_name)) $errors[] = "Username is required";
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = "Invalid email format";
-    if (!preg_match('/^20\d{8}$/', $phone)) $errors[] = "Phone must start with 20 and be 10 digits";
-    if (empty($dob)) $errors[] = "Date of birth is required";
-    if (strtotime($dob) > time()) $errors[] = "Date of birth cannot be in the future";
 
     // Check if email is changed and already exists
     if ($email != $admin['email']) {
@@ -46,12 +38,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     }
 
-    // Check if phone is changed and already exists
-    if ($phone != $admin['phone']) {
-        $phone_check = "SELECT * FROM admin WHERE phone = '$phone'";
-        $phone_result = mysqli_query($conn, $phone_check);
-        if (mysqli_num_rows($phone_result) > 0) {
-            $errors[] = "Phone number already registered";
+    // Check if username is changed and already exists
+    if ($user_name != $admin['user_name']) {
+        $username_check = "SELECT * FROM admin WHERE user_name = '$user_name'";
+        $username_result = mysqli_query($conn, $username_check);
+        if (mysqli_num_rows($username_result) > 0) {
+            $errors[] = "Username already taken";
         }
     }
 
@@ -69,12 +61,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($errors)) {
         // Prepare update query
         $update_fields = [
-            "first_name = '$first_name'",
-            "last_name = '$last_name'",
-            "email = '$email'",
-            "phone = '$phone'",
-            "dob = '$dob'",
-            "address = " . ($address ? "'$address'" : "NULL")
+            "user_name = '$user_name'",
+            "email = '$email'"
         ];
 
         if ($password_changed) {
@@ -225,44 +213,16 @@ $conn->close();
             <?php endif; ?>
 
             <form method="POST" action="admin_profile.php" id="profileForm">
-                <div class="form-row">
-                    <div class="input-group">
-                        <label for="first_name">First Name</label>
-                        <input type="text" id="first_name" name="first_name" required
-                            value="<?php echo htmlspecialchars($admin['first_name'] ?? ''); ?>" disabled>
-                    </div>
-                    <div class="input-group">
-                        <label for="last_name">Last Name</label>
-                        <input type="text" id="last_name" name="last_name" required
-                            value="<?php echo htmlspecialchars($admin['last_name'] ?? ''); ?>" disabled>
-                    </div>
+                <div class="input-group">
+                    <label for="user_name">Username</label>
+                    <input type="text" id="user_name" name="user_name" required
+                        value="<?php echo htmlspecialchars($admin['user_name'] ?? ''); ?>" disabled>
                 </div>
 
                 <div class="input-group">
                     <label for="email">Email Address</label>
                     <input type="email" id="email" name="email" required
                         value="<?php echo htmlspecialchars($admin['email'] ?? ''); ?>" disabled>
-                </div>
-
-                <div class="input-group">
-                    <label for="phone">Phone Number</label>
-                    <input type="text" id="phone" name="phone" required
-                        placeholder="20xxxxxxxx" maxlength="10"
-                        value="<?php echo htmlspecialchars($admin['phone'] ?? ''); ?>" disabled>
-                    <small class="hint">Must start with 20 and be 10 digits</small>
-                </div>
-
-                <div class="input-group">
-                    <label for="dob">Date of Birth</label>
-                    <input type="date" id="dob" name="dob" required
-                        max="<?php echo date('Y-m-d'); ?>"
-                        value="<?php echo htmlspecialchars($admin['dob'] ?? ''); ?>" disabled>
-                </div>
-
-                <div class="input-group">
-                    <label for="address">Address (Optional)</label>
-                    <input type="text" id="address" name="address"
-                        value="<?php echo htmlspecialchars($admin['address'] ?? ''); ?>" disabled>
                 </div>
 
                 <div class="password-section">
@@ -390,14 +350,6 @@ $conn->close();
                 error.style.display = 'none';
             }
         }
-
-        // Phone number validation
-        document.getElementById('phone').addEventListener('input', function(e) {
-            this.value = this.value.replace(/\D/g, '');
-            if (this.value.length > 10) {
-                this.value = this.value.slice(0, 10);
-            }
-        });
     </script>
 </body>
 

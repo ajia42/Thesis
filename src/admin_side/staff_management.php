@@ -1,15 +1,9 @@
 <?php
-
 session_start();
 if (!isset($_SESSION['admin_id'])) {
     header('Location: signin_admin.php');
     exit();
 }
-
-// Security headers to prevent caching
-header("Cache-Control: no-cache, no-store, must-revalidate");
-header("Pragma: no-cache");
-header("Expires: 0");
 
 // Include database configuration
 include("../db_config.php");
@@ -21,7 +15,7 @@ function generateStaffID($conn)
     $result = mysqli_query($conn, $sql);
     $row = mysqli_fetch_assoc($result);
 
-    // If no staff exists, start with P0001
+    // If no staff exists, start with S0001
     if (empty($row['max_id'])) {
         return 'S0001';
     }
@@ -36,8 +30,6 @@ function generateStaffID($conn)
 }
 
 // Validation checks
-$validate_email = "";
-$validate_phone = "";
 $errors = '';
 $message = '';
 
@@ -47,85 +39,102 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $first_name = mysqli_real_escape_string($conn, $_POST['first_name']);
     $last_name = mysqli_real_escape_string($conn, $_POST['last_name']);
     $gender = mysqli_real_escape_string($conn, $_POST['gender']);
-    $email = mysqli_real_escape_string($conn, $_POST['email']);
     $phone = mysqli_real_escape_string($conn, $_POST['phone']);
     $dob = mysqli_real_escape_string($conn, $_POST['dob']);
     $address = mysqli_real_escape_string($conn, $_POST['address']);
-
+    $position = mysqli_real_escape_string($conn, $_POST['position']);
 
     // Action based on button click
     if (isset($_POST['save_button'])) {
-
-        // Check email uniqueness
-        $email_check = "SELECT * FROM staff WHERE email = '$email'";
-        $email_result = mysqli_query($conn, $email_check);
-        if (mysqli_num_rows($email_result) > 0) {
-            $errors = "Email already exists.";
-        }
-
-        // Check phone uniqueness
+        // Check if phone exists in staff table
         $phone_check = "SELECT * FROM staff WHERE phone = '$phone'";
         $phone_result = mysqli_query($conn, $phone_check);
         if (mysqli_num_rows($phone_result) > 0) {
-            $errors = "Phone number already exists.";
+            $errors = "Phone number already exists in staff records.";
         }
 
         if (empty($errors)) {
-            // Generate new staff ID
-            $staff_id = generateStaffID($conn);
+            // Start transaction
+            mysqli_begin_transaction($conn);
 
-            // Prepare INSERT query
-            $insert_query = "INSERT INTO staff (staff_id, first_name, last_name, gender, email, phone, dob, address) 
-                         VALUES ('$staff_id', '$first_name', '$last_name', '$gender', '$email', '$phone', '$dob', '$address')";
+            try {
+                // Generate new staff ID
+                $staff_id = generateStaffID($conn);
 
-            if (mysqli_query($conn, $insert_query)) {
-                $message = "Staff added successfully!";
-                // echo "<script>alert('Staff added successfully!');</script>";
-                $staff_id = $first_name = $last_name = $gender = $email = $phone = $dob = $address = '';
-            } else {
-                // echo "<script>alert('Error adding staff: " . mysqli_error($conn) . "');</script>";
-                $errors = "Error adding staff: " . mysqli_error($conn);
+                // Prepare INSERT query for staff
+                $insert_staff = "INSERT INTO staff (staff_id, first_name, last_name, gender, phone, dob, address, position) 
+                                 VALUES ('$staff_id', '$first_name', '$last_name', '$gender', '$phone', '$dob', '$address', '$position')";
+
+                if (mysqli_query($conn, $insert_staff)) {
+                    mysqli_commit($conn);
+                    $message = "Staff added successfully!";
+                    $staff_id = $first_name = $last_name = $gender = $phone = $dob = $address = $position = '';
+                } else {
+                    throw new Exception("Error adding staff: " . mysqli_error($conn));
+                }
+            } catch (Exception $e) {
+                mysqli_rollback($conn);
+                $errors = $e->getMessage();
             }
         }
     }
 
-    // Update functionality
+    // Handle update functionality
     if (isset($_POST['update_button']) && !empty($_POST['staff_id'])) {
         $staff_id = mysqli_real_escape_string($conn, $_POST['staff_id']);
+        $first_name = mysqli_real_escape_string($conn, $_POST['first_name']);
+        $last_name = mysqli_real_escape_string($conn, $_POST['last_name']);
+        $gender = mysqli_real_escape_string($conn, $_POST['gender']);
+        $new_phone = mysqli_real_escape_string($conn, $_POST['phone']);
+        $original_phone = mysqli_real_escape_string($conn, $_POST['original_phone']);
+        $dob = mysqli_real_escape_string($conn, $_POST['dob']);
+        $address = mysqli_real_escape_string($conn, $_POST['address']);
+        $position = mysqli_real_escape_string($conn, $_POST['position']);
 
-        // Check if email exists but exclude the current staff
-        $email_check = "SELECT * FROM staff WHERE email = '$email' AND staff_id != '$staff_id'";
-        $email_result = mysqli_query($conn, $email_check);
-        if (mysqli_num_rows($email_result) > 0) {
-            $errors = "Email already exists.";
-        }
+        // Validate phone number
+        if (!preg_match('/^20\d{8}$/', $new_phone)) {
+            $errors = "Phone must start with 20 and be 10 digits (e.g., 2012345678)";
+        } else {
+            // Start transaction
+            mysqli_begin_transaction($conn);
 
-        // Check if phone exists but exclude the current staff
-        $phone_check = "SELECT * FROM staff WHERE phone = '$phone' AND staff_id != '$staff_id'";
-        $phone_result = mysqli_query($conn, $phone_check);
-        if (mysqli_num_rows($phone_result) > 0) {
-            $errors = "Phone number already exists.";
-        }
+            try {
+                // Check if phone number is being changed
+                if ($new_phone != $original_phone) {
+                    // Check if new phone exists in staff table (excluding current record)
+                    $staff_check = "SELECT * FROM staff WHERE phone = '$new_phone' AND phone != '$original_phone'";
+                    $staff_result = mysqli_query($conn, $staff_check);
 
-        if (empty($errors)) {
-            // Prepare UPDATE query
-            $update_query = "UPDATE staff 
-        SET first_name = '$first_name', 
-            last_name = '$last_name', 
-            gender = '$gender', 
-            email = '$email', 
-            phone = '$phone', 
-            dob = '$dob', 
-            address = '$address' 
-        WHERE staff_id = '$staff_id'";
+                    if (mysqli_num_rows($staff_result) > 0) {
+                        throw new Exception("Phone number already registered in staff records");
+                    }
+                }
 
-            if (mysqli_query($conn, $update_query)) {
-                // echo "<script>alert('Staff updated successfully!');</script>";
+                // Update staff table
+                $update_staff = "UPDATE staff SET 
+                              first_name = '$first_name', 
+                              last_name = '$last_name', 
+                              gender = '$gender', 
+                              phone = '$new_phone', 
+                              dob = '$dob', 
+                              address = '$address',
+                              position = '$position'
+                              WHERE staff_id = '$staff_id'";
+
+                if (!mysqli_query($conn, $update_staff)) {
+                    throw new Exception("Error updating staff: " . mysqli_error($conn));
+                }
+
+                // If we got here, all queries were successful - commit transaction
+                mysqli_commit($conn);
                 $message = "Staff updated successfully!";
-                $staff_id = $first_name = $last_name = $gender = $email = $phone = $dob = $address = '';
-            } else {
-                // echo "<script>alert('Error updating staff: " . mysqli_error($conn) . "');</script>";
-                $errors = "Error adding staff: " . mysqli_error($conn);
+
+                // Clear the form
+                $staff_id = $first_name = $last_name = $gender = $new_phone = $dob = $address = $position = '';
+            } catch (Exception $e) {
+                // Something went wrong - rollback transaction
+                mysqli_rollback($conn);
+                $errors = $e->getMessage();
             }
         }
     }
@@ -133,21 +142,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Delete functionality
     if (isset($_POST['delete_button']) && !empty($_POST['staff_id'])) {
         $staff_id = mysqli_real_escape_string($conn, $_POST['staff_id']);
+        $phone = mysqli_real_escape_string($conn, $_POST['phone']);
 
-        // Prepare DELETE query
-        $delete_query = "DELETE FROM staff WHERE staff_id = '$staff_id'";
+        // Start transaction
+        mysqli_begin_transaction($conn);
 
-        if (mysqli_query($conn, $delete_query)) {
-            // echo "<script>alert('Staff deleted successfully!');</script>";
+        try {
+            // Delete the staff
+            $delete_staff = "DELETE FROM staff WHERE staff_id = '$staff_id'";
+            if (!mysqli_query($conn, $delete_staff)) {
+                throw new Exception("Error deleting staff: " . mysqli_error($conn));
+            }
+
+            mysqli_commit($conn);
             $message = "Staff deleted successfully!";
-        } else {
-            // echo "<script>alert('Error deleting staff: " . mysqli_error($conn) . "');</script>";
-            $errors = "Error adding staff: " . mysqli_error($conn);
+        } catch (Exception $e) {
+            mysqli_rollback($conn);
+            $errors = $e->getMessage();
         }
     }
 }
 
-// Search functionality - REPLACE your current search code with this block
+// Search functionality
 $search_query = "";
 $search_results = [];
 $no_results_message = "";
@@ -159,8 +175,7 @@ if (isset($_GET['search']) && !empty($_GET['search'])) {
     $search_query = "SELECT * FROM staff 
                      WHERE staff_id LIKE '%$search_term%' 
                      OR first_name LIKE '%$search_term%' 
-                     OR last_name LIKE '%$search_term%' 
-                     OR email LIKE '%$search_term%'
+                     OR last_name LIKE '%$search_term%'
                      OR phone LIKE '%$search_term%'";
     $search_result = mysqli_query($conn, $search_query);
 
@@ -176,12 +191,12 @@ if (isset($_GET['search']) && !empty($_GET['search'])) {
     }
 }
 
-// Fetch all staffs only if no search is performed
+// Fetch all staff only if no search is performed
 if (!$is_search && empty($search_results)) {
-    $all_staffs_query = "SELECT * FROM staff";
-    $all_staffs_result = mysqli_query($conn, $all_staffs_query);
+    $all_staff_query = "SELECT * FROM staff";
+    $all_staff_result = mysqli_query($conn, $all_staff_query);
 
-    while ($row = mysqli_fetch_assoc($all_staffs_result)) {
+    while ($row = mysqli_fetch_assoc($all_staff_result)) {
         $search_results[] = $row;
     }
 }
@@ -197,8 +212,6 @@ if (!$is_search && empty($search_results)) {
 </head>
 
 <body>
-
-
     <div class="container">
         <aside class="sidebar">
             <!-- Sidebar content remains the same as in the original HTML -->
@@ -215,14 +228,14 @@ if (!$is_search && empty($search_results)) {
 
                 <!-- NEW STAFF INFO SECTION -->
                 <li>
-                    <a href="#">
+                    <a href="admin_profile.php">
                         <div class="staff-info">
                             <svg xmlns="http://www.w3.org/2000/svg" style="color: #2c3e50;" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-user-round-icon lucide-circle-user-round">
                                 <path d="M18 20a6 6 0 0 0-12 0" />
                                 <circle cx="12" cy="10" r="4" />
                                 <circle cx="12" cy="12" r="10" />
                             </svg>
-                            <p><?php echo htmlspecialchars($_SESSION['staff_name']); ?></p>
+                            <p><?php echo htmlspecialchars($_SESSION['admin_user_name']); ?></p>
                         </div>
                     </a>
                 </li>
@@ -243,6 +256,19 @@ if (!$is_search && empty($search_results)) {
                             <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                         </svg>
                         Patients</a></li>
+
+                <li><a href="reception_management.php">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-notebook-text-icon lucide-notebook-text">
+                            <path d="M2 6h4" />
+                            <path d="M2 10h4" />
+                            <path d="M2 14h4" />
+                            <path d="M2 18h4" />
+                            <rect width="16" height="20" x="4" y="2" rx="2" />
+                            <path d="M9.5 8h5" />
+                            <path d="M9.5 12H16" />
+                            <path d="M9.5 16H14" />
+                        </svg>
+                        Reception</a></li>
 
                 <li class="active"><a href="staff_management.php">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -304,13 +330,24 @@ if (!$is_search && empty($search_results)) {
                         </svg>
                         Receipts</a></li>
 
-                <li><a href="#">
+                <li class="has-submenu">
+                    <a href="#" onclick="toggleSubmenu(this)">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="18" y1="20" x2="18" y2="10"></line>
                             <line x1="12" y1="20" x2="12" y2="4"></line>
                             <line x1="6" y1="20" x2="6" y2="14"></line>
                         </svg>
-                        Reports</a></li>
+                        Reports
+                        <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </a>
+                    <ul class="submenu">
+                        <li><a href="report/patient_report.php">Patient Report</a></li>
+                        <li><a href="report/staff_report.php">Staff Report</a></li>
+                        <li><a href="report/income_report.php">Income Report</a></li>
+                    </ul>
+                </li>
 
                 <li><a href="logout.php">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-log-out-icon lucide-log-out">
@@ -324,7 +361,6 @@ if (!$is_search && empty($search_results)) {
             </ul>
         </aside>
         <main class="main-content">
-
             <div class="header">
                 <h1>Staff Management</h1>
                 <button class="new-staff-button" name="new_staff" onclick="clearForm()">+ New Staff</button>
@@ -339,6 +375,7 @@ if (!$is_search && empty($search_results)) {
 
             <!-- Staff Form -->
             <form method="POST" action="" id="staffForm">
+                <input type="hidden" id="original_phone" name="original_phone">
                 <div class="staff-form">
                     <div class="form-group">
                         <label for="staffID">Staff ID</label>
@@ -360,17 +397,21 @@ if (!$is_search && empty($search_results)) {
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="email">Email</label>
-                        <input type="email" id="email" name="email" required>
+                        <label for="position">Position</label>
+                        <select id="position" name="position" required>
+                            <option value="admin">Admin</option>
+                            <option value="doctor">Doctor</option>
+                            <option value="nurse">Nurse</option>
+                            <option value="manager">Manager</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label for="phone">Phone</label>
-                        <!-- <input type="number" id="phone" name="phone" required> -->
                         <input
                             type="text"
                             id="phone"
                             name="phone"
-                            placeholder="Enter staff phone number"
+                            placeholder="Enter phone number 20xxxxxxxx"
                             maxlength="10"
                             inputmode="numeric"
                             required />
@@ -396,7 +437,7 @@ if (!$is_search && empty($search_results)) {
             <!-- Search Form -->
             <div class="staff-list-header">
                 <form method="GET" action="">
-                    <input type="search" name="search" placeholder="Search staff by name or email..."
+                    <input type="search" name="search" placeholder="Search staff by name or phone..."
                         value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
                     <button type="submit">Search</button>
                 </form>
@@ -417,7 +458,7 @@ if (!$is_search && empty($search_results)) {
                             <th>FIRST NAME</th>
                             <th>LAST NAME</th>
                             <th>GENDER</th>
-                            <th>EMAIL</th>
+                            <th>POSITION</th>
                             <th>PHONE</th>
                             <th>DATE OF BIRTH</th>
                             <th>ADDRESS</th>
@@ -431,7 +472,7 @@ if (!$is_search && empty($search_results)) {
                                 <td><?php echo htmlspecialchars($staff['first_name']); ?></td>
                                 <td><?php echo htmlspecialchars($staff['last_name']); ?></td>
                                 <td><?php echo htmlspecialchars($staff['gender']); ?></td>
-                                <td><?php echo htmlspecialchars($staff['email']); ?></td>
+                                <td><?php echo htmlspecialchars(ucfirst($staff['position'])); ?></td>
                                 <td><?php echo htmlspecialchars($staff['phone']); ?></td>
                                 <td><?php echo htmlspecialchars($staff['dob']); ?></td>
                                 <td><?php echo htmlspecialchars($staff['address']); ?></td>
@@ -440,10 +481,10 @@ if (!$is_search && empty($search_results)) {
                                 '<?php echo htmlspecialchars($staff['first_name']); ?>', 
                                 '<?php echo htmlspecialchars($staff['last_name']); ?>', 
                                 '<?php echo htmlspecialchars($staff['gender']); ?>', 
-                                '<?php echo htmlspecialchars($staff['email']); ?>', 
                                 '<?php echo htmlspecialchars($staff['phone']); ?>', 
                                 '<?php echo htmlspecialchars($staff['dob']); ?>', 
-                                '<?php echo htmlspecialchars($staff['address']); ?>')">Edit</a>
+                                '<?php echo htmlspecialchars($staff['address']); ?>',
+                                '<?php echo htmlspecialchars($staff['position']); ?>')">Edit</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -454,15 +495,16 @@ if (!$is_search && empty($search_results)) {
     </div>
 
     <script>
-        function fillForm(staffId, firstName, lastName, gender, email, phone, dob, address) {
+        function fillForm(staffId, firstName, lastName, gender, phone, dob, address, position) {
             document.getElementById('staffID').value = staffId;
             document.getElementById('firstName').value = firstName;
             document.getElementById('lastName').value = lastName;
             document.getElementById('gender').value = gender;
-            document.getElementById('email').value = email;
             document.getElementById('phone').value = phone;
+            document.getElementById('original_phone').value = phone;
             document.getElementById('dob').value = dob;
             document.getElementById('address').value = address;
+            document.getElementById('position').value = position;
 
             // Disable save button, enable update and delete
             document.getElementById('saveButton').disabled = true;
@@ -476,15 +518,15 @@ if (!$is_search && empty($search_results)) {
         }
 
         function clearForm() {
-            document.getElementById('staffID').value = ''; // Clear Staff ID
-            document.getElementById('firstName').value = ''; // Clear First Name
-            document.getElementById('lastName').value = ''; // Clear Last Name
-            document.getElementById('gender').selectedIndex = 0; // Reset Gender to default
-            document.getElementById('email').value = ''; // Clear Email
-            document.getElementById('phone').value = ''; // Clear Phone
-            document.getElementById('dob').value = ''; // Clear Date of Birth
-            document.getElementById('address').value = ''; // Clear Address
-            // Focus on first name input
+            document.getElementById('staffID').value = '';
+            document.getElementById('firstName').value = '';
+            document.getElementById('lastName').value = '';
+            document.getElementById('gender').selectedIndex = 0;
+            document.getElementById('phone').value = '';
+            document.getElementById('original_phone').value = '';
+            document.getElementById('dob').value = '';
+            document.getElementById('address').value = '';
+            document.getElementById('position').selectedIndex = 0;
             document.getElementById('firstName').focus();
 
             // Enable save button, disable update and delete
@@ -526,8 +568,6 @@ if (!$is_search && empty($search_results)) {
                 alert("Error: No staff selected. Please select a staff to edit first.");
                 return;
             }
-
-            // Additional validation can be added here
         });
 
         // Prevent form resubmission on page refresh
@@ -557,6 +597,9 @@ if (!$is_search && empty($search_results)) {
                 };
             }
 
+            return {
+                valid: true
+            };
         }
 
         // Show error message
@@ -620,7 +663,6 @@ if (!$is_search && empty($search_results)) {
             }
         });
 
-
         // Date of birth validation
         const dobInput = document.getElementById("dob");
         const dobError = document.getElementById("dobError");
@@ -675,7 +717,7 @@ if (!$is_search && empty($search_results)) {
                 };
             }
 
-            // Check age range (assuming staffs should be between 0 and 120 years old)
+            // Check age range (assuming staff should be between 0 and 120 years old)
             const age = calculateAge(dob);
             if (age > 120) {
                 return {
@@ -720,6 +762,12 @@ if (!$is_search && empty($search_results)) {
                 }
             }
         });
+
+        function toggleSubmenu(element) {
+            event.preventDefault();
+            const parent = element.parentElement;
+            parent.classList.toggle('active');
+        }
     </script>
 </body>
 

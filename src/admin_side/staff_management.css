@@ -235,3 +235,36 @@ button:disabled {
 .save-button:disabled {
   background-color: #1976d280 !important;
 }
+
+/* Submenu styles */
+.has-submenu {
+  position: relative;
+}
+
+.submenu {
+  display: none;
+  padding-left: 20px;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.submenu li a {
+  padding: 8px 15px;
+  font-size: 14px;
+}
+
+.submenu li a:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.has-submenu > a .chevron {
+  margin-left: auto;
+  transition: transform 0.3s ease;
+}
+
+.has-submenu.active > a .chevron {
+  transform: rotate(180deg);
+}
+
+.has-submenu.active .submenu {
+  display: block;
+}

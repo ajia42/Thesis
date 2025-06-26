@@ -345,13 +345,24 @@ if (!$is_search && empty($search_results)) {
                         </svg>
                         Receipts</a></li>
 
-                <li><a href="#">
+                <li class="has-submenu">
+                    <a href="#" onclick="toggleSubmenu(this)">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="18" y1="20" x2="18" y2="10"></line>
                             <line x1="12" y1="20" x2="12" y2="4"></line>
                             <line x1="6" y1="20" x2="6" y2="14"></line>
                         </svg>
-                        Reports</a></li>
+                        Reports
+                        <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </a>
+                    <ul class="submenu">
+                        <li><a href="report/patient_report.php">Patient Report</a></li>
+                        <li><a href="report/staff_report.php">Staff Report</a></li>
+                        <li><a href="report/income_report.php">Income Report</a></li>
+                    </ul>
+                </li>
 
                 <li><a href="logout.php">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-log-out-icon lucide-log-out">
@@ -652,6 +663,12 @@ if (!$is_search && empty($search_results)) {
         // Prevent form resubmission on page refresh
         if (window.history.replaceState) {
             window.history.replaceState(null, null, window.location.href);
+        }
+
+        function toggleSubmenu(element) {
+            event.preventDefault();
+            const parent = element.parentElement;
+            parent.classList.toggle('active');
         }
     </script>
 </body>
