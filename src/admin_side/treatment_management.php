@@ -701,8 +701,8 @@ $diseases_result = mysqli_query($conn, $diseases_query);
                     </div>
                     <div class="form-actions">
                         <button type="submit" class="save-button" name="save_button">Save</button>
-                        <button type="submit" class="update-button" name="update_button">Update</button>
-                        <button type="submit" class="delete-button" name="delete_button">Delete</button>
+                        <button type="submit" class="update-button" name="update_button" disabled>Update</button>
+                        <button type="submit" class="delete-button" name="delete_button" disabled>Delete</button>
                     </div>
                 </div>
             </form>

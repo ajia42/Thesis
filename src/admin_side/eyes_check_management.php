@@ -42,15 +42,22 @@ $message = '';
 // Check if form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Sanitize and validate input
-    $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id']);
-    $eyes_type = mysqli_real_escape_string($conn, $_POST['eyes_type']);
-    $left_eye = mysqli_real_escape_string($conn, $_POST['left_eye']);
-    $right_eye = mysqli_real_escape_string($conn, $_POST['right_eye']);
-    $staff_id = mysqli_real_escape_string($conn, $_POST['staff_id']);
-    $date = mysqli_real_escape_string($conn, $_POST['date']);
+    // $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id']);
+    // $eyes_type = mysqli_real_escape_string($conn, $_POST['eyes_type']);
+    // $left_eye = mysqli_real_escape_string($conn, $_POST['left_eye']);
+    // $right_eye = mysqli_real_escape_string($conn, $_POST['right_eye']);
+    // $staff_id = mysqli_real_escape_string($conn, $_POST['staff_id']);
+    // $date = mysqli_real_escape_string($conn, $_POST['date']);
 
     // Action based on button click
     if (isset($_POST['save_button'])) {
+        // Sanitize and validate input for save operation
+        $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id']);
+        $eyes_type = mysqli_real_escape_string($conn, $_POST['eyes_type']);
+        $left_eye = mysqli_real_escape_string($conn, $_POST['left_eye']);
+        $right_eye = mysqli_real_escape_string($conn, $_POST['right_eye']);
+        $staff_id = mysqli_real_escape_string($conn, $_POST['staff_id']);
+        $date = mysqli_real_escape_string($conn, $_POST['date']);
         // Validate patient exists
         $patient_check = "SELECT * FROM patient WHERE patient_id = '$patient_id'";
         $patient_result = mysqli_query($conn, $patient_check);
@@ -85,6 +92,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Update functionality
     if (isset($_POST['update_button']) && !empty($_POST['eyes_check_id'])) {
         $eyes_check_id = mysqli_real_escape_string($conn, $_POST['eyes_check_id']);
+        $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id']);
+        $eyes_type = mysqli_real_escape_string($conn, $_POST['eyes_type']);
+        $left_eye = mysqli_real_escape_string($conn, $_POST['left_eye']);
+        $right_eye = mysqli_real_escape_string($conn, $_POST['right_eye']);
+        $staff_id = mysqli_real_escape_string($conn, $_POST['staff_id']);
+        $date = mysqli_real_escape_string($conn, $_POST['date']);
+
 
         // Validate patient exists
         $patient_check = "SELECT * FROM patient WHERE patient_id = '$patient_id'";
@@ -181,12 +195,22 @@ if (!$is_search && empty($search_results)) {
 }
 
 // Fetch patients for dropdown
-$patients_query = "SELECT patient_id, first_name, last_name FROM patient ORDER BY first_name, last_name";
+$patients_query = "SELECT patient_id, first_name, last_name FROM patient";
 $patients_result = mysqli_query($conn, $patients_query);
+$patients = [];
+while ($row = mysqli_fetch_assoc($patients_result)) {
+    $patients[$row['patient_id']] = $row['patient_id'] . ' - ' . $row['first_name'] . ' ' . $row['last_name'];
+}
 
-// Fetch staff for dropdown
-$staff_query = "SELECT staff_id, first_name FROM staff ORDER BY first_name";
+// Fetch staff for dropdown (only doctors and nurses)
+$staff_query = "SELECT staff_id, first_name, last_name, position FROM staff 
+                WHERE position IN ('Doctor', 'Nurse') 
+                ORDER BY position, first_name, last_name";
 $staff_result = mysqli_query($conn, $staff_query);
+$staff = [];
+while ($row = mysqli_fetch_assoc($staff_result)) {
+    $staff[$row['staff_id']] = $row['staff_id'] . ' - ' . $row['first_name'] . ' ' . $row['last_name'] . ' (' . $row['position'] . ')';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -197,6 +221,121 @@ $staff_result = mysqli_query($conn, $staff_query);
     <title>Eyes Check Management</title>
     <link rel="stylesheet" href="patient_management.css">
 </head>
+
+<style>
+    .custom-dropdown {
+        position: relative;
+        width: 100%;
+    }
+
+    .dropdown-input {
+        width: calc(100% - 24px);
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+        font-size: 14px;
+        background-color: white;
+        cursor: pointer;
+    }
+
+    .dropdown-options {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        border-top: none;
+        border-radius: 0 0 3px 3px;
+        background: white;
+        z-index: 1000;
+        display: none;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .dropdown-options.show {
+        display: block;
+    }
+
+    .dropdown-option {
+        padding: 10px 15px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        background-color: white;
+    }
+
+    .dropdown-option:hover {
+        background-color: #3f51b5 !important;
+        color: white !important;
+    }
+
+    .hidden-select {
+        display: none;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1001;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: 5% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 60%;
+        border-radius: 5px;
+        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .modal-actions button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .modal-actions .update-button {
+        background-color: #1976d2;
+        color: white;
+    }
+
+    .modal-actions .cancel-button {
+        background-color: #f44336;
+        color: white;
+    }
+
+    .delete-link {
+        color: #d32f2f;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .delete-link:hover {
+        text-decoration: underline;
+    }
+
+    .readonly-field {
+        background-color: #f5f5f5;
+        color: #666;
+        cursor: not-allowed;
+    }
+</style>
 
 <body>
     <div class="container">
@@ -369,15 +508,21 @@ $staff_result = mysqli_query($conn, $staff_query);
                         <input type="text" id="eyesCheckID" name="eyes_check_id" readonly>
                     </div>
                     <div class="form-group">
-                        <label for="patientID">Patient</label>
-                        <select id="patientID" name="patient_id" required>
-                            <option value="">Select Patient</option>
-                            <?php while ($patient = mysqli_fetch_assoc($patients_result)): ?>
-                                <option value="<?php echo $patient['patient_id']; ?>">
-                                    <?php echo $patient['patient_id'] . ' - ' . $patient['first_name'] . ' ' . $patient['last_name']; ?>
-                                </option>
-                            <?php endwhile; ?>
-                        </select>
+                        <label for="patient_id">Patient</label>
+                        <div class="custom-dropdown">
+                            <input type="text" id="patient_search" class="dropdown-input" placeholder="Type a name..." autocomplete="off">
+                            <select id="patient_id" name="patient_id" class="hidden-select" required>
+                                <option value="">Select Patient</option>
+                                <?php foreach ($patients as $id => $name): ?>
+                                    <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <div id="patient_options" class="dropdown-options">
+                                <?php foreach ($patients as $id => $name): ?>
+                                    <div class="dropdown-option" data-value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="eyesType">Eyes Type</label>
@@ -396,15 +541,21 @@ $staff_result = mysqli_query($conn, $staff_query);
                         <input type="text" id="rightEye" name="right_eye" placeholder="e.g., -1.75" required>
                     </div>
                     <div class="form-group">
-                        <label for="staffID">Staff</label>
-                        <select id="staffID" name="staff_id" required>
-                            <option value="">Select Staff</option>
-                            <?php while ($staff = mysqli_fetch_assoc($staff_result)): ?>
-                                <option value="<?php echo $staff['staff_id']; ?>">
-                                    <?php echo $staff['staff_id'] . ' - ' . $staff['first_name']; ?>
-                                </option>
-                            <?php endwhile; ?>
-                        </select>
+                        <label for="staff_id">Staff</label>
+                        <div class="custom-dropdown">
+                            <input type="text" id="staff_search" class="dropdown-input" placeholder="Type a name..." autocomplete="off">
+                            <select id="staff_id" name="staff_id" class="hidden-select" required>
+                                <option value="">Select Staff</option>
+                                <?php foreach ($staff as $id => $name): ?>
+                                    <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <div id="staff_options" class="dropdown-options">
+                                <?php foreach ($staff as $id => $name): ?>
+                                    <div class="dropdown-option" data-value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="date">Date</label>
@@ -412,8 +563,8 @@ $staff_result = mysqli_query($conn, $staff_query);
                     </div>
                     <div class="form-actions">
                         <button type="submit" class="save-button" name="save_button">Save</button>
-                        <button type="submit" class="update-button" name="update_button">Update</button>
-                        <button type="submit" class="delete-button" name="delete_button">Delete</button>
+                        <button type="submit" class="update-button" name="update_button" disabled>Update</button>
+                        <button type="submit" class="delete-button" name="delete_button" disabled>Delete</button>
                     </div>
                 </div>
             </form>
@@ -447,6 +598,7 @@ $staff_result = mysqli_query($conn, $staff_query);
                             <th>STAFF</th>
                             <th>DATE</th>
                             <th>ACTIONS</th>
+                            <th>DELETE</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -461,42 +613,220 @@ $staff_result = mysqli_query($conn, $staff_query);
                                 <td><?php echo htmlspecialchars($record['first_name']); ?></td>
                                 <td><?php echo htmlspecialchars($record['date']); ?></td>
                                 <td>
-                                    <a href="#" onclick="fillForm('<?php echo htmlspecialchars($record['eyes_check_id']); ?>', 
-                                '<?php echo htmlspecialchars($record['patient_id']); ?>', 
-                                '<?php echo htmlspecialchars($record['eyes_type']); ?>', 
-                                '<?php echo htmlspecialchars($record['left_eye']); ?>', 
-                                '<?php echo htmlspecialchars($record['right_eye']); ?>', 
-                                '<?php echo htmlspecialchars($record['staff_id']); ?>', 
-                                '<?php echo htmlspecialchars($record['date']); ?>')">Edit</a>
+                                    <a href="#" onclick="showEditModal(
+        '<?php echo htmlspecialchars($record['eyes_check_id']); ?>',
+        '<?php echo htmlspecialchars($record['patient_id']); ?>',
+        '<?php echo htmlspecialchars($record['eyes_type']); ?>',
+        '<?php echo htmlspecialchars($record['left_eye']); ?>',
+        '<?php echo htmlspecialchars($record['right_eye']); ?>',
+        '<?php echo htmlspecialchars($record['staff_id']); ?>',
+        '<?php echo htmlspecialchars($record['date']); ?>'
+    )">Edit</a>
                                 </td>
-                            </tr>
-                        <?php endforeach; ?>
+                                <td>
+                                    <a href="#" class="delete-link" onclick="confirmDelete('<?php echo htmlspecialchars($record['eyes_check_id']); ?>')">Delete</a>
+                                </td>
+                            <?php endforeach; ?>
                     </tbody>
                 <?php endif; ?>
             </table>
         </main>
     </div>
 
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h2>Edit Eyes Check</h2>
+            <form id="editForm" method="POST" action="eyes_check_management.php">
+                <input type="hidden" id="modal_eyes_check_id" name="eyes_check_id">
+                <input type="hidden" id="modal_hidden_patient_id" name="patient_id">
+                <div class="patient-form">
+                    <div class="form-group">
+                        <label for="display_eyes_check_id">Eyes Check ID</label>
+                        <input type="text" id="display_eyes_check_id" name="display_eyes_check_id" readonly class="readonly-field">
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_patient_id">Patient</label>
+                        <select id="modal_patient_id" name="patient_id" disabled class="readonly-field">
+                            <option value="">Select Patient</option>
+                            <?php foreach ($patients as $id => $name): ?>
+                                <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_eyes_type">Eyes Type</label>
+                        <select id="modal_eyes_type" name="eyes_type" required>
+                            <option value="">Select Type</option>
+                            <option value="Short Sighted">Short Sighted (-)</option>
+                            <option value="Long Sighted">Long Sighted (+)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_left_eye">Left Eye Grade</label>
+                        <input type="text" id="modal_left_eye" name="left_eye" placeholder="e.g., -2.25" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_right_eye">Right Eye Grade</label>
+                        <input type="text" id="modal_right_eye" name="right_eye" placeholder="e.g., -1.75" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_staff_id">Staff</label>
+                        <select id="modal_staff_id" name="staff_id" required>
+                            <option value="">Select Staff</option>
+                            <?php foreach ($staff as $id => $name): ?>
+                                <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal_date">Date</label>
+                        <input type="date" id="modal_date" name="date" required>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="cancel-button" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="update-button" name="update_button">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content" style="width: 40%;">
+            <h2>Confirm Delete</h2>
+            <p>Are you sure you want to delete this eyes check record?</p>
+            <form id="deleteForm" method="POST" action="">
+                <input type="hidden" id="delete_eyes_check_id" name="eyes_check_id">
+                <div class="modal-actions">
+                    <button type="button" class="cancel-button" onclick="closeDeleteModal()">Cancel</button>
+                    <button type="submit" class="delete-button" name="delete_button">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
+        // Custom dropdown functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Patient dropdown
+            const patientSearch = document.getElementById('patient_search');
+            const patientOptions = document.getElementById('patient_options');
+            const hiddenPatientSelect = document.getElementById('patient_id');
+            const patientDropdownOptions = patientOptions.querySelectorAll('.dropdown-option');
+
+            // Staff dropdown
+            const staffSearch = document.getElementById('staff_search');
+            const staffOptions = document.getElementById('staff_options');
+            const hiddenStaffSelect = document.getElementById('staff_id');
+            const staffDropdownOptions = staffOptions.querySelectorAll('.dropdown-option');
+
+            // Initialize both dropdowns
+            initDropdown(patientSearch, patientOptions, hiddenPatientSelect, patientDropdownOptions);
+            initDropdown(staffSearch, staffOptions, hiddenStaffSelect, staffDropdownOptions);
+
+            function initDropdown(searchInput, optionsContainer, hiddenSelect, dropdownOptions) {
+                searchInput.addEventListener('focus', function() {
+                    dropdownOptions.forEach(option => {
+                        option.style.display = 'block';
+                    });
+                    optionsContainer.classList.add('show');
+                });
+
+                searchInput.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase();
+                    let hasVisibleOptions = false;
+
+                    dropdownOptions.forEach(option => {
+                        const optionText = option.textContent.toLowerCase();
+                        if (optionText.includes(searchTerm)) {
+                            option.style.display = 'block';
+                            hasVisibleOptions = true;
+                        } else {
+                            option.style.display = 'none';
+                        }
+                    });
+
+                    if (hasVisibleOptions || searchTerm.length === 0) {
+                        optionsContainer.classList.add('show');
+                    } else {
+                        optionsContainer.classList.remove('show');
+                    }
+                });
+
+                dropdownOptions.forEach(option => {
+                    option.addEventListener('click', function() {
+                        const value = this.getAttribute('data-value');
+                        const text = this.textContent;
+
+                        searchInput.value = text;
+                        hiddenSelect.value = value;
+                        optionsContainer.classList.remove('show');
+
+                        dropdownOptions.forEach(opt => {
+                            opt.classList.remove('selected');
+                        });
+                        this.classList.add('selected');
+                    });
+                });
+
+                document.addEventListener('click', function(e) {
+                    if (!e.target.closest('.custom-dropdown')) {
+                        optionsContainer.classList.remove('show');
+                    }
+                });
+
+                if (hiddenSelect.value) {
+                    const selectedOption = hiddenSelect.querySelector('option:checked');
+                    if (selectedOption) {
+                        searchInput.value = selectedOption.textContent;
+                        const selectedDiv = optionsContainer.querySelector(`.dropdown-option[data-value="${selectedOption.value}"]`);
+                        if (selectedDiv) {
+                            selectedDiv.classList.add('selected');
+                        }
+                    }
+                }
+            }
+        });
+
         function fillForm(eyesCheckId, patientId, eyesType, leftEye, rightEye, staffId, date) {
             document.getElementById('eyesCheckID').value = eyesCheckId;
-            document.getElementById('patientID').value = patientId;
+
+            // Set patient dropdown
+            const patientSelect = document.getElementById('patient_id');
+            patientSelect.value = patientId;
+            const selectedPatientOption = patientSelect.querySelector(`option[value="${patientId}"]`);
+            if (selectedPatientOption) {
+                document.getElementById('patient_search').value = selectedPatientOption.textContent;
+            }
+
             document.getElementById('eyesType').value = eyesType;
             document.getElementById('leftEye').value = leftEye;
             document.getElementById('rightEye').value = rightEye;
-            document.getElementById('staffID').value = staffId;
+
+            // Set staff dropdown
+            const staffSelect = document.getElementById('staff_id');
+            staffSelect.value = staffId;
+            const selectedStaffOption = staffSelect.querySelector(`option[value="${staffId}"]`);
+            if (selectedStaffOption) {
+                document.getElementById('staff_search').value = selectedStaffOption.textContent;
+            }
+
             document.getElementById('date').value = date;
         }
 
         function clearForm() {
             document.getElementById('eyesCheckID').value = '';
-            document.getElementById('patientID').selectedIndex = 0;
+            document.getElementById('patient_id').selectedIndex = 0;
+            document.getElementById('patient_search').value = '';
             document.getElementById('eyesType').selectedIndex = 0;
             document.getElementById('leftEye').value = '';
             document.getElementById('rightEye').value = '';
-            document.getElementById('staffID').selectedIndex = 0;
+            document.getElementById('staff_id').selectedIndex = 0;
+            document.getElementById('staff_search').value = '';
             document.getElementById('date').value = '';
-            document.getElementById('patientID').focus();
+            document.getElementById('patient_search').focus();
         }
 
         // Set today's date as default
@@ -557,6 +887,44 @@ $staff_result = mysqli_query($conn, $staff_query);
             event.preventDefault();
             const parent = element.parentElement;
             parent.classList.toggle('active');
+        }
+
+        // Add these functions to your existing script section
+        function showEditModal(eyesCheckId, patientId, eyesType, leftEye, rightEye, staffId, date) {
+            document.getElementById('modal_eyes_check_id').value = eyesCheckId;
+            document.getElementById('display_eyes_check_id').value = eyesCheckId;
+            document.getElementById('modal_hidden_patient_id').value = patientId;
+            document.getElementById('modal_patient_id').value = patientId;
+            document.getElementById('modal_eyes_type').value = eyesType;
+            document.getElementById('modal_left_eye').value = leftEye;
+            document.getElementById('modal_right_eye').value = rightEye;
+            document.getElementById('modal_staff_id').value = staffId;
+            document.getElementById('modal_date').value = date;
+
+            document.getElementById('editModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        function confirmDelete(eyesCheckId) {
+            document.getElementById('delete_eyes_check_id').value = eyesCheckId;
+            document.getElementById('deleteModal').style.display = 'block';
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').style.display = 'none';
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('editModal')) {
+                closeModal();
+            }
+            if (event.target == document.getElementById('deleteModal')) {
+                closeDeleteModal();
+            }
         }
     </script>
 </body>

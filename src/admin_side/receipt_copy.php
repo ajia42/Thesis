@@ -59,24 +59,22 @@ $message = '';
 
 // Check if form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Sanitize and validate input
+    $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id']);
+    $staff_id = mysqli_real_escape_string($conn, $_POST['staff_id']);
+    $receipt_date = mysqli_real_escape_string($conn, $_POST['receipt_date']);
+    $remark = mysqli_real_escape_string($conn, $_POST['remark']);
 
+    // Parse selected services with quantities
+    $selected_services = [];
+    if (isset($_POST['services']) && is_array($_POST['services'])) {
+        foreach ($_POST['services'] as $service_id) {
+            $selected_services[] = mysqli_real_escape_string($conn, $service_id);
+        }
+    }
 
     // Action based on button click
     if (isset($_POST['save_button'])) {
-        // Sanitize and validate input
-        $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id']);
-        $staff_id = mysqli_real_escape_string($conn, $_POST['staff_id']);
-        $receipt_date = mysqli_real_escape_string($conn, $_POST['receipt_date']);
-        $remark = mysqli_real_escape_string($conn, $_POST['remark']);
-
-        // Parse selected services with quantities
-        $selected_services = [];
-        if (isset($_POST['services']) && is_array($_POST['services'])) {
-            foreach ($_POST['services'] as $service_id) {
-                $selected_services[] = mysqli_real_escape_string($conn, $service_id);
-            }
-        }
-
         // Validate required fields
         if (empty($patient_id)) {
             $errors = "Please select a patient.";
@@ -139,19 +137,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Update functionality
     if (isset($_POST['update_button']) && !empty($_POST['receipt_id'])) {
         $receipt_id = mysqli_real_escape_string($conn, $_POST['receipt_id']);
-        // Sanitize and validate input
-        $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id']);
-        $staff_id = mysqli_real_escape_string($conn, $_POST['staff_id']);
-        $receipt_date = mysqli_real_escape_string($conn, $_POST['receipt_date']);
-        $remark = mysqli_real_escape_string($conn, $_POST['remark']);
-
-        // Parse selected services with quantities
-        $selected_services = [];
-        if (isset($_POST['services']) && is_array($_POST['services'])) {
-            foreach ($_POST['services'] as $service_id) {
-                $selected_services[] = mysqli_real_escape_string($conn, $service_id);
-            }
-        }
 
         // Validate required fields
         if (empty($patient_id)) {
@@ -430,110 +415,6 @@ $services_result = mysqli_query($conn, $services_query);
 
         .hidden-select {
             display: none;
-        }
-
-        /* Add these styles to the existing style section */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1001;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0, 0, 0, 0.4);
-        }
-
-        .modal-content {
-            background-color: #fefefe;
-            margin: 5% auto;
-            padding: 20px;
-            border: 1px solid #888;
-            width: 60%;
-            border-radius: 5px;
-            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
-        }
-
-        .modal-actions {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .modal-actions button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .modal-actions .update-button {
-            background-color: #1976d2;
-            color: white;
-        }
-
-        .modal-actions .cancel-button {
-            background-color: #f44336;
-            color: white;
-        }
-
-        .delete-link {
-            color: #d32f2f;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        .delete-link:hover {
-            text-decoration: underline;
-        }
-
-        .readonly-field {
-            background-color: #f5f5f5;
-            color: #666;
-            cursor: not-allowed;
-        }
-
-        /* Update the modal services container to match treatment management */
-        .modal .services-group {
-            grid-column: span 2;
-        }
-
-        .modal .services-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 10px;
-            max-height: 200px;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            padding: 10px;
-            border-radius: 4px;
-        }
-
-        .modal .service-checkbox {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 5px;
-            border: 1px solid #eee;
-            border-radius: 4px;
-        }
-
-        .modal .service-checkbox input[type="checkbox"] {
-            margin: 0;
-        }
-
-        .modal .service-checkbox label {
-            margin: 0;
-            font-size: 14px;
-            cursor: pointer;
-            flex: 1;
-        }
-
-        .modal .service-price {
-            font-weight: bold;
-            color: #2563eb;
         }
     </style>
 </head>
@@ -836,16 +717,11 @@ $services_result = mysqli_query($conn, $services_query);
                                 <td><?php echo htmlspecialchars(implode(', ', $services)); ?></td>
                                 <td><?php echo htmlspecialchars(substr($receipt['remark'], 0, 30)) . (strlen($receipt['remark']) > 30 ? '...' : ''); ?></td>
                                 <td>
-                                    <a href="#" onclick="showEditModal(
-        '<?php echo htmlspecialchars($receipt['receipt_id']); ?>',
-        '<?php echo htmlspecialchars($receipt['patient_id']); ?>',
-        '<?php echo htmlspecialchars($receipt['staff_id']); ?>',
-        '<?php echo htmlspecialchars($receipt['date']); ?>',
-        '<?php echo htmlspecialchars($receipt['remark']); ?>'
-    )">Edit</a>
-                                </td>
-                                <td>
-                                    <a href="#" class="delete-link" onclick="confirmDelete('<?php echo htmlspecialchars($receipt['receipt_id']); ?>')">Delete</a>
+                                    <a href="#" onclick="fillForm('<?php echo htmlspecialchars($receipt['receipt_id']); ?>', 
+                                        '<?php echo htmlspecialchars($receipt['patient_id']); ?>', 
+                                        '<?php echo htmlspecialchars($receipt['staff_id']); ?>', 
+                                        '<?php echo htmlspecialchars($receipt['date']); ?>', 
+                                        '<?php echo htmlspecialchars($receipt['remark']); ?>')">Edit</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -853,92 +729,6 @@ $services_result = mysqli_query($conn, $services_query);
             </table>
         <?php endif; ?>
         </main>
-    </div>
-
-    <!-- Edit Modal -->
-    <div id="editModal" class="modal">
-        <div class="modal-content">
-            <h2>Edit Receipt</h2>
-            <form id="editForm" method="POST" action="receipt_copy.php">
-                <input type="hidden" id="modal_receipt_id" name="receipt_id">
-                <input type="hidden" id="modal_hidden_patient_id" name="patient_id">
-                <div class="patient-form">
-                    <div class="form-group">
-                        <label for="display_receipt_id">Receipt ID</label>
-                        <input type="text" id="display_receipt_id" name="display_receipt_id" readonly class="readonly-field">
-                    </div>
-                    <div class="form-group">
-                        <label for="modal_patient_id">Patient</label>
-                        <select id="modal_patient_id" name="patient_id" disabled class="readonly-field">
-                            <option value="">Select Patient</option>
-                            <?php foreach ($patients as $id => $name): ?>
-                                <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="modal_staff_id">Staff</label>
-                        <select id="modal_staff_id" name="staff_id" required>
-                            <option value="">Select Staff</option>
-                            <?php foreach ($staff as $id => $name): ?>
-                                <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="modal_receipt_date">Receipt Date</label>
-                        <input type="date" id="modal_receipt_date" name="receipt_date" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="modal_remark">Remark</label>
-                        <textarea id="modal_remark" name="remark" rows="2"></textarea>
-                    </div>
-                    <div class="form-group services-group">
-                        <label>Services</label>
-                        <div class="services-container">
-                            <?php mysqli_data_seek($services_result, 0);
-                            while ($service = mysqli_fetch_assoc($services_result)): ?>
-                                <div class="service-checkbox">
-                                    <input type="checkbox"
-                                        id="modal_service_<?php echo $service['service_type_id']; ?>"
-                                        name="services[]"
-                                        value="<?php echo $service['service_type_id']; ?>"
-                                        data-price="<?php echo $service['service_fee']; ?>"
-                                        onchange="updateModalTotalAmount()">
-                                    <label for="modal_service_<?php echo $service['service_type_id']; ?>">
-                                        <?php echo htmlspecialchars($service['service_name']); ?>
-                                        <span class="service-price">(<?php echo number_format($service['service_fee']); ?> LAK)</span>
-                                    </label>
-                                </div>
-                            <?php endwhile; ?>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Total Amount</label>
-                        <div class="total-amount-display" id="modalTotalAmountDisplay">0 LAK</div>
-                    </div>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="cancel-button" onclick="closeModal()">Cancel</button>
-                    <button type="submit" class="update-button" name="update_button">Update</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Delete Confirmation Modal -->
-    <div id="deleteModal" class="modal">
-        <div class="modal-content" style="width: 40%;">
-            <h2>Confirm Delete</h2>
-            <p>Are you sure you want to delete this receipt?</p>
-            <form id="deleteForm" method="POST" action="">
-                <input type="hidden" id="delete_receipt_id" name="receipt_id">
-                <div class="modal-actions">
-                    <button type="button" class="cancel-button" onclick="closeDeleteModal()">Cancel</button>
-                    <button type="submit" class="delete-button" name="delete_button">Delete</button>
-                </div>
-            </form>
-        </div>
     </div>
 
     <script>
@@ -1032,7 +822,7 @@ $services_result = mysqli_query($conn, $services_query);
             });
 
             updateTotalAmount();
-            document.getElementById('patient_search').focus();
+            document.getElementById('patientSelect').focus();
         }
 
         // Form validation before submission
@@ -1178,104 +968,6 @@ $services_result = mysqli_query($conn, $services_query);
                 }
             }
         });
-
-        function showEditModal(receiptId, patientId, staffId, date, remark) {
-            document.getElementById('modal_receipt_id').value = receiptId;
-            document.getElementById('display_receipt_id').value = receiptId;
-            document.getElementById('modal_hidden_patient_id').value = patientId;
-            document.getElementById('modal_patient_id').value = patientId;
-            document.getElementById('modal_staff_id').value = staffId;
-            document.getElementById('modal_receipt_date').value = date;
-            document.getElementById('modal_remark').value = remark || '';
-
-            // Load associated services
-            loadReceiptServices(receiptId, true);
-
-            document.getElementById('editModal').style.display = 'block';
-        }
-
-        function closeModal() {
-            document.getElementById('editModal').style.display = 'none';
-        }
-
-        function confirmDelete(receiptId) {
-            document.getElementById('delete_receipt_id').value = receiptId;
-            document.getElementById('deleteModal').style.display = 'block';
-        }
-
-        function closeDeleteModal() {
-            document.getElementById('deleteModal').style.display = 'none';
-        }
-
-        function updateModalTotalAmount() {
-            let total = 0;
-            const serviceCheckboxes = document.querySelectorAll('#editModal input[name="services[]"]:checked');
-
-            serviceCheckboxes.forEach(checkbox => {
-                total += parseFloat(checkbox.dataset.price);
-            });
-
-            document.getElementById('modalTotalAmountDisplay').textContent =
-                total.toLocaleString('en-US', {
-                    maximumFractionDigits: 0
-                }) + ' LAK';
-        }
-
-        // Close modals when clicking outside
-        window.onclick = function(event) {
-            if (event.target == document.getElementById('editModal')) {
-                closeModal();
-            }
-            if (event.target == document.getElementById('deleteModal')) {
-                closeDeleteModal();
-            }
-        }
-
-        // Modify loadReceiptServices to work with modal
-        function loadReceiptServices(receiptId, forModal = false) {
-            // Clear all checkboxes first
-            document.querySelectorAll('input[name="services[]"]').forEach(checkbox => {
-                checkbox.checked = false;
-            });
-
-            fetch('get_receipt_services.php?receipt_id=' + encodeURIComponent(receiptId))
-                .then(response => response.json())
-                .then(services => {
-                    let total = 0;
-
-                    services.forEach(service => {
-                        // Update main form checkboxes
-                        const checkbox = document.getElementById('service_' + service.service_type_id);
-                        if (checkbox) {
-                            checkbox.checked = true;
-                            if (!forModal) total += parseFloat(checkbox.dataset.price);
-                        }
-
-                        // Update modal checkboxes
-                        const modalCheckbox = document.getElementById('modal_service_' + service.service_type_id);
-                        if (modalCheckbox) {
-                            modalCheckbox.checked = true;
-                            if (forModal) total += parseFloat(modalCheckbox.dataset.price);
-                        }
-                    });
-
-                    // Update appropriate total display
-                    if (forModal) {
-                        document.getElementById('modalTotalAmountDisplay').textContent =
-                            total.toLocaleString('en-US', {
-                                maximumFractionDigits: 0
-                            }) + ' LAK';
-                    } else {
-                        document.getElementById('totalAmountDisplay').textContent =
-                            total.toLocaleString('en-US', {
-                                maximumFractionDigits: 0
-                            }) + ' LAK';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading receipt services:', error);
-                });
-        }
     </script>
 </body>
 
