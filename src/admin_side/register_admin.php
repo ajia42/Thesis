@@ -26,7 +26,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email_check = "SELECT * FROM admin WHERE email = '$email'";
     $result = mysqli_query($conn, $email_check);
     if (mysqli_num_rows($result) > 0) {
-        $errors[] = "Email already registered";
+        $errors[] = "ອີເມວຖືກໃຊ້ໄປແລ້ວ";
     }
 
     // // Check if username already exists
@@ -50,7 +50,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 VALUES ('$admin_id', '$user_name', '$email', '$hashed_password')";
 
         if (mysqli_query($conn, $sql)) {
-            $success = "Registration successful! Redirecting to login...";
+            $success = "ລົງທະບຽນສຳເລັດ, ກໍາລັງກັບໄປໜ້າເຂົ້າສູ່ລະບົບ...";
             header("Refresh: 3; url=signin_admin.php");
         } else {
             $errors[] = "Error: " . mysqli_error($conn);
@@ -102,6 +102,10 @@ $conn->close();
             text-align: center;
         }
     </style>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Phetsarath:wght@400;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
@@ -114,8 +118,8 @@ $conn->close();
                 <span>Vision Care</span>
             </div>
             <div class="auth-links">
-                <a href="signin_admin.php">Login</a>
-                <a href="register_admin.php" class="active">Register</a>
+                <a href="signin_admin.php">ເຂົ້າສູ່ລະບົບ</a>
+                <a href="register_admin.php" class="active">ລົງທະບຽນ</a>
             </div>
         </div>
     </header>
@@ -129,8 +133,8 @@ $conn->close();
                 <h2>Vision Care</h2>
             </div>
 
-            <h1>Create Admin Account</h1>
-            <p class="create-account">Or <a href="signin_admin.php">sign in to existing account</a></p>
+            <h1>ລົງທະບຽນໃໝ່</h1>
+            <p class="create-account">Or <a href="signin_admin.php">ມີບັນຊີແລ້ວ? ເຂົ້າສູ່ລະບົບ</a></p>
 
             <?php if (!empty($errors)): ?>
                 <div class="error-message">
@@ -146,19 +150,19 @@ $conn->close();
 
             <form method="POST" action="register_admin.php">
                 <div class="input-group">
-                    <label for="user_name">Username</label>
+                    <label for="user_name">ຊື່ຜູ້ໃຊ້</label>
                     <input type="text" id="user_name" name="user_name" required
                         value="<?php echo htmlspecialchars($_POST['user_name'] ?? ''); ?>">
                 </div>
 
                 <div class="input-group">
-                    <label for="email">Email Address</label>
+                    <label for="email">ອີເມວ</label>
                     <input type="email" id="email" name="email" required
                         value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
                 </div>
 
                 <div class="input-group">
-                    <label for="password">Password</label>
+                    <label for="password">ລະຫັດຜ່ານ</label>
                     <div class="password-input">
                         <input type="password" id="password" name="password" required
                             oninput="checkPasswordStrength(this.value)">
@@ -171,11 +175,11 @@ $conn->close();
                     <div class="password-strength">
                         <div class="password-strength-bar" id="password-strength-bar"></div>
                     </div>
-                    <p class="password-hint" id="password-hint">Use 8+ characters with numbers and symbols</p>
+                    <p class="password-hint" id="password-hint">ລະຫັດຕ້ອງມີ 8 ໂຕຂຶ້ນໄປ, ຢ່າງໜ້ອຍຕ້ອງມີ 1 ຕົວໜັງສື 1 ຕົວເລກ</p>
                 </div>
 
                 <div class="input-group">
-                    <label for="confirm_password">Confirm Password</label>
+                    <label for="confirm_password">ຢືນຢັນລະຫັດຜ່ານ</label>
                     <div class="password-input">
                         <input type="password" id="confirm_password" name="confirm_password" required
                             oninput="checkPasswordMatch()">
@@ -193,7 +197,7 @@ $conn->close();
                         <path d="M10 17l5-5-5-5v10z"></path>
                         <path d="M19 12c0 4.14-3.36 7.5-7.5 7.5S4 16.14 4 12 7.36 4.5 12 4.5s7.5 3.36 7.5 7.5zM12 6.5c-3.04 0-5.5 2.46-5.5 5.5s2.46 5.5 5.5 5.5 5.5-2.46 5.5-5.5-2.46-5.5-5.5-5.5z"></path>
                     </svg>
-                    Register
+                    ລົງທະບຽນ
                 </button>
             </form>
         </div>

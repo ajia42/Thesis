@@ -31,14 +31,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
       exit();
     } else {
       // Incorrect password
-      $_SESSION['login_error'] = "Incorrect password.";
+      $_SESSION['login_error'] = "ອີເມວ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ.";
       $_SESSION['login_email'] = $email;
       header("Location: signin_admin.php");
       exit();
     }
   } else {
     // Admin not found
-    $_SESSION['login_error'] = "Incorrect email.";
+    $_SESSION['login_error'] = "ອີເມວ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ.";
     $_SESSION['login_email'] = $email;
     header("Location: signin_admin.php");
     exit();
@@ -58,6 +58,10 @@ $conn->close();
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sign In - Vision Care</title>
   <link rel="stylesheet" href="signin_admin.css">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Phetsarath:wght@400;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
@@ -70,8 +74,8 @@ $conn->close();
         <span>Vision Care</span>
       </div>
       <div class="auth-links">
-        <a href="signin_admin.php">Login</a>
-        <a href="register_admin.php">Register</a>
+        <a href="signin_admin.php">ເຂົ້າສູ່ລະບົບ</a>
+        <a href="register_admin.php">ລົງທະບຽນ</a>
       </div>
     </div>
   </header>
@@ -83,8 +87,8 @@ $conn->close();
         </svg>
         <h2>Vision Care</h2>
       </div>
-      <h1>Sign in to your account</h1>
-      <p class="create-account">Or <a href="register_admin.php">create a new account</a></p>
+      <h1>ເຂົ້າສູ່ລະບົບ</h1>
+      <p class="create-account">Or <a href="register_admin.php">ສ້າງບັນຊີໃໝ່</a></p>
       <?php
       // Display error message (if any)
       if (isset($_SESSION['login_error'])) {
@@ -95,12 +99,12 @@ $conn->close();
       ?>
       <form action="#" method="POST">
         <div class="input-group">
-          <label for="email">Email Address</label>
+          <label for="email">ອີເມວ</label>
           <input type="email" id="email" name="email" required
             value="<?php echo isset($_SESSION['login_email']) ? htmlspecialchars($_SESSION['login_email']) : ''; ?>" />
         </div>
         <div class="input-group">
-          <label for="password">Password</label>
+          <label for="password">ລະຫັດຜ່ານ</label>
           <div class="password-input">
             <input type="password" id="password" name="password" required />
             <button type="button" class="toggle-password" onclick="togglePasswordVisibility()">
@@ -111,10 +115,6 @@ $conn->close();
           </div>
         </div>
         <div class="form-options">
-          <label class="checkbox-label">
-            <input type="checkbox" name="remember">
-            Remember me
-          </label>
           <a href="#" class="forgot-password">Forgot your password?</a>
         </div>
         <button type="submit" class="sign-in-button">
@@ -122,7 +122,7 @@ $conn->close();
             <path d="M10 17l5-5-5-5v10z"></path>
             <path d="M19 12c0 4.14-3.36 7.5-7.5 7.5S4 16.14 4 12 7.36 4.5 12 4.5s7.5 3.36 7.5 7.5zM12 6.5c-3.04 0-5.5 2.46-5.5 5.5s2.46 5.5 5.5 5.5 5.5-2.46 5.5-5.5-2.46-5.5-5.5-5.5z"></path>
           </svg>
-          Sign in
+          ເຂົ້າສູູ່ລະບົບ
         </button>
       </form>
     </div>

@@ -269,6 +269,10 @@ $status_counts['all'] = array_sum($status_counts) - $status_counts['all']; // Su
     <title>Appointment Management</title>
     <link rel="stylesheet" href="patient_management.css">
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Phetsarath:wght@400;700&display=swap" rel="stylesheet">
+
     <!-- CSS styles (same as original) -->
     <style>
         .readonly-field {
@@ -431,89 +435,107 @@ $status_counts['all'] = array_sum($status_counts) - $status_counts['all']; // Su
 </head>
 
 <body>
-    <div class="container">
-        <aside class="sidebar">
-            <!-- Sidebar content remains the same as in the original HTML -->
-            <!-- ... (previous sidebar code) ... -->
-            <div class="logo">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-                Vision Care
-            </div>
+    <aside class="sidebar">
+        <!-- Sidebar content remains the same as in the original HTML -->
+        <!-- ... (previous sidebar code) ... -->
+        <div class="logo">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            Vision Care
+        </div>
 
-            <ul class="menu">
+        <ul class="menu">
 
-                <!-- NEW STAFF INFO SECTION -->
-                <li>
-                    <a href="admin_profile.php">
-                        <div class="staff-info">
-                            <svg xmlns="http://www.w3.org/2000/svg" style="color: #2c3e50;" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-user-round-icon lucide-circle-user-round">
-                                <path d="M18 20a6 6 0 0 0-12 0" />
-                                <circle cx="12" cy="10" r="4" />
-                                <circle cx="12" cy="12" r="10" />
-                            </svg>
-                            <p><?php echo htmlspecialchars($_SESSION['admin_user_name']); ?></p>
-                        </div>
-                    </a>
-                </li>
-
-                <li><a href="#">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="3" y1="9" x2="21" y2="9"></line>
-                            <line x1="9" y1="21" x2="9" y2="9"></line>
+            <!-- NEW STAFF INFO SECTION -->
+            <li>
+                <a href="admin_profile.php">
+                    <div class="staff-info">
+                        <svg xmlns="http://www.w3.org/2000/svg" style="color: #2c3e50;" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-user-round-icon lucide-circle-user-round">
+                            <path d="M18 20a6 6 0 0 0-12 0" />
+                            <circle cx="12" cy="10" r="4" />
+                            <circle cx="12" cy="12" r="10" />
                         </svg>
-                        Dashboard</a></li>
+                        <p><?php echo htmlspecialchars($_SESSION['admin_user_name']); ?></p>
+                    </div>
+                </a>
+            </li>
 
-                <li><a href="patient_management.php">
+            <li><a href="#">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="3" y1="9" x2="21" y2="9"></line>
+                        <line x1="9" y1="21" x2="9" y2="9"></line>
+                    </svg>
+                    Dashboard</a></li>
+
+            <!-- <li class="active"><a href="patient_management.php">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                             <circle cx="9" cy="7" r="4"></circle>
                             <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
                             <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                         </svg>
-                        Patients</a></li>
+                        ຂໍ້ມູນຄົນເຈັບ</a></li> -->
 
-                <li><a href="reception_management.php">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-notebook-text-icon lucide-notebook-text">
-                            <path d="M2 6h4" />
-                            <path d="M2 10h4" />
-                            <path d="M2 14h4" />
-                            <path d="M2 18h4" />
-                            <rect width="16" height="20" x="4" y="2" rx="2" />
-                            <path d="M9.5 8h5" />
-                            <path d="M9.5 12H16" />
-                            <path d="M9.5 16H14" />
-                        </svg>
-                        Reception</a></li>
+            <li class="has-submenu">
+                <a href="#" onclick="toggleSubmenu(this)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-album-icon lucide-album">
+                        <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                        <polyline points="11 3 11 11 14 8 17 11 17 3" />
+                    </svg>
+                    ຈັດການຂໍ້ມູນພື້ນຖານ
+                    <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </a>
+                <ul class="submenu">
+                    <li <?php echo basename($_SERVER['PHP_SELF']) == 'patient_management.php' ? 'class="active"' : ''; ?>><a href="patient_management.php">ຂໍ້ມູນຄົນເຈັບ</a></li>
+                    <li <?php echo basename($_SERVER['PHP_SELF']) == 'service_type_managment.php' ? 'class="active"' : ''; ?>><a href="service_type_managment.php">ຂໍ້ມູນປະເພດບໍລິການ</a></li>
+                    <li <?php echo basename($_SERVER['PHP_SELF']) == 'disease_management.php' ? 'class="active"' : ''; ?>><a href="disease_management.php">ຂໍ້ມູນພະຍາດ</a></li>
+                    <li <?php echo basename($_SERVER['PHP_SELF']) == 'staff_management.php' ? 'class="active"' : ''; ?>><a href="staff_management.php">ຂໍ້ມູນພະນັກງານ</a></li>
+                </ul>
+            </li>
 
-                <li><a href="staff_management.php">
+            <li><a href="reception_management.php">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-notebook-text-icon lucide-notebook-text">
+                        <path d="M2 6h4" />
+                        <path d="M2 10h4" />
+                        <path d="M2 14h4" />
+                        <path d="M2 18h4" />
+                        <rect width="16" height="20" x="4" y="2" rx="2" />
+                        <path d="M9.5 8h5" />
+                        <path d="M9.5 12H16" />
+                        <path d="M9.5 16H14" />
+                    </svg>
+                    ຕ້ອນຮັບ</a></li>
+
+            <!-- <li><a href="staff_management.php">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                             <circle cx="12" cy="7" r="4"></circle>
                         </svg>
-                        Staff</a></li>
+                        ຂໍ້ມູນພະນັກງານ</a></li> -->
 
-                <li class="active"><a href="appointment_management.php">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                        </svg>
-                        Appointments</a></li>
+            <li class="active"><a href="appointment_management.php">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    ຈັດການຈອງຄິວ</a></li>
 
-                <li><a href="service_type_managment.php">
+            <!-- <li><a href="service_type_managment.php">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
                             <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
                             <line x1="12" y1="17" x2="12.01" y2="17"></line>
                         </svg>
-                        Services</a></li>
+                        ປະເພດບໍລິການ</a></li> -->
 
-                <li><a href="disease_management.php">
+            <!-- <li><a href="disease_management.php">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                             <polyline points="14 2 14 8 20 8"></polyline>
@@ -521,226 +543,229 @@ $status_counts['all'] = array_sum($status_counts) - $status_counts['all']; // Su
                             <line x1="16" y1="17" x2="8" y2="17"></line>
                             <polyline points="10 9 9 9 8 9"></polyline>
                         </svg>
-                        Diseases</a></li>
+                        ຂໍ້ມູນພະຍາດ</a></li> -->
 
-                <li><a href="checkup_management.php">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20.42 4.58a5.4 5.4 0 0 0-7.65 0l-.77.78-.77-.78a5.4 5.4 0 0 0-7.65 0C1.46 6.7 1.33 10.28 4 13l8 8 8-8c2.67-2.72 2.54-6.3.42-8.42z"></path>
-                        </svg>
-                        General Checkups</a></li>
+            <li><a href="checkup_management.php">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20.42 4.58a5.4 5.4 0 0 0-7.65 0l-.77.78-.77-.78a5.4 5.4 0 0 0-7.65 0C1.46 6.7 1.33 10.28 4 13l8 8 8-8c2.67-2.72 2.54-6.3.42-8.42z"></path>
+                    </svg>
+                    ກວດເບື້ອງຕົ້ນ</a></li>
 
-                <li><a href="treatment_management.php">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                        </svg>
-                        Treatments</a></li>
+            <li><a href="treatment_management.php">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                    ກວດຮັກສາ</a></li>
 
-                <li><a href="eyes_check_management.php">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
-                        Eyes Check</a>
+            <li><a href="eyes_check_management.php">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    ວັດແທກສາຍຕາ</a>
 
-                <li><a href="receipt.php">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="12" y1="1" x2="12" y2="23"></line>
-                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                        </svg>
-                        Receipts</a></li>
+            <li><a href="receipt.php">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                    ໃບບິນເກັບເງິນ</a></li>
 
-                <li class="has-submenu">
-                    <a href="#" onclick="toggleSubmenu(this)">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="18" y1="20" x2="18" y2="10"></line>
-                            <line x1="12" y1="20" x2="12" y2="4"></line>
-                            <line x1="6" y1="20" x2="6" y2="14"></line>
-                        </svg>
-                        Reports
-                        <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
-                    </a>
-                    <ul class="submenu">
-                        <li><a href="report/patient_report.php">Patient Report</a></li>
-                        <li><a href="report/staff_report.php">Staff Report</a></li>
-                        <li><a href="report/income_report.php">Income Report</a></li>
-                    </ul>
-                </li>
 
-                <li><a href="logout.php">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-log-out-icon lucide-log-out">
-                            <path d="m16 17 5-5-5-5" />
-                            <path d="M21 12H9" />
-                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                        </svg>
-                        Log out</a></li>
 
-                </li>
-            </ul>
-        </aside>
+            <li class="has-submenu">
+                <a href="#" onclick="toggleSubmenu(this)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    ລາຍງານ
+                    <svg class="chevron" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </a>
+                <ul class="submenu">
+                    <li <?php echo basename($_SERVER['PHP_SELF']) == 'report/patient_report.php' ? 'class="active"' : ''; ?>><a href="report/patient_report.php">ລາຍງານຄົນເຈັບ</a></li>
+                    <li <?php echo basename($_SERVER['PHP_SELF']) == 'report/staff_report.php' ? 'class="active"' : ''; ?>><a href="report/staff_report.php">ລາຍງານພະນັກງານ</a></li>
+                    <li <?php echo basename($_SERVER['PHP_SELF']) == 'report/income_report.php' ? 'class="active"' : ''; ?>><a href="report/income_report.php">ລາຍງານລາຍຮັບ</a></li>
 
-        <main class="main-content">
-            <div class="header">
-                <h1>Appointment Management</h1>
-                <button class="new-patient-button" name="new_appointment" onclick="clearForm()">+ New Appointment</button>
-            </div>
+                </ul>
+            </li>
 
-            <?php if ($message): ?>
-                <div class="message"><?php echo $message; ?></div>
-            <?php endif; ?>
-            <?php if ($errors): ?>
-                <div class="error"><?php echo $errors; ?></div>
-            <?php endif; ?>
+            <li><a href="logout.php">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-log-out-icon lucide-log-out">
+                        <path d="m16 17 5-5-5-5" />
+                        <path d="M21 12H9" />
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    </svg>
+                    ອອກຈາກລະບົບ</a></li>
 
-            <!-- Appointment Form -->
-            <form method="POST" action="" id="appointmentForm">
-                <div class="patient-form">
-                    <div class="form-group">
-                        <label for="appointmentID">Appointment ID</label>
-                        <input type="text" id="appointmentID" name="appointment_id" readonly>
-                    </div>
+            </li>
+        </ul>
+    </aside>
 
-                    <div class="form-group">
-                        <label for="patient_id">Patient</label>
-                        <div class="custom-dropdown">
-                            <input type="text" id="patient_search" class="dropdown-input" placeholder="Type a name..." autocomplete="off">
-                            <select id="patient_id" name="patient_id" class="hidden-select" required>
-                                <option value="">Select Patient</option>
-                                <?php foreach ($patients as $id => $name): ?>
-                                    <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                            <div id="patient_options" class="dropdown-options">
-                                <?php foreach ($patients as $id => $name): ?>
-                                    <div class="dropdown-option" data-value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></div>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-                    </div>
+    <main class="main-content">
+        <div class="header">
+            <h1>Appointment Management</h1>
+            <button class="new-patient-button" name="new_appointment" onclick="clearForm()">+ New Appointment</button>
+        </div>
 
-                    <div class="form-group">
-                        <label for="service_type_id">Service Type</label>
-                        <select id="service_type_id" name="service_type_id" required>
-                            <option value="">Select Service</option>
-                            <?php foreach ($service_types as $id => $name): ?>
+        <?php if ($message): ?>
+            <div class="message"><?php echo $message; ?></div>
+        <?php endif; ?>
+        <?php if ($errors): ?>
+            <div class="error"><?php echo $errors; ?></div>
+        <?php endif; ?>
+
+        <!-- Appointment Form -->
+        <form method="POST" action="" id="appointmentForm">
+            <div class="patient-form">
+                <div class="form-group">
+                    <label for="appointmentID">Appointment ID</label>
+                    <input type="text" id="appointmentID" name="appointment_id" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label for="patient_id">Patient</label>
+                    <div class="custom-dropdown">
+                        <input type="text" id="patient_search" class="dropdown-input" placeholder="Type a name..." autocomplete="off">
+                        <select id="patient_id" name="patient_id" class="hidden-select" required>
+                            <option value="">Select Patient</option>
+                            <?php foreach ($patients as $id => $name): ?>
                                 <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></option>
                             <?php endforeach; ?>
                         </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="booking_date">Date</label>
-                        <input type="date" id="booking_date" name="booking_date" required>
-                        <div id="dateError" class="error-message" style="display: none;"></div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="booking_time">Time</label>
-                        <select id="booking_time" name="booking_time" required>
-                            <option value="">Select Time</option>
-                            <?php foreach ($time_slots as $time): ?>
-                                <option value="<?php echo htmlspecialchars($time); ?>"><?php echo htmlspecialchars(substr($time, 0, 5)); ?></option>
+                        <div id="patient_options" class="dropdown-options">
+                            <?php foreach ($patients as $id => $name): ?>
+                                <div class="dropdown-option" data-value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></div>
                             <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="symptoms">Symptoms (max 30 chars)</label>
-                        <textarea id="symptoms" name="symptoms" rows="3" maxlength="30"></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="comment">Comment (max 30 chars)</label>
-                        <textarea id="comment" name="comment" rows="3" maxlength="30"></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="status">Status</label>
-                        <select id="status" name="status" required>
-                            <option value="scheduled" selected>Scheduled</option>
-                            <option value="completed">Completed</option>
-                            <option value="cancelled">Cancelled</option>
-                            <option value="no_show">No-show</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="created_at">Created At</label>
-                        <input type="text" id="created_at" name="created_at" readonly class="readonly-field">
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="submit" class="save-button" name="save_button" id="saveButton">Save</button>
-                        <button type="submit" class="update-button" name="update_button" id="updateButton">Update</button>
-                        <button type="submit" class="delete-button" name="delete_button" id="deleteButton">Delete</button>
+                        </div>
                     </div>
                 </div>
+
+                <div class="form-group">
+                    <label for="service_type_id">Service Type</label>
+                    <select id="service_type_id" name="service_type_id" required>
+                        <option value="">Select Service</option>
+                        <?php foreach ($service_types as $id => $name): ?>
+                            <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="booking_date">Date</label>
+                    <input type="date" id="booking_date" name="booking_date" required>
+                    <div id="dateError" class="error-message" style="display: none;"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="booking_time">Time</label>
+                    <select id="booking_time" name="booking_time" required>
+                        <option value="">Select Time</option>
+                        <?php foreach ($time_slots as $time): ?>
+                            <option value="<?php echo htmlspecialchars($time); ?>"><?php echo htmlspecialchars(substr($time, 0, 5)); ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="symptoms">Symptoms (max 30 chars)</label>
+                    <textarea id="symptoms" name="symptoms" rows="3" maxlength="30"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="comment">Comment (max 30 chars)</label>
+                    <textarea id="comment" name="comment" rows="3" maxlength="30"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="status">Status</label>
+                    <select id="status" name="status" required>
+                        <option value="scheduled" selected>Scheduled</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="no_show">No-show</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="created_at">Created At</label>
+                    <input type="text" id="created_at" name="created_at" readonly class="readonly-field">
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="save-button" name="save_button" id="saveButton">Save</button>
+                    <button type="submit" class="update-button" name="update_button" id="updateButton">Update</button>
+                    <button type="submit" class="delete-button" name="delete_button" id="deleteButton">Delete</button>
+                </div>
+            </div>
+        </form>
+
+        <!-- Search and Table (same as original - truncated) -->
+        <div class="patient-list-header">
+            <form method="GET" action="">
+                <input type="search" name="search" placeholder="Search appointments..."
+                    value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
+                <button type="submit">Search</button>
             </form>
+        </div>
 
-            <!-- Search and Table (same as original - truncated) -->
-            <div class="patient-list-header">
-                <form method="GET" action="">
-                    <input type="search" name="search" placeholder="Search appointments..."
-                        value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
-                    <button type="submit">Search</button>
-                </form>
+        <!-- Status Filter Bar with Counts -->
+        <div class="status-filter-bar">
+            <a href="?status=all" class="<?php echo (!isset($_GET['status'])) || $_GET['status'] == 'all' ? 'active' : ''; ?>">
+                All Appointments <span class="status-count">(<?php echo $status_counts['all']; ?>)</span>
+            </a>
+            <a href="?status=scheduled" class="<?php echo (isset($_GET['status'])) && $_GET['status'] == 'scheduled' ? 'active' : ''; ?>">
+                Scheduled <span class="status-count">(<?php echo $status_counts['scheduled']; ?>)</span>
+            </a>
+            <a href="?status=completed" class="<?php echo (isset($_GET['status'])) && $_GET['status'] == 'completed' ? 'active' : ''; ?>">
+                Completed <span class="status-count">(<?php echo $status_counts['completed']; ?>)</span>
+            </a>
+            <a href="?status=cancelled" class="<?php echo (isset($_GET['status'])) && $_GET['status'] == 'cancelled' ? 'active' : ''; ?>">
+                Cancelled <span class="status-count">(<?php echo $status_counts['cancelled']; ?>)</span>
+            </a>
+            <a href="?status=no_show" class="<?php echo (isset($_GET['status'])) && $_GET['status'] == 'no_show' ? 'active' : ''; ?>">
+                No-show <span class="status-count">(<?php echo $status_counts['no_show']; ?>)</span>
+            </a>
+        </div>
+
+        <!-- Table and modals (same structure - truncated for brevity) -->
+        <?php if (!empty($no_results_message)): ?>
+            <div class="alert alert-info">
+                <?php echo $no_results_message; ?>
             </div>
+        <?php endif; ?>
 
-            <!-- Status Filter Bar with Counts -->
-            <div class="status-filter-bar">
-                <a href="?status=all" class="<?php echo (!isset($_GET['status'])) || $_GET['status'] == 'all' ? 'active' : ''; ?>">
-                    All Appointments <span class="status-count">(<?php echo $status_counts['all']; ?>)</span>
-                </a>
-                <a href="?status=scheduled" class="<?php echo (isset($_GET['status'])) && $_GET['status'] == 'scheduled' ? 'active' : ''; ?>">
-                    Scheduled <span class="status-count">(<?php echo $status_counts['scheduled']; ?>)</span>
-                </a>
-                <a href="?status=completed" class="<?php echo (isset($_GET['status'])) && $_GET['status'] == 'completed' ? 'active' : ''; ?>">
-                    Completed <span class="status-count">(<?php echo $status_counts['completed']; ?>)</span>
-                </a>
-                <a href="?status=cancelled" class="<?php echo (isset($_GET['status'])) && $_GET['status'] == 'cancelled' ? 'active' : ''; ?>">
-                    Cancelled <span class="status-count">(<?php echo $status_counts['cancelled']; ?>)</span>
-                </a>
-                <a href="?status=no_show" class="<?php echo (isset($_GET['status'])) && $_GET['status'] == 'no_show' ? 'active' : ''; ?>">
-                    No-show <span class="status-count">(<?php echo $status_counts['no_show']; ?>)</span>
-                </a>
-            </div>
-
-            <!-- Table and modals (same structure - truncated for brevity) -->
-            <?php if (!empty($no_results_message)): ?>
-                <div class="alert alert-info">
-                    <?php echo $no_results_message; ?>
-                </div>
-            <?php endif; ?>
-
-            <!-- Appointment Table -->
-            <table class="patient-table">
-                <?php if (!empty($search_results)): ?>
-                    <thead>
+        <!-- Appointment Table -->
+        <table class="patient-table">
+            <?php if (!empty($search_results)): ?>
+                <thead>
+                    <tr>
+                        <th>APPOINTMENT ID</th>
+                        <th>PATIENT</th>
+                        <th>SERVICE</th>
+                        <th>DATE</th>
+                        <th>TIME</th>
+                        <th>STATUS</th>
+                        <th>CREATED AT</th>
+                        <th>ACTIONS</th>
+                        <th>DELETE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($search_results as $appointment): ?>
                         <tr>
-                            <th>APPOINTMENT ID</th>
-                            <th>PATIENT</th>
-                            <th>SERVICE</th>
-                            <th>DATE</th>
-                            <th>TIME</th>
-                            <th>STATUS</th>
-                            <th>CREATED AT</th>
-                            <th>ACTIONS</th>
-                            <th>DELETE</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($search_results as $appointment): ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($appointment['appointment_id']); ?></td>
-                                <td><?php echo htmlspecialchars($appointment['first_name'] . ' ' . $appointment['last_name']); ?></td>
-                                <td><?php echo htmlspecialchars($appointment['service_name']); ?></td>
-                                <td><?php echo htmlspecialchars($appointment['booking_date']); ?></td>
-                                <td><?php echo htmlspecialchars(substr($appointment['booking_time'], 0, 5)); ?></td>
-                                <td><?php echo htmlspecialchars(ucfirst($appointment['status'])); ?></td>
-                                <td><?php echo htmlspecialchars($appointment['created_at']); ?></td>
-                                <td>
-                                    <a href="#" onclick="showEditModal(
+                            <td><?php echo htmlspecialchars($appointment['appointment_id']); ?></td>
+                            <td><?php echo htmlspecialchars($appointment['first_name'] . ' ' . $appointment['last_name']); ?></td>
+                            <td><?php echo htmlspecialchars($appointment['service_name']); ?></td>
+                            <td><?php echo htmlspecialchars($appointment['booking_date']); ?></td>
+                            <td><?php echo htmlspecialchars(substr($appointment['booking_time'], 0, 5)); ?></td>
+                            <td><?php echo htmlspecialchars(ucfirst($appointment['status'])); ?></td>
+                            <td><?php echo htmlspecialchars($appointment['created_at']); ?></td>
+                            <td>
+                                <a href="#" onclick="showEditModal(
                                         '<?php echo htmlspecialchars($appointment['appointment_id']); ?>',
                                         '<?php echo htmlspecialchars($appointment['patient_id']); ?>',
                                         '<?php echo htmlspecialchars($appointment['service_type_id']); ?>',
@@ -750,16 +775,16 @@ $status_counts['all'] = array_sum($status_counts) - $status_counts['all']; // Su
                                         '<?php echo htmlspecialchars($appointment['comment']); ?>',
                                         '<?php echo htmlspecialchars($appointment['status']); ?>'
                                     )">Edit</a>
-                                </td>
-                                <td>
-                                    <a href="#" class="delete-link" onclick="confirmDelete('<?php echo htmlspecialchars($appointment['appointment_id']); ?>')">Delete</a>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                <?php endif; ?>
-            </table>
-        </main>
+                            </td>
+                            <td>
+                                <a href="#" class="delete-link" onclick="confirmDelete('<?php echo htmlspecialchars($appointment['appointment_id']); ?>')">Delete</a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            <?php endif; ?>
+        </table>
+    </main>
     </div>
 
     <!-- Edit Modal -->
@@ -1259,8 +1284,46 @@ $status_counts['all'] = array_sum($status_counts) - $status_counts['all']; // Su
         function toggleSubmenu(element) {
             event.preventDefault();
             const parent = element.parentElement;
-            parent.classList.toggle('active');
+            const submenu = parent.querySelector('.submenu');
+
+            // Toggle the visibility of the submenu
+            submenu.style.display = submenu.style.display === 'block' ? 'none' : 'block';
+
+            // Remove 'active' class from parent if submenu is being shown
+            if (submenu.style.display === 'block') {
+                parent.classList.remove('active');
+            }
         }
+
+        // function toggleSubmenu(element) {
+        //     event.preventDefault();
+        //     const parent = element.parentElement;
+        //     parent.classList.toggle('active');
+        // }
+
+        document.addEventListener('DOMContentLoaded', function() {
+
+            // Automatically expand submenu if current page is a submenu item
+            const currentPage = window.location.pathname.split('/').pop();
+            const menuItems = document.querySelectorAll('.has-submenu');
+
+            menuItems.forEach(menuItem => {
+                const submenuLinks = menuItem.querySelectorAll('.submenu a');
+                let shouldExpand = false;
+
+                submenuLinks.forEach(link => {
+                    const linkPage = link.getAttribute('href').split('/').pop();
+                    if (linkPage === currentPage) {
+                        shouldExpand = true;
+                    }
+                });
+
+                if (shouldExpand) {
+                    const toggleLink = menuItem.querySelector('a[onclick]');
+                    toggleSubmenu(toggleLink, true);
+                }
+            });
+        });
     </script>
 </body>
 
