@@ -409,6 +409,7 @@ while ($row = mysqli_fetch_assoc($patients_result)) {
                         <li <?php echo basename($_SERVER['PHP_SELF']) == 'patient_report.php' ? 'class="active"' : ''; ?>><a href="patient_report.php">ລາຍງານຄົນເຈັບ</a></li>
                         <li <?php echo basename($_SERVER['PHP_SELF']) == 'staff_report.php' ? 'class="active"' : ''; ?>><a href="staff_report.php">ລາຍງານພະນັກງານ</a></li>
                         <li <?php echo basename($_SERVER['PHP_SELF']) == 'income_report.php' ? 'class="active"' : ''; ?>><a href="income_report.php">ລາຍງານລາຍຮັບ</a></li>
+                        <li <?php echo basename($_SERVER['PHP_SELF']) == 'disease_report.php' ? 'class="active"' : ''; ?>><a href="disease_report.php">ລາຍງານພະຍາດ</a></li>
 
                     </ul>
                 </li>
