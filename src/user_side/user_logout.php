@@ -2,6 +2,6 @@
 session_start();
 unset($_SESSION['registered_phone']);
 unset($_SESSION['user_name']);
-session_destroy();
+
 header("Location: user_login.php");
 exit();

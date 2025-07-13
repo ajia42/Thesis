@@ -1,6 +1,7 @@
 <?php
 session_start();
-session_unset();
-session_destroy();
+unset($_SESSION['admin_id']);
+unset($_SESSION['admin_user_name']);
+
 header("Location: signin_admin.php");
 exit();

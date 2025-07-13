@@ -177,20 +177,19 @@ while ($row = mysqli_fetch_assoc($service_types_result)) {
     $service_types[$row['service_type_id']] = $row['service_name'];
 }
 
-// Fetch patients and service types (same as original)
-$patients = [];
-$patients_query = "SELECT patient_id, first_name, last_name FROM patient ORDER BY first_name, last_name";
-$patients_result = mysqli_query($conn, $patients_query);
-while ($row = mysqli_fetch_assoc($patients_result)) {
-    $patients[$row['patient_id']] = $row['patient_id'] . ' - ' . $row['first_name'] . ' ' . $row['last_name'];
+// Date filter
+$date_filter = "";
+if (isset($_GET['filter_date']) && !empty($_GET['filter_date'])) {
+    $filter_date = mysqli_real_escape_string($conn, $_GET['filter_date']);
+    $date_filter = " AND a.booking_date = '$filter_date'";
+} else {
+    // Default to current date if no date filter is set
+    $filter_date = date('Y-m-d');
+    $date_filter = " AND a.booking_date = '$filter_date'";
 }
 
-$service_types = [];
-$service_types_query = "SELECT service_type_id, service_name FROM service_type";
-$service_types_result = mysqli_query($conn, $service_types_query);
-while ($row = mysqli_fetch_assoc($service_types_result)) {
-    $service_types[$row['service_type_id']] = $row['service_name'];
-}
+// Initialize search_term variable
+$search_term = isset($_GET['search']) ? mysqli_real_escape_string($conn, $_GET['search']) : '';
 
 // Search functionality with status filter
 $search_query = "";
@@ -205,16 +204,8 @@ if (isset($_GET['status'])) {
     }
 }
 
-// Modify the search functionality section to include date filtering
-$date_filter = "";
-if (isset($_GET['filter_date']) && !empty($_GET['filter_date'])) {
-    $date_filter = " AND a.booking_date = '" . mysqli_real_escape_string($conn, $_GET['filter_date']) . "'";
-}
-
-// Then modify the search query to include the date filter
 if (isset($_GET['search']) && !empty($_GET['search'])) {
     $is_search = true;
-    $search_term = mysqli_real_escape_string($conn, $_GET['search']);
     $search_query = "SELECT a.*, p.first_name, p.last_name, s.service_name
                      FROM appointment a
                      JOIN patient p ON a.patient_id = p.patient_id
@@ -223,7 +214,8 @@ if (isset($_GET['search']) && !empty($_GET['search'])) {
                      OR p.first_name LIKE '%$search_term%' 
                      OR p.last_name LIKE '%$search_term%' 
                      OR s.service_name LIKE '%$search_term%'
-                     OR a.booking_date LIKE '%$search_term%')
+                     OR a.booking_date LIKE '%$search_term%'
+                     OR a.created_at LIKE '%$search_term%')
                      $status_filter
                      $date_filter";
     $search_result = mysqli_query($conn, $search_query);
@@ -239,7 +231,6 @@ if (isset($_GET['search']) && !empty($_GET['search'])) {
     }
 }
 
-// Also modify the all appointments query
 if (!$is_search && empty($search_results)) {
     $all_appointments_query = "SELECT a.*, p.first_name, p.last_name, s.service_name
                               FROM appointment a
@@ -254,31 +245,42 @@ if (!$is_search && empty($search_results)) {
     }
 }
 
-// NEW: Get current date and time for JavaScript
-$current_date = date('Y-m-d');
-$current_time = date('H:i:s');
+// Calculate status counts for the filter bar
+$status_counts = [
+    'all' => 0,
+    'scheduled' => 0,
+    'completed' => 0,
+    'cancelled' => 0,
+    'no_show' => 0
+];
 
-error_log("POST data: " . print_r($_POST, true));
+// Count all appointments for the selected date
+$count_query = "SELECT status, COUNT(*) as count 
+                FROM appointment 
+                WHERE booking_date = '$filter_date' 
+                GROUP BY status";
+$count_result = mysqli_query($conn, $count_query);
 
-// // Get counts for each status
-// $status_counts = [
-//     'all' => 0,
-//     'scheduled' => 0,
-//     'completed' => 0,
-//     'cancelled' => 0,
-//     'no_show' => 0
-// ];
+// Initialize counts
+while ($row = mysqli_fetch_assoc($count_result)) {
+    $status = $row['status'];
+    $status_counts[$status] = $row['count'];
+    $status_counts['all'] += $row['count'];
+}
 
-// // Query to get counts for each status
-// $count_query = "SELECT status, COUNT(*) as count FROM appointment GROUP BY status";
-// $count_result = mysqli_query($conn, $count_query);
-
-// while ($row = mysqli_fetch_assoc($count_result)) {
-//     $status_counts[$row['status']] = $row['count'];
-// }
-
-// // Calculate total count
-// $status_counts['all'] = array_sum($status_counts) - $status_counts['all']; // Subtract the initial 0
+// Also count scheduled appointments if not already counted
+if (!array_key_exists('scheduled', $status_counts)) {
+    $status_counts['scheduled'] = 0;
+}
+if (!array_key_exists('completed', $status_counts)) {
+    $status_counts['completed'] = 0;
+}
+if (!array_key_exists('cancelled', $status_counts)) {
+    $status_counts['cancelled'] = 0;
+}
+if (!array_key_exists('no_show', $status_counts)) {
+    $status_counts['no_show'] = 0;
+}
 ?>
 
 
@@ -417,69 +419,67 @@ error_log("POST data: " . print_r($_POST, true));
 
         .status-filter-bar {
             display: flex;
-            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
             margin: 20px 0;
             border-bottom: 1px solid #ddd;
-            flex-wrap: wrap;
+            padding-bottom: 10px;
+            align-items: center;
         }
 
-        .status-filter-bar .date-filter {
-            margin-right: 20px;
-        }
-
-        .status-filter-bar .date-filter input {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-family: 'Phetsarath', sans-serif;
-        }
-
-        .status-filter-bar a {
-            padding: 10px 15px;
-            margin-right: 5px;
-            text-decoration: none;
-            color: #333;
-            border-radius: 4px 4px 0 0;
-            transition: all 0.3s ease;
-        }
-
-        .status-filter-bar a:hover {
-            background-color: #f0f0f0;
-        }
-
-        .status-filter-bar a.active {
-            background-color: #3f51b5;
-            color: white;
-            border-bottom: 2px solid #3f51b5;
-        }
-
-        /* Add this to your existing CSS */
-        .status-filter-bar .date-filter {
+        .date-filter {
             display: flex;
             align-items: center;
             margin-right: 20px;
         }
 
-        .status-filter-bar .date-filter input {
-            padding: 8px 12px;
+        .date-filter label {
+            margin-right: 8px;
+            font-weight: bold;
+        }
+
+        .date-filter input[type="date"] {
+            padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
-            font-family: 'Phetsarath', sans-serif;
         }
 
-        .status-filter-bar .date-filter button {
+        .status-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .status-filters a {
             padding: 8px 12px;
-            margin-left: 5px;
+            text-decoration: none;
+            color: #333;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .status-filters a:hover {
+            background-color: #f0f0f0;
+        }
+
+        .status-filters a.active {
             background-color: #3f51b5;
             color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-family: 'Phetsarath', sans-serif;
         }
 
-        .status-filter-bar .date-filter button:hover {
-            background-color: #303f9f;
+        .status-count {
+            background-color: #e0e0e0;
+            color: #333;
+            border-radius: 10px;
+            padding: 2px 6px;
+            font-size: 0.8em;
+            margin-left: 4px;
+        }
+
+        .status-filters a.active .status-count {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
         }
     </style>
 </head>
@@ -621,6 +621,8 @@ error_log("POST data: " . print_r($_POST, true));
                     </svg>
                     ໃບບິນເກັບເງິນ</a></li>
 
+
+
             <li class="has-submenu">
                 <a href="#" onclick="toggleSubmenu(this)">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -760,31 +762,36 @@ error_log("POST data: " . print_r($_POST, true));
             </form>
         </div>
 
-        <!-- Find the status-filter-bar div and add the date filter at the beginning -->
+        <!-- Status Filter Bar with Counts and Date Filter -->
         <div class="status-filter-bar">
             <div class="date-filter">
-                <input type="date" id="filter_date" name="filter_date" value="<?php echo isset($_GET['filter_date']) ? htmlspecialchars($_GET['filter_date']) : ''; ?>">
-                <button type="button" onclick="applyDateFilter()">Filter</button>
-                <?php if (isset($_GET['filter_date'])): ?>
-                    <button type="button" onclick="clearDateFilter()" style="margin-left: 5px;">Clear</button>
-                <?php endif; ?>
+                <label for="filter_date">Date:</label>
+                <input type="date" id="filter_date" name="filter_date"
+                    value="<?php echo isset($_GET['filter_date']) ? htmlspecialchars($_GET['filter_date']) : date('Y-m-d'); ?>">
             </div>
 
-            <a href="?status=all<?php echo isset($_GET['filter_date']) ? '&filter_date=' . htmlspecialchars($_GET['filter_date']) : ''; ?>" class="<?php echo (!isset($_GET['status'])) || $_GET['status'] == 'all' ? 'active' : ''; ?>">
-                All Appointments <span class="status-count"></span>
-            </a>
-            <a href="?status=scheduled<?php echo isset($_GET['filter_date']) ? '&filter_date=' . htmlspecialchars($_GET['filter_date']) : ''; ?>" class="<?php echo (isset($_GET['status'])) && $_GET['status'] == 'scheduled' ? 'active' : ''; ?>">
-                Scheduled <span class="status-count"></span>
-            </a>
-            <a href="?status=completed<?php echo isset($_GET['filter_date']) ? '&filter_date=' . htmlspecialchars($_GET['filter_date']) : ''; ?>" class="<?php echo (isset($_GET['status'])) && $_GET['status'] == 'completed' ? 'active' : ''; ?>">
-                Completed <span class="status-count"></span>
-            </a>
-            <a href="?status=cancelled<?php echo isset($_GET['filter_date']) ? '&filter_date=' . htmlspecialchars($_GET['filter_date']) : ''; ?>" class="<?php echo (isset($_GET['status'])) && $_GET['status'] == 'cancelled' ? 'active' : ''; ?>">
-                Cancelled <span class="status-count"></span>
-            </a>
-            <a href="?status=no_show<?php echo isset($_GET['filter_date']) ? '&filter_date=' . htmlspecialchars($_GET['filter_date']) : ''; ?>" class="<?php echo (isset($_GET['status'])) && $_GET['status'] == 'no_show' ? 'active' : ''; ?>">
-                No-show <span class="status-count"></span>
-            </a>
+            <div class="status-filters">
+                <a href="?status=all<?php echo isset($_GET['filter_date']) ? '&filter_date=' . htmlspecialchars($_GET['filter_date']) : ''; ?>"
+                    class="<?php echo (!isset($_GET['status'])) || $_GET['status'] == 'all' ? 'active' : ''; ?>">
+                    All Appointments <span class="status-count">(<?php echo $status_counts['all']; ?>)</span>
+                </a>
+                <a href="?status=scheduled<?php echo isset($_GET['filter_date']) ? '&filter_date=' . htmlspecialchars($_GET['filter_date']) : ''; ?>"
+                    class="<?php echo (isset($_GET['status'])) && $_GET['status'] == 'scheduled' ? 'active' : ''; ?>">
+                    Scheduled <span class="status-count">(<?php echo $status_counts['scheduled']; ?>)</span>
+                </a>
+                <a href="?status=completed<?php echo isset($_GET['filter_date']) ? '&filter_date=' . htmlspecialchars($_GET['filter_date']) : ''; ?>"
+                    class="<?php echo (isset($_GET['status'])) && $_GET['status'] == 'completed' ? 'active' : ''; ?>">
+                    Completed <span class="status-count">(<?php echo $status_counts['completed']; ?>)</span>
+                </a>
+                <a href="?status=cancelled<?php echo isset($_GET['filter_date']) ? '&filter_date=' . htmlspecialchars($_GET['filter_date']) : ''; ?>"
+                    class="<?php echo (isset($_GET['status'])) && $_GET['status'] == 'cancelled' ? 'active' : ''; ?>">
+                    Cancelled <span class="status-count">(<?php echo $status_counts['cancelled']; ?>)</span>
+                </a>
+                <a href="?status=no_show<?php echo isset($_GET['filter_date']) ? '&filter_date=' . htmlspecialchars($_GET['filter_date']) : ''; ?>"
+                    class="<?php echo (isset($_GET['status'])) && $_GET['status'] == 'no_show' ? 'active' : ''; ?>">
+                    No-show <span class="status-count">(<?php echo $status_counts['no_show']; ?>)</span>
+                </a>
+            </div>
         </div>
 
         <!-- Table and modals (same structure - truncated for brevity) -->
@@ -844,12 +851,11 @@ error_log("POST data: " . print_r($_POST, true));
     </div>
 
     <!-- Edit Modal -->
+    <!-- Edit Modal -->
     <div id="editModal" class="modal">
         <div class="modal-content">
             <h2>Appointment Feedback</h2>
-            <!-- <form id="editForm" method="POST" action="appointment_management.php"> -->
-            <!-- In your edit modal form, change the action to include current filters -->
-            <form id="editForm" method="POST" action="appointment_management.php?<?php echo isset($_GET['status']) ? 'status=' . htmlspecialchars($_GET['status']) : ''; ?><?php echo isset($_GET['filter_date']) ? '&filter_date=' . htmlspecialchars($_GET['filter_date']) : ''; ?><?php echo isset($_GET['search']) ? '&search=' . htmlspecialchars($_GET['search']) : ''; ?>">
+            <form id="editForm" method="POST" action="appointment_management.php">
                 <input type="hidden" id="modal_appointment_id" name="appointment_id">
                 <input type="hidden" id="modal_hidden_patient_id" name="patient_id">
                 <div class="patient-form">
@@ -951,8 +957,8 @@ error_log("POST data: " . print_r($_POST, true));
 
     <script>
         // NEW: Add current date and time variables for JavaScript
-        const currentDate = '<?php echo htmlspecialchars($current_date); ?>';
-        const currentTime = '<?php echo htmlspecialchars($current_time); ?>';
+        const currentDate = '<?php echo $current_date; ?>';
+        const currentTime = '<?php echo $current_time; ?>';
 
         // Custom dropdown functionality (same as original)
         document.addEventListener('DOMContentLoaded', function() {
@@ -1390,62 +1396,19 @@ error_log("POST data: " . print_r($_POST, true));
             });
         });
 
-        // // Add this to your script section
-        // document.getElementById('filter_date').addEventListener('change', function() {
-        //     const date = this.value;
-        //     const currentUrl = new URL(window.location.href);
-
-        //     // Keep existing parameters
-        //     const params = new URLSearchParams(window.location.search);
-
-        //     // Set or update the filter_date parameter
-        //     params.set('filter_date', date);
-
-        //     // Keep the status filter if it exists
-        //     if (params.has('status')) {
-        //         params.set('status', params.get('status'));
-        //     }
-
-        //     window.location.href = window.location.pathname + '?' + params.toString();
-        // });
-
-        // Add these functions to your script section
-        function applyDateFilter() {
-            const date = document.getElementById('filter_date').value;
+        // Add this to your script section
+        document.getElementById('filter_date').addEventListener('change', function() {
+            const date = this.value;
             const currentUrl = new URL(window.location.href);
-
-            // Keep existing parameters
-            const params = new URLSearchParams(window.location.search);
-
-            // Set or update the filter_date parameter
-            if (date) {
-                params.set('filter_date', date);
-            } else {
-                params.delete('filter_date');
-            }
+            currentUrl.searchParams.set('filter_date', date);
 
             // Keep the status filter if it exists
-            if (!params.has('status')) {
-                params.set('status', 'all');
+            const status = new URLSearchParams(window.location.search).get('status');
+            if (status) {
+                currentUrl.searchParams.set('status', status);
             }
 
-            window.location.href = window.location.pathname + '?' + params.toString();
-        }
-
-        function clearDateFilter() {
-            const currentUrl = new URL(window.location.href);
-            const params = new URLSearchParams(window.location.search);
-
-            params.delete('filter_date');
-
-            window.location.href = window.location.pathname + '?' + params.toString();
-        }
-
-        // Add event listener for Enter key on date filter
-        document.getElementById('filter_date').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                applyDateFilter();
-            }
+            window.location.href = currentUrl.toString();
         });
     </script>
 </body>

@@ -4,9 +4,6 @@ session_start();
 // Set Laos timezone
 date_default_timezone_set('Asia/Vientiane');
 
-$current_date = date('Y-m-d');
-$current_time = date('H:i:s');
-
 if (!isset($_SESSION['admin_id'])) {
     header('Location: signin_admin.php');
     exit();
@@ -51,8 +48,7 @@ $time_slots = [
     '14:00:00',
     '14:30:00',
     '15:00:00',
-    '15:30:00',
-    '23:30:00',
+    '15:30:00'
 ];
 
 // Validation checks
@@ -75,25 +71,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $symptoms = isset($_POST['symptoms']) ? mysqli_real_escape_string($conn, substr($_POST['symptoms'], 0, 30)) : '';
         $comment = isset($_POST['comment']) ? mysqli_real_escape_string($conn, substr($_POST['comment'], 0, 30)) : '';
         $status = mysqli_real_escape_string($conn, $_POST['status']);
-
-        // Check if booking is for today and within 3 hours
-        $today = date('Y-m-d');
-        if ($booking_date == $today) {
-            $current_time = date('H:i:s');
-            $booking_timestamp = strtotime($booking_time);
-            $current_timestamp = strtotime($current_time);
-            $three_hours_later = $current_timestamp + (3 * 60 * 60);
-
-            if ($booking_timestamp < $three_hours_later) {
-                $errors = "Cannot book appointments less than 3 hours from now for today.";
-            }
-        }
-
         // Check for existing appointment at same time
         $check_query = "SELECT * FROM appointment 
                         WHERE booking_date = '$booking_date' 
-                        AND booking_time = '$booking_time'
-                        AND status !='cancelled'";
+                        AND booking_time = '$booking_time'";
         $check_result = mysqli_query($conn, $check_query);
 
         if (mysqli_num_rows($check_result) > 0) {
@@ -126,21 +107,43 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Update functionality
     if (isset($_POST['update_button']) && !empty($_POST['appointment_id'])) {
         $appointment_id = mysqli_real_escape_string($conn, $_POST['appointment_id']);
+        $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id']); // This should now be available
+        $service_type_id = mysqli_real_escape_string($conn, $_POST['service_type_id']);
+        $booking_time = mysqli_real_escape_string($conn, $_POST['booking_time']);
+        $booking_date = mysqli_real_escape_string($conn, $_POST['booking_date']);
+        $symptoms = isset($_POST['symptoms']) ? mysqli_real_escape_string($conn, substr($_POST['symptoms'], 0, 30)) : '';
         $comment = isset($_POST['comment']) ? mysqli_real_escape_string($conn, substr($_POST['comment'], 0, 30)) : '';
         $status = mysqli_real_escape_string($conn, $_POST['status']);
 
-        // Only update comment and status
-        $update_query = "UPDATE appointment 
-                    SET comment = '$comment',
-                        status = '$status'
-                    WHERE appointment_id = '$appointment_id'";
+        // Check for existing appointment at same time (excluding current appointment)
+        $check_query = "SELECT * FROM appointment 
+                        WHERE booking_date = '$booking_date' 
+                        AND booking_time = '$booking_time'
+                        AND appointment_id != '$appointment_id'";
+        $check_result = mysqli_query($conn, $check_query);
 
-        if (mysqli_query($conn, $update_query)) {
-            $message = "Appointment feedback updated successfully!";
-            // Clear form fields
-            $appointment_id = $comment = $status = '';
-        } else {
-            $errors = "Error updating appointment: " . mysqli_error($conn);
+        if (mysqli_num_rows($check_result) > 0) {
+            $errors = "An appointment already exists at this time.";
+        }
+
+        if (empty($errors)) {
+            $update_query = "UPDATE appointment 
+                            SET service_type_id = '$service_type_id',
+                                booking_time = '$booking_time',
+                                booking_date = '$booking_date',
+                                symptoms = '$symptoms',
+                                comment = '$comment',
+                                status = '$status'
+                            WHERE appointment_id = '$appointment_id'";
+
+            if (mysqli_query($conn, $update_query)) {
+                $message = "Appointment updated successfully!";
+                // Clear form fields
+                $appointment_id = $patient_id = $service_type_id = $booking_time =
+                    $booking_date = $symptoms = $comment = $status = '';
+            } else {
+                $errors = "Error updating appointment: " . mysqli_error($conn);
+            }
         }
     }
 }
@@ -177,21 +180,6 @@ while ($row = mysqli_fetch_assoc($service_types_result)) {
     $service_types[$row['service_type_id']] = $row['service_name'];
 }
 
-// Fetch patients and service types (same as original)
-$patients = [];
-$patients_query = "SELECT patient_id, first_name, last_name FROM patient ORDER BY first_name, last_name";
-$patients_result = mysqli_query($conn, $patients_query);
-while ($row = mysqli_fetch_assoc($patients_result)) {
-    $patients[$row['patient_id']] = $row['patient_id'] . ' - ' . $row['first_name'] . ' ' . $row['last_name'];
-}
-
-$service_types = [];
-$service_types_query = "SELECT service_type_id, service_name FROM service_type";
-$service_types_result = mysqli_query($conn, $service_types_query);
-while ($row = mysqli_fetch_assoc($service_types_result)) {
-    $service_types[$row['service_type_id']] = $row['service_name'];
-}
-
 // Search functionality with status filter
 $search_query = "";
 $search_results = [];
@@ -205,13 +193,6 @@ if (isset($_GET['status'])) {
     }
 }
 
-// Modify the search functionality section to include date filtering
-$date_filter = "";
-if (isset($_GET['filter_date']) && !empty($_GET['filter_date'])) {
-    $date_filter = " AND a.booking_date = '" . mysqli_real_escape_string($conn, $_GET['filter_date']) . "'";
-}
-
-// Then modify the search query to include the date filter
 if (isset($_GET['search']) && !empty($_GET['search'])) {
     $is_search = true;
     $search_term = mysqli_real_escape_string($conn, $_GET['search']);
@@ -223,9 +204,9 @@ if (isset($_GET['search']) && !empty($_GET['search'])) {
                      OR p.first_name LIKE '%$search_term%' 
                      OR p.last_name LIKE '%$search_term%' 
                      OR s.service_name LIKE '%$search_term%'
-                     OR a.booking_date LIKE '%$search_term%')
-                     $status_filter
-                     $date_filter";
+                     OR a.booking_date LIKE '%$search_term%'
+                     OR a.created_at LIKE '%$search_term%')
+                     $status_filter";
     $search_result = mysqli_query($conn, $search_query);
 
     if ($search_result) {
@@ -239,13 +220,12 @@ if (isset($_GET['search']) && !empty($_GET['search'])) {
     }
 }
 
-// Also modify the all appointments query
 if (!$is_search && empty($search_results)) {
     $all_appointments_query = "SELECT a.*, p.first_name, p.last_name, s.service_name
                               FROM appointment a
                               JOIN patient p ON a.patient_id = p.patient_id
                               JOIN service_type s ON a.service_type_id = s.service_type_id
-                              WHERE 1=1 $status_filter $date_filter
+                              WHERE 1=1 $status_filter
                               ORDER BY a.booking_date DESC, a.booking_time DESC";
     $all_appointments_result = mysqli_query($conn, $all_appointments_query);
 
@@ -260,28 +240,26 @@ $current_time = date('H:i:s');
 
 error_log("POST data: " . print_r($_POST, true));
 
-// // Get counts for each status
-// $status_counts = [
-//     'all' => 0,
-//     'scheduled' => 0,
-//     'completed' => 0,
-//     'cancelled' => 0,
-//     'no_show' => 0
-// ];
+// Get counts for each status
+$status_counts = [
+    'all' => 0,
+    'scheduled' => 0,
+    'completed' => 0,
+    'cancelled' => 0,
+    'no_show' => 0
+];
 
-// // Query to get counts for each status
-// $count_query = "SELECT status, COUNT(*) as count FROM appointment GROUP BY status";
-// $count_result = mysqli_query($conn, $count_query);
+// Query to get counts for each status
+$count_query = "SELECT status, COUNT(*) as count FROM appointment GROUP BY status";
+$count_result = mysqli_query($conn, $count_query);
 
-// while ($row = mysqli_fetch_assoc($count_result)) {
-//     $status_counts[$row['status']] = $row['count'];
-// }
+while ($row = mysqli_fetch_assoc($count_result)) {
+    $status_counts[$row['status']] = $row['count'];
+}
 
-// // Calculate total count
-// $status_counts['all'] = array_sum($status_counts) - $status_counts['all']; // Subtract the initial 0
+// Calculate total count
+$status_counts['all'] = array_sum($status_counts) - $status_counts['all']; // Subtract the initial 0
 ?>
-
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -417,21 +395,8 @@ error_log("POST data: " . print_r($_POST, true));
 
         .status-filter-bar {
             display: flex;
-            align-items: center;
             margin: 20px 0;
             border-bottom: 1px solid #ddd;
-            flex-wrap: wrap;
-        }
-
-        .status-filter-bar .date-filter {
-            margin-right: 20px;
-        }
-
-        .status-filter-bar .date-filter input {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-family: 'Phetsarath', sans-serif;
         }
 
         .status-filter-bar a {
@@ -453,33 +418,18 @@ error_log("POST data: " . print_r($_POST, true));
             border-bottom: 2px solid #3f51b5;
         }
 
-        /* Add this to your existing CSS */
-        .status-filter-bar .date-filter {
-            display: flex;
-            align-items: center;
-            margin-right: 20px;
+        .status-count {
+            background-color: #e0e0e0;
+            color: #333;
+            border-radius: 10px;
+            padding: 2px 6px;
+            font-size: 0.8em;
+            margin-left: 4px;
         }
 
-        .status-filter-bar .date-filter input {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-family: 'Phetsarath', sans-serif;
-        }
-
-        .status-filter-bar .date-filter button {
-            padding: 8px 12px;
-            margin-left: 5px;
-            background-color: #3f51b5;
+        .status-filter-bar a.active .status-count {
+            background-color: rgba(255, 255, 255, 0.2);
             color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-family: 'Phetsarath', sans-serif;
-        }
-
-        .status-filter-bar .date-filter button:hover {
-            background-color: #303f9f;
         }
     </style>
 </head>
@@ -621,6 +571,8 @@ error_log("POST data: " . print_r($_POST, true));
                     </svg>
                     ໃບບິນເກັບເງິນ</a></li>
 
+
+
             <li class="has-submenu">
                 <a href="#" onclick="toggleSubmenu(this)">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -760,30 +712,22 @@ error_log("POST data: " . print_r($_POST, true));
             </form>
         </div>
 
-        <!-- Find the status-filter-bar div and add the date filter at the beginning -->
+        <!-- Status Filter Bar with Counts -->
         <div class="status-filter-bar">
-            <div class="date-filter">
-                <input type="date" id="filter_date" name="filter_date" value="<?php echo isset($_GET['filter_date']) ? htmlspecialchars($_GET['filter_date']) : ''; ?>">
-                <button type="button" onclick="applyDateFilter()">Filter</button>
-                <?php if (isset($_GET['filter_date'])): ?>
-                    <button type="button" onclick="clearDateFilter()" style="margin-left: 5px;">Clear</button>
-                <?php endif; ?>
-            </div>
-
-            <a href="?status=all<?php echo isset($_GET['filter_date']) ? '&filter_date=' . htmlspecialchars($_GET['filter_date']) : ''; ?>" class="<?php echo (!isset($_GET['status'])) || $_GET['status'] == 'all' ? 'active' : ''; ?>">
-                All Appointments <span class="status-count"></span>
+            <a href="?status=all" class="<?php echo (!isset($_GET['status'])) || $_GET['status'] == 'all' ? 'active' : ''; ?>">
+                All Appointments <span class="status-count">(<?php echo $status_counts['all']; ?>)</span>
             </a>
-            <a href="?status=scheduled<?php echo isset($_GET['filter_date']) ? '&filter_date=' . htmlspecialchars($_GET['filter_date']) : ''; ?>" class="<?php echo (isset($_GET['status'])) && $_GET['status'] == 'scheduled' ? 'active' : ''; ?>">
-                Scheduled <span class="status-count"></span>
+            <a href="?status=scheduled" class="<?php echo (isset($_GET['status'])) && $_GET['status'] == 'scheduled' ? 'active' : ''; ?>">
+                Scheduled <span class="status-count">(<?php echo $status_counts['scheduled']; ?>)</span>
             </a>
-            <a href="?status=completed<?php echo isset($_GET['filter_date']) ? '&filter_date=' . htmlspecialchars($_GET['filter_date']) : ''; ?>" class="<?php echo (isset($_GET['status'])) && $_GET['status'] == 'completed' ? 'active' : ''; ?>">
-                Completed <span class="status-count"></span>
+            <a href="?status=completed" class="<?php echo (isset($_GET['status'])) && $_GET['status'] == 'completed' ? 'active' : ''; ?>">
+                Completed <span class="status-count">(<?php echo $status_counts['completed']; ?>)</span>
             </a>
-            <a href="?status=cancelled<?php echo isset($_GET['filter_date']) ? '&filter_date=' . htmlspecialchars($_GET['filter_date']) : ''; ?>" class="<?php echo (isset($_GET['status'])) && $_GET['status'] == 'cancelled' ? 'active' : ''; ?>">
-                Cancelled <span class="status-count"></span>
+            <a href="?status=cancelled" class="<?php echo (isset($_GET['status'])) && $_GET['status'] == 'cancelled' ? 'active' : ''; ?>">
+                Cancelled <span class="status-count">(<?php echo $status_counts['cancelled']; ?>)</span>
             </a>
-            <a href="?status=no_show<?php echo isset($_GET['filter_date']) ? '&filter_date=' . htmlspecialchars($_GET['filter_date']) : ''; ?>" class="<?php echo (isset($_GET['status'])) && $_GET['status'] == 'no_show' ? 'active' : ''; ?>">
-                No-show <span class="status-count"></span>
+            <a href="?status=no_show" class="<?php echo (isset($_GET['status'])) && $_GET['status'] == 'no_show' ? 'active' : ''; ?>">
+                No-show <span class="status-count">(<?php echo $status_counts['no_show']; ?>)</span>
             </a>
         </div>
 
@@ -844,13 +788,13 @@ error_log("POST data: " . print_r($_POST, true));
     </div>
 
     <!-- Edit Modal -->
+    <!-- Edit Modal -->
     <div id="editModal" class="modal">
         <div class="modal-content">
-            <h2>Appointment Feedback</h2>
-            <!-- <form id="editForm" method="POST" action="appointment_management.php"> -->
-            <!-- In your edit modal form, change the action to include current filters -->
-            <form id="editForm" method="POST" action="appointment_management.php?<?php echo isset($_GET['status']) ? 'status=' . htmlspecialchars($_GET['status']) : ''; ?><?php echo isset($_GET['filter_date']) ? '&filter_date=' . htmlspecialchars($_GET['filter_date']) : ''; ?><?php echo isset($_GET['search']) ? '&search=' . htmlspecialchars($_GET['search']) : ''; ?>">
+            <h2>Edit Appointment</h2>
+            <form id="editForm" method="POST" action="appointment_management.php"> <!-- Added action -->
                 <input type="hidden" id="modal_appointment_id" name="appointment_id">
+                <!-- Add this hidden field for patient_id -->
                 <input type="hidden" id="modal_hidden_patient_id" name="patient_id">
                 <div class="patient-form">
                     <!-- Appointment ID field (readonly) -->
@@ -859,11 +803,10 @@ error_log("POST data: " . print_r($_POST, true));
                         <input type="text" id="display_appointment_id" name="display_appointment_id" readonly class="readonly-field">
                     </div>
 
-                    <!-- Patient field (readonly) -->
+                    <!-- Patient field (disabled) -->
                     <div class="form-group">
                         <label for="modal_patient_id">Patient</label>
-                        <input type="text" id="modal_patient_display" class="readonly-field" readonly>
-                        <select id="modal_patient_id" name="patient_id" class="hidden-select" disabled>
+                        <select id="modal_patient_id" name="patient_id" disabled class="readonly-field">
                             <option value="">Select Patient</option>
                             <?php foreach ($patients as $id => $name): ?>
                                 <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></option>
@@ -871,11 +814,9 @@ error_log("POST data: " . print_r($_POST, true));
                         </select>
                     </div>
 
-                    <!-- Service Type (readonly) -->
                     <div class="form-group">
-                        <label for="modal_service_type_display">Service Type</label>
-                        <input type="text" id="modal_service_type_display" class="readonly-field" readonly>
-                        <select id="modal_service_type_id" name="service_type_id" class="hidden-select" disabled>
+                        <label for="modal_service_type_id">Service Type</label>
+                        <select id="modal_service_type_id" name="service_type_id" required>
                             <option value="">Select Service</option>
                             <?php foreach ($service_types as $id => $name): ?>
                                 <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></option>
@@ -883,18 +824,14 @@ error_log("POST data: " . print_r($_POST, true));
                         </select>
                     </div>
 
-                    <!-- Date (readonly) -->
                     <div class="form-group">
-                        <label for="modal_booking_date_display">Date</label>
-                        <input type="text" id="modal_booking_date_display" class="readonly-field" readonly>
-                        <input type="date" id="modal_booking_date" name="booking_date" class="hidden-select" disabled>
+                        <label for="modal_booking_date">Date</label>
+                        <input type="date" id="modal_booking_date" name="booking_date" required>
                     </div>
 
-                    <!-- Time (readonly) -->
                     <div class="form-group">
-                        <label for="modal_booking_time_display">Time</label>
-                        <input type="text" id="modal_booking_time_display" class="readonly-field" readonly>
-                        <select id="modal_booking_time" name="booking_time" class="hidden-select" disabled>
+                        <label for="modal_booking_time">Time</label>
+                        <select id="modal_booking_time" name="booking_time" required>
                             <option value="">Select Time</option>
                             <?php foreach ($time_slots as $time): ?>
                                 <option value="<?php echo htmlspecialchars($time); ?>"><?php echo htmlspecialchars(substr($time, 0, 5)); ?></option>
@@ -902,20 +839,16 @@ error_log("POST data: " . print_r($_POST, true));
                         </select>
                     </div>
 
-                    <!-- Symptoms (readonly) -->
                     <div class="form-group">
-                        <label for="modal_symptoms_display">Symptoms</label>
-                        <textarea id="modal_symptoms_display" class="readonly-field" rows="3" readonly></textarea>
-                        <textarea id="modal_symptoms" name="symptoms" class="hidden-select" rows="3" maxlength="30" disabled></textarea>
+                        <label for="modal_symptoms">Symptoms (max 30 chars)</label>
+                        <textarea id="modal_symptoms" name="symptoms" rows="3" maxlength="30"></textarea>
                     </div>
 
-                    <!-- Comment (editable) -->
                     <div class="form-group">
                         <label for="modal_comment">Comment (max 30 chars)</label>
                         <textarea id="modal_comment" name="comment" rows="3" maxlength="30"></textarea>
                     </div>
 
-                    <!-- Status (editable) -->
                     <div class="form-group">
                         <label for="modal_status">Status</label>
                         <select id="modal_status" name="status" required>
@@ -928,7 +861,7 @@ error_log("POST data: " . print_r($_POST, true));
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="cancel-button" onclick="closeModal()">Cancel</button>
-                    <button type="submit" class="update-button" name="update_button">Update Feedback</button>
+                    <button type="submit" class="update-button" name="update_button">Update</button>
                 </div>
             </form>
         </div>
@@ -951,8 +884,8 @@ error_log("POST data: " . print_r($_POST, true));
 
     <script>
         // NEW: Add current date and time variables for JavaScript
-        const currentDate = '<?php echo htmlspecialchars($current_date); ?>';
-        const currentTime = '<?php echo htmlspecialchars($current_time); ?>';
+        const currentDate = '<?php echo $current_date; ?>';
+        const currentTime = '<?php echo $current_time; ?>';
 
         // Custom dropdown functionality (same as original)
         document.addEventListener('DOMContentLoaded', function() {
@@ -1027,36 +960,44 @@ error_log("POST data: " . print_r($_POST, true));
 
         // Modal functions
         function showEditModal(appointmentId, patientId, serviceTypeId, bookingTime, bookingDate, symptoms, comment, status) {
-            // Set the hidden appointment ID
+            // Set the hidden and displayed appointment IDs
             document.getElementById('modal_appointment_id').value = appointmentId;
             document.getElementById('display_appointment_id').value = appointmentId;
 
-            // Set patient information (display only)
-            const patientSelect = document.getElementById('modal_patient_id');
-            patientSelect.value = patientId;
+            // Set patient ID in both hidden and visible fields
             document.getElementById('modal_hidden_patient_id').value = patientId;
-            document.getElementById('modal_patient_display').value = patientSelect.options[patientSelect.selectedIndex].text;
+            document.getElementById('modal_patient_id').value = patientId;
+            document.getElementById('modal_patient_id').disabled = true;
 
-            // Set service type (display only)
-            const serviceSelect = document.getElementById('modal_service_type_id');
-            serviceSelect.value = serviceTypeId;
-            document.getElementById('modal_service_type_display').value = serviceSelect.options[serviceSelect.selectedIndex].text;
-
-            // Set date and time (display only)
-            document.getElementById('modal_booking_date').value = bookingDate;
-            document.getElementById('modal_booking_date_display').value = bookingDate;
+            // Set other fields
+            document.getElementById('modal_service_type_id').value = serviceTypeId;
             document.getElementById('modal_booking_time').value = bookingTime;
-            document.getElementById('modal_booking_time_display').value = bookingTime.substring(0, 5);
-
-            // Set symptoms (display only)
+            document.getElementById('modal_booking_date').value = bookingDate;
+            // Store original date in a data attribute
+            document.getElementById('modal_booking_date').dataset.originalDate = bookingDate;
             document.getElementById('modal_symptoms').value = symptoms || '';
-            document.getElementById('modal_symptoms_display').value = symptoms || '';
-
-            // Set editable fields
             document.getElementById('modal_comment').value = comment || '';
             document.getElementById('modal_status').value = status;
 
+            // Store the current time in a data attribute to avoid disabling it
+            const modalBookingTimeSelect = document.getElementById('modal_booking_time');
+            modalBookingTimeSelect.dataset.currentTime = bookingTime;
+
+            // If the date is today, check if we need to reset the time
+            if (bookingDate === currentDate) {
+                const now = new Date();
+                const currentHours = String(now.getHours()).padStart(2, '0');
+                const currentMinutes = String(now.getMinutes()).padStart(2, '0');
+                const currentSeconds = String(now.getSeconds()).padStart(2, '0');
+                const currentTimeFormatted = `${currentHours}:${currentMinutes}:${currentSeconds}`;
+
+                if (bookingTime < currentTimeFormatted) {
+                    modalBookingTimeSelect.selectedIndex = 0; // Reset to "Select Time"
+                }
+            }
+
             document.getElementById('editModal').style.display = 'block';
+            updateTimeSlotsAvailability();
         }
 
         function closeModal() {
@@ -1082,58 +1023,42 @@ error_log("POST data: " . print_r($_POST, true));
             }
         }
 
-        // MODIFIED: Enhanced time slot availability function with 3-hour buffer rule
+        // MODIFIED: Enhanced time slot availability function with past time blocking
         function updateTimeSlotsAvailability() {
             const bookingDate = document.getElementById('booking_date').value;
             const bookingTimeSelect = document.getElementById('booking_time');
             const modalBookingDate = document.getElementById('modal_booking_date');
             const modalBookingTimeSelect = document.getElementById('modal_booking_time');
 
-            // Function to check if a time slot is within 3 hours from now
-            function isWithin3Hours(timeSlot, selectedDate) {
+            // Function to check if a time slot has passed today
+            function isTimePassed(timeSlot, selectedDate) {
                 if (selectedDate !== currentDate) {
                     return false; // Not today, so no time restrictions
                 }
 
-                // Parse current time and selected time
-                const now = new Date();
-                const [currentHours, currentMinutes, currentSeconds] = currentTime.split(':').map(Number);
-                now.setHours(currentHours, currentMinutes, currentSeconds);
-
-                const [slotHours, slotMinutes, slotSeconds] = timeSlot.split(':').map(Number);
-                const slotTime = new Date();
-                slotTime.setHours(slotHours, slotMinutes, slotSeconds);
-
-                // Calculate difference in milliseconds
-                const diffMs = slotTime - now;
-                const diffHours = diffMs / (1000 * 60 * 60);
-
-                return diffHours < 3;
+                // Compare time slots (format: HH:MM:SS vs HH:MM:SS)
+                return timeSlot <= currentTime;
             }
 
             if (bookingDate) {
-                // First, reset all options to default state
-                Array.from(bookingTimeSelect.options).forEach(option => {
-                    if (option.value) {
-                        option.disabled = false;
-                        option.style.color = '';
-                        // Remove any status labels
-                        option.textContent = option.textContent.replace(' (Booked)', '')
-                            .replace(' (Unavailable)', '');
-                    }
-                });
-
                 // Fetch booked time slots for this date via AJAX
                 fetch('get_booked_times.php?date=' + bookingDate)
                     .then(response => response.json())
                     .then(bookedTimes => {
-                        // Disable already booked times (unless status is cancelled)
+                        // Enable all options first
+                        Array.from(bookingTimeSelect.options).forEach(option => {
+                            if (option.value) {
+                                option.disabled = false;
+                                option.style.color = '';
+                            }
+                        });
+
+                        // Disable already booked times
                         bookedTimes.forEach(time => {
-                            const option = bookingTimeSelect.querySelector(`option[value="${time.time}"]`);
-                            if (option && time.status !== 'cancelled') {
+                            const option = bookingTimeSelect.querySelector(`option[value="${time}"]`);
+                            if (option) {
                                 option.disabled = true;
                                 option.style.color = '#999';
-                                option.textContent = option.textContent + ' (Booked)';
                                 if (option.selected) {
                                     option.selected = false;
                                     bookingTimeSelect.selectedIndex = 0;
@@ -1141,17 +1066,24 @@ error_log("POST data: " . print_r($_POST, true));
                             }
                         });
 
-                        // NEW: Disable time slots within 3 hours if selected date is today
+                        // NEW: Disable past time slots if selected date is today
                         if (bookingDate === currentDate) {
                             Array.from(bookingTimeSelect.options).forEach(option => {
-                                if (option.value && isWithin3Hours(option.value, bookingDate)) {
+                                if (option.value && isTimePassed(option.value, bookingDate)) {
                                     option.disabled = true;
                                     option.style.color = '#ccc';
-                                    option.textContent = option.textContent + ' (Unavailable)';
+                                    option.textContent = option.textContent + ' (Past)';
                                     if (option.selected) {
                                         option.selected = false;
                                         bookingTimeSelect.selectedIndex = 0;
                                     }
+                                }
+                            });
+                        } else {
+                            // Remove "(Past)" text if date is not today
+                            Array.from(bookingTimeSelect.options).forEach(option => {
+                                if (option.value) {
+                                    option.textContent = option.textContent.replace(' (Past)', '');
                                 }
                             });
                         }
@@ -1163,38 +1095,41 @@ error_log("POST data: " . print_r($_POST, true));
 
             // Same logic for modal if it exists
             if (modalBookingDate && modalBookingDate.value) {
-                // First reset modal options
-                Array.from(modalBookingTimeSelect.options).forEach(option => {
-                    if (option.value) {
-                        option.disabled = false;
-                        option.style.color = '';
-                        option.textContent = option.textContent.replace(' (Booked)', '')
-                            .replace(' (Unavailable)', '');
-                    }
-                });
-
                 fetch('get_booked_times.php?date=' + modalBookingDate.value)
                     .then(response => response.json())
                     .then(bookedTimes => {
                         // Store current selected time before making changes
                         const currentSelectedTime = modalBookingTimeSelect.value;
 
-                        bookedTimes.forEach(time => {
-                            const option = modalBookingTimeSelect.querySelector(`option[value="${time.time}"]`);
-                            if (option && option.value !== modalBookingTimeSelect.dataset.currentTime && time.status !== 'cancelled') {
-                                option.disabled = true;
-                                option.style.color = '#999';
-                                option.textContent = option.textContent + ' (Booked)';
+                        Array.from(modalBookingTimeSelect.options).forEach(option => {
+                            if (option.value) {
+                                option.disabled = false;
+                                option.style.color = '';
                             }
                         });
 
-                        // NEW: Check if date is today and selected time is within 3 hours
+                        bookedTimes.forEach(time => {
+                            const option = modalBookingTimeSelect.querySelector(`option[value="${time}"]`);
+                            if (option && option.value !== modalBookingTimeSelect.dataset.currentTime) {
+                                option.disabled = true;
+                                option.style.color = '#999';
+                            }
+                        });
+
+                        // NEW: Check if date is today and selected time is in the past
                         if (modalBookingDate.value === currentDate) {
                             Array.from(modalBookingTimeSelect.options).forEach(option => {
-                                if (option.value && isWithin3Hours(option.value, modalBookingDate.value)) {
+                                if (option.value && isTimePassed(option.value, modalBookingDate.value)) {
                                     option.disabled = true;
                                     option.style.color = '#ccc';
-                                    option.textContent = option.textContent + ' (Unavailable)';
+                                    option.textContent = option.textContent.replace(' (Past)', '') + ' (Past)';
+                                }
+                            });
+                        } else {
+                            // Remove "(Past)" text if date is not today
+                            Array.from(modalBookingTimeSelect.options).forEach(option => {
+                                if (option.value) {
+                                    option.textContent = option.textContent.replace(' (Past)', '');
                                 }
                             });
                         }
@@ -1388,64 +1323,6 @@ error_log("POST data: " . print_r($_POST, true));
                     toggleSubmenu(toggleLink, true);
                 }
             });
-        });
-
-        // // Add this to your script section
-        // document.getElementById('filter_date').addEventListener('change', function() {
-        //     const date = this.value;
-        //     const currentUrl = new URL(window.location.href);
-
-        //     // Keep existing parameters
-        //     const params = new URLSearchParams(window.location.search);
-
-        //     // Set or update the filter_date parameter
-        //     params.set('filter_date', date);
-
-        //     // Keep the status filter if it exists
-        //     if (params.has('status')) {
-        //         params.set('status', params.get('status'));
-        //     }
-
-        //     window.location.href = window.location.pathname + '?' + params.toString();
-        // });
-
-        // Add these functions to your script section
-        function applyDateFilter() {
-            const date = document.getElementById('filter_date').value;
-            const currentUrl = new URL(window.location.href);
-
-            // Keep existing parameters
-            const params = new URLSearchParams(window.location.search);
-
-            // Set or update the filter_date parameter
-            if (date) {
-                params.set('filter_date', date);
-            } else {
-                params.delete('filter_date');
-            }
-
-            // Keep the status filter if it exists
-            if (!params.has('status')) {
-                params.set('status', 'all');
-            }
-
-            window.location.href = window.location.pathname + '?' + params.toString();
-        }
-
-        function clearDateFilter() {
-            const currentUrl = new URL(window.location.href);
-            const params = new URLSearchParams(window.location.search);
-
-            params.delete('filter_date');
-
-            window.location.href = window.location.pathname + '?' + params.toString();
-        }
-
-        // Add event listener for Enter key on date filter
-        document.getElementById('filter_date').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                applyDateFilter();
-            }
         });
     </script>
 </body>
