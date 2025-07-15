@@ -22,19 +22,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (strlen($password) < 8) $errors[] = "Password must be at least 8 characters";
     if ($password !== $confirm_password) $errors[] = "Passwords do not match";
 
+    // Password character validation (server-side)
+    if (!preg_match('/^[A-Za-z0-9!@#$%^&*()_+\-=\[\]{};\':"\\\\|,.<>\/?]*$/', $password)) {
+        $errors[] = "ລະຫັດຜ່ານຕ້ອງມີພຽງຕົວອັກສອນອັງກິດ, ຕົວເລກ, ແລະ ສັນຍາລັກເທົ່ານັ້ນ.";
+    }
+
     // Check if email already exists
     $email_check = "SELECT * FROM admin WHERE email = '$email'";
     $result = mysqli_query($conn, $email_check);
     if (mysqli_num_rows($result) > 0) {
         $errors[] = "ອີເມວຖືກໃຊ້ໄປແລ້ວ";
     }
-
-    // // Check if username already exists
-    // $username_check = "SELECT * FROM admin WHERE user_name = '$user_name'";
-    // $username_result = mysqli_query($conn, $username_check);
-    // if (mysqli_num_rows($username_result) > 0) {
-    //     $errors[] = "Username already taken";
-    // }
 
     if (empty($errors)) {
         // Get the highest existing admin_id and increment it
@@ -101,6 +99,13 @@ $conn->close();
             font-size: 0.95rem;
             text-align: center;
         }
+
+        .password-error {
+            color: #e74c3c;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            display: none;
+        }
     </style>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -112,8 +117,9 @@ $conn->close();
     <header>
         <div class="container header-content">
             <div class="logo">
-                <svg viewBox="0 0 24 24" fill="currentColor" class="icon">
-                    <path d="M12 4a4 4 0 100 8 4 4 0 000-8zM2 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10S2 17.514 2 12z"></path>
+                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
                 </svg>
                 <span>Vision Care</span>
             </div>
@@ -127,8 +133,9 @@ $conn->close();
     <main class="container sign-in-container">
         <div class="sign-in-card">
             <div class="logo-center">
-                <svg viewBox="0 0 24 24" fill="currentColor" class="icon-large">
-                    <path d="M12 4a4 4 0 100 8 4 4 0 000-8zM2 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10S2 17.514 2 12z"></path>
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-large">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
                 </svg>
                 <h2>Vision Care</h2>
             </div>
@@ -148,7 +155,7 @@ $conn->close();
                 <div class="success-message"><?php echo htmlspecialchars($success); ?></div>
             <?php endif; ?>
 
-            <form method="POST" action="register_admin.php">
+            <form method="POST" action="register_admin.php" onsubmit="return validatePassword()">
                 <div class="input-group">
                     <label for="user_name">ຊື່ຜູ້ໃຊ້</label>
                     <input type="text" id="user_name" name="user_name" required
@@ -165,6 +172,7 @@ $conn->close();
                     <label for="password">ລະຫັດຜ່ານ</label>
                     <div class="password-input">
                         <input type="password" id="password" name="password" required
+                            onkeydown="validatePasswordInput(event)"
                             oninput="checkPasswordStrength(this.value)">
                         <button type="button" class="toggle-password" onclick="togglePasswordVisibility('password')">
                             <svg viewBox="0 0 24 24" fill="currentColor" class="eye-icon">
@@ -176,12 +184,14 @@ $conn->close();
                         <div class="password-strength-bar" id="password-strength-bar"></div>
                     </div>
                     <p class="password-hint" id="password-hint">ລະຫັດຕ້ອງມີ 8 ໂຕຂຶ້ນໄປ, ຢ່າງໜ້ອຍຕ້ອງມີ 1 ຕົວໜັງສື 1 ຕົວເລກ</p>
+                    <!-- <p class="password-error" id="password-error">ລະຫັດຜ່ານສາມາດປ້ອນໄດ້ພຽງແຕ່ຕົວອັກສອນອັງກິດ, ຕົວເລກ, ແລະສັນຍາລັກ !@#$%^&*()_+-=[]{};':"\|,.<>/?</p> -->
                 </div>
 
                 <div class="input-group">
                     <label for="confirm_password">ຢືນຢັນລະຫັດຜ່ານ</label>
                     <div class="password-input">
                         <input type="password" id="confirm_password" name="confirm_password" required
+                            onkeydown="validatePasswordInput(event)"
                             oninput="checkPasswordMatch()">
                         <button type="button" class="toggle-password" onclick="togglePasswordVisibility('confirm_password')">
                             <svg viewBox="0 0 24 24" fill="currentColor" class="eye-icon">
@@ -215,6 +225,31 @@ $conn->close();
                 field.type = 'password';
                 icon.innerHTML = `<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>`;
             }
+        }
+
+        function validatePasswordInput(event) {
+            // Only allow English letters, numbers, and common symbols
+            const allowedChars = /^[A-Za-z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]*$/;
+
+            // Check if the pressed key is allowed
+            if (!allowedChars.test(event.key)) {
+                event.preventDefault();
+                document.getElementById('password-error').style.display = 'block';
+                return false;
+            } else {
+                document.getElementById('password-error').style.display = 'none';
+            }
+        }
+
+        function validatePassword() {
+            const password = document.getElementById('password').value;
+            const allowedChars = /^[A-Za-z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]*$/;
+
+            if (!allowedChars.test(password)) {
+                document.getElementById('password-error').style.display = 'block';
+                return false;
+            }
+            return true;
         }
 
         function checkPasswordStrength(password) {

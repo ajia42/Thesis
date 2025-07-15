@@ -1,5 +1,9 @@
-body {
+* {
   font-family: "Phetsarath", sans-serif;
+}
+
+body {
+  /* font-family: "Phetsarath", sans-serif; */
   margin: 0;
   background-color: #f4f6f8;
   display: flex;
@@ -34,8 +38,8 @@ header {
 }
 
 .logo .icon {
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
   margin-right: 8px;
   fill: #1e88e5;
   /* Example primary color */
@@ -89,8 +93,8 @@ nav ul li a {
 }
 
 .logo-center .icon-large {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   fill: #1e88e5;
   margin-bottom: 5px;
 }

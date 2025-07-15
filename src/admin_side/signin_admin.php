@@ -13,6 +13,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
   $email = $_POST["email"];
   $password = $_POST["password"];
 
+  // Server-side password validation
+  if (!preg_match('/^[A-Za-z0-9!@#$%^&*()_+\-=\[\]{};\':"\\\\|,.<>\/?]*$/', $password)) {
+    $_SESSION['login_error'] = "ລະຫັດຜ່ານຕ້ອງມີພຽງຕົວອັກສອນອັງກິດ, ຕົວເລກ, ແລະ ສັນຍາລັກເທົ່ານັ້ນ.";
+    $_SESSION['login_email'] = $email;
+    header("Location: signin_admin.php");
+    exit();
+  }
+
   // Prepare SQL query to fetch admin by email
   $sql = "SELECT * FROM admin WHERE email = ?";
   $stmt = $conn->prepare($sql);
@@ -68,8 +76,9 @@ $conn->close();
   <header>
     <div class="container header-content">
       <div class="logo">
-        <svg viewBox="0 0 24 24" fill="currentColor" class="icon">
-          <path d="M12 4a4 4 0 100 8 4 4 0 000-8zM2 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10S2 17.514 2 12z"></path>
+        <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
         </svg>
         <span>Vision Care</span>
       </div>
@@ -82,8 +91,9 @@ $conn->close();
   <main class="container sign-in-container">
     <div class="sign-in-card">
       <div class="logo-center">
-        <svg viewBox="0 0 24 24" fill="currentColor" class="icon-large">
-          <path d="M12 4a4 4 0 100 8 4 4 0 000-8zM2 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10S2 17.514 2 12z"></path>
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-large">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
         </svg>
         <h2>Vision Care</h2>
       </div>
@@ -106,7 +116,8 @@ $conn->close();
         <div class="input-group">
           <label for="password">ລະຫັດຜ່ານ</label>
           <div class="password-input">
-            <input type="password" id="password" name="password" required />
+            <input type="password" id="password" name="password" required
+              onkeydown="validatePasswordInput(event)" />
             <button type="button" class="toggle-password" onclick="togglePasswordVisibility()">
               <svg viewBox="0 0 24 24" fill="currentColor" class="eye-icon" id="eye-icon">
                 <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"></path>
@@ -114,9 +125,9 @@ $conn->close();
             </button>
           </div>
         </div>
-        <div class="form-options">
+        <!-- <div class="form-options">
           <a href="#" class="forgot-password">Forgot your password?</a>
-        </div>
+        </div> -->
         <button type="submit" class="sign-in-button">
           <svg viewBox="0 0 24 24" fill="currentColor" class="arrow-icon">
             <path d="M10 17l5-5-5-5v10z"></path>
@@ -145,6 +156,17 @@ $conn->close();
         eyeIcon.innerHTML = `
             <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
           `;
+      }
+    }
+
+    function validatePasswordInput(event) {
+      // Only allow English letters, numbers, and common symbols
+      const allowedChars = /^[A-Za-z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]*$/;
+
+      // Check if the pressed key is allowed
+      if (!allowedChars.test(event.key)) {
+        event.preventDefault();
+        return false;
       }
     }
 

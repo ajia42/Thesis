@@ -74,6 +74,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $errors[] = "Booking date cannot be in the past";
     }
 
+    // Check if booking is at least 3 hours in advance
+    if ($booking_date == $today) {
+        $current_time = time();
+        $booking_timestamp = strtotime("$booking_date $booking_time");
+        $three_hours_later = $current_time + (3 * 60 * 60);
+
+        if ($booking_timestamp < $three_hours_later) {
+            $errors[] = "Appointments must be booked at least 3 hours in advance";
+        }
+    }
+
     // Check if the selected time slot is available
     $check_sql = "SELECT * FROM appointment 
              WHERE booking_date = '$booking_date' 
@@ -497,84 +508,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Highlight selected time slot
         document.querySelectorAll('.time-slot').forEach(slot => {
             slot.addEventListener('click', function() {
-                // Remove selected class from all slots
-                document.querySelectorAll('.time-slot').forEach(s => {
-                    s.classList.remove('selected');
-                });
-
-                // Add selected class to clicked slot
-                this.classList.add('selected');
-
-                // Ensure the radio button is checked
-                const radio = this.querySelector('input[type="radio"]');
-                if (radio) {
-                    radio.checked = true;
-                }
-            });
-        });
-
-        // Date validation
-        document.getElementById('booking_date').addEventListener('change', function() {
-            const selectedDate = new Date(this.value);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
-            if (selectedDate < today) {
-                alert('Booking date cannot be in the past');
-                this.value = '';
-            }
-        });
-
-        // Check available time slots when date changes
-        document.getElementById('booking_date').addEventListener('change', function() {
-            const selectedDate = this.value;
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const dateObj = new Date(selectedDate);
-
-            if (dateObj < today) {
-                alert('Booking date cannot be in the past');
-                this.value = '';
-                return;
-            }
-
-            if (selectedDate) {
-                // Disable all time slots while checking
-                document.querySelectorAll('.time-slot input').forEach(slot => {
-                    slot.disabled = true;
-                    slot.parentElement.classList.add('disabled');
-                });
-
-                // Fetch already booked time slots for this date
-                // Modify the fetch response handling in both event listeners
-                fetch(`check_time_slots.php?date=${selectedDate}`)
-                    .then(response => response.json())
-                    .then(bookedSlots => {
-                        document.querySelectorAll('.time-slot input').forEach(slot => {
-                            const slotValue = slot.value;
-                            const isBooked = bookedSlots.includes(slotValue);
-
-                            // Disable both the radio button and the label
-                            slot.disabled = isBooked;
-                            const label = slot.parentElement;
-                            label.classList.toggle('disabled', isBooked);
-
-                            // If this slot was selected but is now booked, unselect it
-                            if (isBooked && slot.checked) {
-                                slot.checked = false;
-                                label.classList.remove('selected');
-                            }
-                        });
-
-                        // After checking booked slots, disable passed slots if today
-                        disablePassedTimeSlots();
-                    })
-            }
-        });
-
-        // Highlight selected time slot
-        document.querySelectorAll('.time-slot').forEach(slot => {
-            slot.addEventListener('click', function() {
                 if (this.classList.contains('disabled')) return;
 
                 // Remove selected class from all slots
@@ -593,18 +526,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             });
         });
 
-        // Function to disable passed time slots for today
+        // Function to disable passed time slots for today (with 3-hour buffer)
         function disablePassedTimeSlots() {
             const today = new Date();
             const currentHour = today.getHours();
             const currentMinutes = today.getMinutes();
+
+            // Calculate the cutoff time (current time + 3 hours)
+            const cutoffHour = currentHour + 3;
+            const cutoffMinutes = currentMinutes;
 
             // Only proceed if the selected date is today
             const selectedDate = new Date(document.getElementById('booking_date').value);
             const isToday = selectedDate.toDateString() === today.toDateString();
 
             if (!isToday) {
-                // If not today, make sure all slots are enabled
+                // If not today, make sure all slots are enabled (except booked ones)
                 document.querySelectorAll('.time-slot').forEach(slot => {
                     const radio = slot.querySelector('input[type="radio"]');
                     if (!slot.classList.contains('disabled')) {
@@ -618,13 +555,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 const hour = parseInt(slot.dataset.hour);
                 const minute = parseInt(slot.dataset.minute);
 
-                // If the time has already passed today
-                if (hour < currentHour || (hour === currentHour && minute < currentMinutes)) {
+                // Convert slot time to minutes since midnight for easier comparison
+                const slotMinutes = (hour * 60) + minute;
+                const cutoffMinutesTotal = (cutoffHour * 60) + cutoffMinutes;
+
+                // If the time is within the next 3 hours
+                if (slotMinutes < cutoffMinutesTotal) {
                     const radio = slot.querySelector('input[type="radio"]');
                     radio.disabled = true;
                     slot.classList.add('disabled');
                 } else {
-                    // Enable slots that haven't passed yet (unless they're booked)
+                    // Enable slots that are beyond 3 hours (unless they're booked)
                     const radio = slot.querySelector('input[type="radio"]');
                     if (!slot.classList.contains('disabled')) {
                         radio.disabled = false;
@@ -680,7 +621,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         });
 
         // Also call it when the page loads if the selected date is today
-        // Modify the DOMContentLoaded event listener
         document.addEventListener('DOMContentLoaded', function() {
             const today = new Date().toISOString().split('T')[0];
             const selectedDate = document.getElementById('booking_date').value;
