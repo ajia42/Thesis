@@ -1,18 +1,9 @@
 <?php
 session_start(); // Start the session to store user information upon successful login
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-
-if (isset($_SESSION['registered_phone'])) {
-    header('Location: user_history.php');
+if (isset($_SESSION['superadmin_id']) && $_SESSION['admin_role'] === 'superadmin') {
+    header('Location: admin_management.php');
     exit();
-}
-
-// Add at the top of user_login.php
-if (isset($_GET['phone_changed'])) {
-    echo '<div class="success-message">Phone number changed successfully. Please login with your new phone number.</div>';
 }
 
 include("../db_config.php");
@@ -22,34 +13,52 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = $_POST["email"];
     $password = $_POST["password"];
 
-    // Prepare SQL query to fetch user by email
-    $sql = "SELECT * FROM user WHERE email = ?";
+    // Server-side password validation
+    if (!preg_match('/^[A-Za-z0-9!@#$%^&*()_+\-=\[\]{};\':"\\\\|,.<>\/?]*$/', $password)) {
+        $_SESSION['login_error'] = "ລະຫັດຜ່ານຕ້ອງມີພຽງຕົວອັກສອນອັງກິດ, ຕົວເລກ, ແລະ ສັນຍາລັກເທົ່ານັ້ນ.";
+        $_SESSION['login_email'] = $email;
+        header("Location: login_superadmin.php");
+        exit();
+    }
+
+    // Prepare SQL query to fetch admin by email
+    $sql = "SELECT * FROM admin WHERE email = ?";
     $stmt = $conn->prepare($sql);
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
 
     if ($result->num_rows == 1) {
-        // User found, now verify the password
+        // Admin found, now verify the password and role
         $row = $result->fetch_assoc();
         if (password_verify($password, $row["password"])) {
-            // Password is correct, set session variables and redirect
-            $_SESSION["registered_phone"] = $row["phone"]; // Use phone as patient_id as it's the primary key
-            $_SESSION["user_name"] = $row["user_name"]; // Use user_name as patient_name
-            header("Location: user_history.php?id=" . $row["phone"]); //Redirect to patient history using phone
-            exit();
+            // Password is correct, now check role
+            if ($row["role"] === 'superadmin') {
+                // Set session variables and redirect to admin management
+                $_SESSION["superadmin_id"] = $row["admin_id"];
+                $_SESSION["superadmin_user_name"] = $row["user_name"];
+                $_SESSION["admin_role"] = $row["role"];
+                header("Location: admin_management.php");
+                exit();
+            } else {
+                // Not a superadmin
+                $_SESSION['login_error'] = "ທ່ານບໍ່ມີສິດເຂົ້າລະບົບ Super Admin";
+                $_SESSION['login_email'] = $email;
+                header("Location: login.php");
+                exit();
+            }
         } else {
             // Incorrect password
-            $_SESSION['login_error'] = "Incorrect password.";
+            $_SESSION['login_error'] = "ອີເມວ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ.";
             $_SESSION['login_email'] = $email;
-            header("Location: user_login.php");
+            header("Location: login.php");
             exit();
         }
     } else {
-        // User not found
-        $_SESSION['login_error'] = "Incorrect email.";
+        // Admin not found
+        $_SESSION['login_error'] = "ອີເມວ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ.";
         $_SESSION['login_email'] = $email;
-        header("Location: user_login.php");
+        header("Location: login.php");
         exit();
     }
 
@@ -65,8 +74,13 @@ $conn->close();
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Patient Login - Vision Care</title>
-    <link rel="stylesheet" href="user_login.css">
+    <title>Super Admin Login - Vision Care</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="../images/logo.svg" type="image/svg+xml">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Phetsarath:wght@400;700&display=swap" rel="stylesheet">
 </head>
 
 <body>
@@ -79,8 +93,8 @@ $conn->close();
                 <span>Vision Care</span>
             </div>
             <div class="auth-links">
-                <a href="user_login.php">Login</a>
-                <a href="user_register.php">Register</a>
+                <a href="login.php">ເຂົ້າສູ່ລະບົບ Super Admin</a>
+                <a href="register.php">ລົງທະບຽນ Super Admin</a>
             </div>
         </div>
     </header>
@@ -92,8 +106,7 @@ $conn->close();
                 </svg>
                 <h2>Vision Care</h2>
             </div>
-            <h1>Patient Login</h1>
-            <p class="create-account">Don't have an account? <a href="user_register.php">Register here</a></p>
+            <h1>ເຂົ້າສູ່ລະບົບ Super Admin</h1>
             <?php
             // Display error message (if any)
             if (isset($_SESSION['login_error'])) {
@@ -104,36 +117,28 @@ $conn->close();
             ?>
             <form action="#" method="POST">
                 <div class="input-group">
-                    <label for="email">Email Address</label>
+                    <label for="email">ອີເມວ</label>
                     <input type="email" id="email" name="email" required
                         value="<?php echo isset($_SESSION['login_email']) ? htmlspecialchars($_SESSION['login_email']) : ''; ?>" />
                 </div>
                 <div class="input-group">
-                    <label for="password">Password</label>
+                    <label for="password">ລະຫັດຜ່ານ</label>
                     <div class="password-input">
-                        <input type="password" id="password" name="password" required />
+                        <input type="password" id="password" name="password" required
+                            onkeydown="validatePasswordInput(event)" />
                         <button type="button" class="toggle-password" onclick="togglePasswordVisibility()">
                             <svg viewBox="0 0 24 24" fill="currentColor" class="eye-icon" id="eye-icon">
-                                <path
-                                    d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"></path>
+                                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"></path>
                             </svg>
                         </button>
                     </div>
                 </div>
-                <div class="form-options">
-                    <label class="checkbox-label">
-                        <input type="checkbox" name="remember">
-                        Remember me
-                    </label>
-                    <a href="user_forgot_password.php" class="forgot-password">Forgot your password?</a>
-                </div>
                 <button type="submit" class="sign-in-button">
                     <svg viewBox="0 0 24 24" fill="currentColor" class="arrow-icon">
                         <path d="M10 17l5-5-5-5v10z"></path>
-                        <path
-                            d="M19 12c0 4.14-3.36 7.5-7.5 7.5S4 16.14 4 12 7.36 4.5 12 4.5s7.5 3.36 7.5 7.5zM12 6.5c-3.04 0-5.5 2.46-5.5 5.5s2.46 5.5 5.5 5.5 5.5-2.46 5.5-5.5-2.46-5.5-5.5-5.5z"></path>
+                        <path d="M19 12c0 4.14-3.36 7.5-7.5 7.5S4 16.14 4 12 7.36 4.5 12 4.5s7.5 3.36 7.5 7.5zM12 6.5c-3.04 0-5.5 2.46-5.5 5.5s2.46 5.5 5.5 5.5 5.5-2.46 5.5-5.5-2.46-5.5-5.5-5.5z"></path>
                     </svg>
-                    Login
+                    ເຂົ້າສູ່ລະບົບ Super Admin
                 </button>
             </form>
         </div>
@@ -156,6 +161,17 @@ $conn->close();
                 eyeIcon.innerHTML = `
             <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
           `;
+            }
+        }
+
+        function validatePasswordInput(event) {
+            // Only allow English letters, numbers, and common symbols
+            const allowedChars = /^[A-Za-z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]*$/;
+
+            // Check if the pressed key is allowed
+            if (!allowedChars.test(event.key)) {
+                event.preventDefault();
+                return false;
             }
         }
 

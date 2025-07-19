@@ -34,8 +34,8 @@ header {
 }
 
 .logo .icon {
-  width: 30px;
-  height: 30px;
+  width: 24px;
+  height: 24px;
   margin-right: 8px;
   fill: #3498db; /* Changed from #4caf50 (green) to #3498db (blue) */
 }
@@ -88,8 +88,8 @@ nav ul li a {
 }
 
 .logo-center .icon-large {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   fill: #3498db; /* Changed from #4caf50 (green) to #3498db (blue) */
   margin-bottom: 5px;
 }

@@ -66,6 +66,7 @@ $conn->close();
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sign In - Vision Care</title>
   <link rel="stylesheet" href="signin_admin.css">
+  <link rel="icon" href="../images/logo.svg" type="image/svg+xml">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -76,9 +77,8 @@ $conn->close();
   <header>
     <div class="container header-content">
       <div class="logo">
-        <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-          <circle cx="12" cy="12" r="3"></circle>
+        <svg viewBox="0 0 24 24" fill="currentColor" class="icon">
+          <path d="M12 4a4 4 0 100 8 4 4 0 000-8zM2 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10S2 17.514 2 12z"></path>
         </svg>
         <span>Vision Care</span>
       </div>
@@ -91,9 +91,8 @@ $conn->close();
   <main class="container sign-in-container">
     <div class="sign-in-card">
       <div class="logo-center">
-        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-large">
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-          <circle cx="12" cy="12" r="3"></circle>
+        <svg viewBox="0 0 24 24" fill="currentColor" class="icon-large">
+          <path d="M12 4a4 4 0 100 8 4 4 0 000-8zM2 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10S2 17.514 2 12z"></path>
         </svg>
         <h2>Vision Care</h2>
       </div>

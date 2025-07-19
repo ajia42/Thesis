@@ -1,0 +1,310 @@
+<?php
+session_start();
+include("../db_config.php");
+
+// Check if a superadmin already exists in the database
+$superadmin_check = "SELECT * FROM admin WHERE role = 'superadmin'";
+$result = mysqli_query($conn, $superadmin_check);
+
+// If a superadmin exists and user is not logged in as superadmin, redirect to login
+if (mysqli_num_rows($result) > 0 && !(isset($_SESSION['superadmin_id']) && $_SESSION['admin_role'] === 'superadmin')) {
+    $_SESSION['error'] = "ມີ Super Admin ໃນລະບົບແລ້ວ, ບໍ່ອະນຸຍາດໃຫ້ລົງທະບຽນ Super Admin ໃໝ່";
+    header('Location: login.php');
+    exit();
+}
+
+$errors = [];
+$success = '';
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $user_name = mysqli_real_escape_string($conn, $_POST['user_name']);
+    $email = mysqli_real_escape_string($conn, $_POST['email']);
+    $password = $_POST['password'];
+    $confirm_password = $_POST['confirm_password'];
+
+    // Input validation
+    if (empty($user_name)) $errors[] = "Username is required";
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = "Invalid email format";
+    if (strlen($password) < 8) $errors[] = "Password must be at least 8 characters";
+    if ($password !== $confirm_password) $errors[] = "Passwords do not match";
+
+    // Password character validation (server-side)
+    if (!preg_match('/^[A-Za-z0-9!@#$%^&*()_+\-=\[\]{};\':"\\\\|,.<>\/?]*$/', $password)) {
+        $errors[] = "ລະຫັດຜ່ານຕ້ອງມີພຽງຕົວອັກສອນອັງກິດ, ຕົວເລກ, ແລະ ສັນຍາລັກເທົ່ານັ້ນ.";
+    }
+
+    // Check if email already exists
+    $email_check = "SELECT * FROM admin WHERE email = '$email'";
+    $result = mysqli_query($conn, $email_check);
+    if (mysqli_num_rows($result) > 0) {
+        $errors[] = "ອີເມວຖືກໃຊ້ໄປແລ້ວ";
+    }
+
+    // Double check that no superadmin exists (in case someone bypasses the initial check)
+    $superadmin_check = "SELECT * FROM admin WHERE role = 'superadmin'";
+    $result = mysqli_query($conn, $superadmin_check);
+    if (mysqli_num_rows($result) > 0) {
+        $errors[] = "ມີ Super Admin ໃນລະບົບແລ້ວ, ບໍ່ອະນຸຍາດໃຫ້ລົງທະບຽນ Super Admin ໃໝ່";
+    }
+
+    if (empty($errors)) {
+        // Get the highest existing admin_id and increment it
+        $id_query = "SELECT MAX(CAST(SUBSTRING(admin_id, 2) AS UNSIGNED)) as max_id FROM admin";
+        $id_result = mysqli_query($conn, $id_query);
+        $row = mysqli_fetch_assoc($id_result);
+        $next_id = ($row['max_id']) ? $row['max_id'] + 1 : 1;
+        $admin_id = 'A' . str_pad($next_id, 4, '0', STR_PAD_LEFT);
+
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
+        // Insert with role set to 'superadmin'
+        $sql = "INSERT INTO admin (admin_id, user_name, email, role, password) 
+                VALUES ('$admin_id', '$user_name', '$email', 'superadmin', '$hashed_password')";
+
+        if (mysqli_query($conn, $sql)) {
+            $success = "ລົງທະບຽນ Super Admin ສຳເລັດ, ກໍາລັງກັບໄປໜ້າເຂົ້າສູ່ລະບົບ...";
+            header("Refresh: 3; url=signin_admin.php");
+        } else {
+            $errors[] = "Error: " . mysqli_error($conn);
+        }
+    }
+}
+
+$conn->close();
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Super Admin - Vision Care</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .password-strength {
+            height: 5px;
+            margin-top: 5px;
+            background: #eee;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+            background: #e74c3c;
+        }
+
+        .password-hint {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            margin-top: 0.3rem;
+        }
+
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            padding: 12px 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+            text-align: center;
+        }
+
+        .password-error {
+            color: #e74c3c;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            display: none;
+        }
+    </style>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Phetsarath:wght@400;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <header>
+        <div class="container header-content">
+            <div class="logo">
+                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span>Vision Care</span>
+            </div>
+            <div class="auth-links">
+                <a href="login.php">ເຂົ້າສູ່ລະບົບ Super Admin</a>
+                <a href="register.php" class="active">ລົງທະບຽນ Super Admin</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container sign-in-container">
+        <div class="sign-in-card">
+            <div class="logo-center">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-large">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <h2>Vision Care</h2>
+            </div>
+
+            <h1>ລົງທະບຽນ Super Admin</h1>
+
+            <?php if (!empty($errors)): ?>
+                <div class="error-message">
+                    <?php foreach ($errors as $error): ?>
+                        <p><?php echo htmlspecialchars($error); ?></p>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($success): ?>
+                <div class="success-message"><?php echo htmlspecialchars($success); ?></div>
+            <?php endif; ?>
+
+            <form method="POST" action="register.php" onsubmit="return validatePassword()">
+                <div class="input-group">
+                    <label for="user_name">ຊື່ຜູ້ໃຊ້</label>
+                    <input type="text" id="user_name" name="user_name" required
+                        value="<?php echo htmlspecialchars($_POST['user_name'] ?? ''); ?>">
+                </div>
+
+                <div class="input-group">
+                    <label for="email">ອີເມວ</label>
+                    <input type="email" id="email" name="email" required
+                        value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
+                </div>
+
+                <div class="input-group">
+                    <label for="password">ລະຫັດຜ່ານ</label>
+                    <div class="password-input">
+                        <input type="password" id="password" name="password" required
+                            onkeydown="validatePasswordInput(event)"
+                            oninput="checkPasswordStrength(this.value)">
+                        <button type="button" class="toggle-password" onclick="togglePasswordVisibility('password')">
+                            <svg viewBox="0 0 24 24" fill="currentColor" class="eye-icon">
+                                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="password-strength">
+                        <div class="password-strength-bar" id="password-strength-bar"></div>
+                    </div>
+                    <p class="password-hint" id="password-hint">ລະຫັດຕ້ອງມີ 8 ໂຕຂຶ້ນໄປ, ຢ່າງໜ້ອຍຕ້ອງມີ 1 ຕົວໜັງສື 1 ຕົວເລກ</p>
+                </div>
+
+                <div class="input-group">
+                    <label for="confirm_password">ຢືນຢັນລະຫັດຜ່ານ</label>
+                    <div class="password-input">
+                        <input type="password" id="confirm_password" name="confirm_password" required
+                            onkeydown="validatePasswordInput(event)"
+                            oninput="checkPasswordMatch()">
+                        <button type="button" class="toggle-password" onclick="togglePasswordVisibility('confirm_password')">
+                            <svg viewBox="0 0 24 24" fill="currentColor" class="eye-icon">
+                                <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <p class="error-message" id="password-match-error" style="display:none;color:#e74c3c;">Passwords do not match</p>
+                </div>
+
+                <button type="submit" class="sign-in-button">
+                    <svg viewBox="0 0 24 24" fill="currentColor" class="arrow-icon">
+                        <path d="M10 17l5-5-5-5v10z"></path>
+                        <path d="M19 12c0 4.14-3.36 7.5-7.5 7.5S4 16.14 4 12 7.36 4.5 12 4.5s7.5 3.36 7.5 7.5zM12 6.5c-3.04 0-5.5 2.46-5.5 5.5s2.46 5.5 5.5 5.5 5.5-2.46 5.5-5.5-2.46-5.5-5.5-5.5z"></path>
+                    </svg>
+                    ລົງທະບຽນ Super Admin
+                </button>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        function togglePasswordVisibility(fieldId) {
+            const field = document.getElementById(fieldId);
+            const icon = field.nextElementSibling.querySelector('.eye-icon');
+
+            if (field.type === 'password') {
+                field.type = 'text';
+                icon.innerHTML = `<path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/>`;
+            } else {
+                field.type = 'password';
+                icon.innerHTML = `<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>`;
+            }
+        }
+
+        function validatePasswordInput(event) {
+            const allowedChars = /^[A-Za-z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]*$/;
+
+            if (!allowedChars.test(event.key)) {
+                event.preventDefault();
+                document.getElementById('password-error').style.display = 'block';
+                return false;
+            } else {
+                document.getElementById('password-error').style.display = 'none';
+            }
+        }
+
+        function validatePassword() {
+            const password = document.getElementById('password').value;
+            const allowedChars = /^[A-Za-z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]*$/;
+
+            if (!allowedChars.test(password)) {
+                document.getElementById('password-error').style.display = 'block';
+                return false;
+            }
+            return true;
+        }
+
+        function checkPasswordStrength(password) {
+            const strengthBar = document.getElementById('password-strength-bar');
+            const hint = document.getElementById('password-hint');
+
+            strengthBar.style.width = '0%';
+            strengthBar.style.backgroundColor = '#e74c3c';
+            hint.style.color = '#7f8c8d';
+
+            if (password.length === 0) return;
+
+            let strength = 0;
+            if (password.length >= 8) strength += 1;
+            if (/[A-Z]/.test(password)) strength += 1;
+            if (/[0-9]/.test(password)) strength += 1;
+            if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+
+            const width = (strength / 4) * 100;
+            strengthBar.style.width = `${width}%`;
+
+            if (width >= 75) {
+                strengthBar.style.backgroundColor = '#2ecc71';
+                hint.textContent = 'Strong password!';
+                hint.style.color = '#2ecc71';
+            } else if (width >= 50) {
+                strengthBar.style.backgroundColor = '#f39c12';
+                hint.textContent = 'Good, but could be stronger';
+            } else {
+                hint.textContent = 'Weak - add numbers/symbols';
+            }
+        }
+
+        function checkPasswordMatch() {
+            const password = document.getElementById('password').value;
+            const confirm = document.getElementById('confirm_password').value;
+            const error = document.getElementById('password-match-error');
+
+            if (confirm.length > 0 && password !== confirm) {
+                error.style.display = 'block';
+            } else {
+                error.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+
+</html>

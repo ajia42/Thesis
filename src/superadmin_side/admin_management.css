@@ -21,7 +21,7 @@ body {
   color: white;
   width: 200px;
   height: 100vh; /* Use viewport height */
-  position: fixed; /* Make it fixed */
+  position: fixed; /*Make it fixed
   top: 0; /* Stick to top */
   left: 0; /* Stick to left */
   padding: 20px;
@@ -316,4 +316,81 @@ button:disabled {
 /* Remove the active styling from submenu items by default */
 .submenu li {
   background-color: transparent;
+}
+
+/* Add this to your admin_management.css file */
+.patient-form input[type="password"] {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  /* font-family: "Phetsarath", sans-serif; */
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1001;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.4);
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: 5% auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 60%;
+  border-radius: 5px;
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.modal-actions button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.modal-actions .update-button {
+  background-color: #1976d2;
+  color: white;
+}
+
+.modal-actions .cancel-button {
+  background-color: #f44336;
+  color: white;
+}
+
+.delete-link {
+  color: #d32f2f;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.delete-link:hover {
+  text-decoration: underline;
+}
+
+.readonly-field {
+  background-color: #f5f5f5;
+  color: #666;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: #d32f2f;
+  font-size: 0.8em;
+  margin-top: 5px;
+  display: none;
 }
