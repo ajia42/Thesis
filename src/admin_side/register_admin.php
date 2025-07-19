@@ -75,6 +75,7 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register Admin - Vision Care</title>
     <link rel="stylesheet" href="signin_admin.css">
+    <link rel="icon" href="../images/logo.svg" type="image/svg+xml">
     <style>
         .password-strength {
             height: 5px;
