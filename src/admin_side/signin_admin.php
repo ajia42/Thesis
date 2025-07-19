@@ -29,14 +29,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
   $result = $stmt->get_result();
 
   if ($result->num_rows == 1) {
-    // Admin found, now verify the password
+    // Admin found, now verify the password and role
     $row = $result->fetch_assoc();
     if (password_verify($password, $row["password"])) {
-      // Password is correct, set session variables and redirect
-      $_SESSION["admin_id"] = $row["admin_id"];
-      $_SESSION["admin_user_name"] = $row["user_name"];
-      header("Location: patient_management.php");
-      exit();
+      // Check if the user has admin role
+      if (strtolower($row["role"]) === 'admin') {
+        // Password is correct and user is admin, set session variables and redirect
+        $_SESSION["admin_id"] = $row["admin_id"];
+        $_SESSION["admin_user_name"] = $row["user_name"];
+        $_SESSION["admin_role"] = $row["role"];
+        header("Location: patient_management.php");
+        exit();
+      } else {
+        // User doesn't have admin role
+        $_SESSION['login_error'] = "ທ່ານບໍ່ມີສິດເຂົ້າສູ່ລະບົບ.";
+        $_SESSION['login_email'] = $email;
+        header("Location: signin_admin.php");
+        exit();
+      }
     } else {
       // Incorrect password
       $_SESSION['login_error'] = "ອີເມວ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ.";

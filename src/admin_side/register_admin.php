@@ -7,6 +7,14 @@ if (isset($_SESSION['admin_id'])) {
     exit();
 }
 
+// Check if an admin already exists in the database
+$admin_check = "SELECT * FROM admin WHERE role = 'admin' LIMIT 1";
+$admin_result = mysqli_query($conn, $admin_check);
+if (mysqli_num_rows($admin_result) > 0) {
+    header('Location: signin_admin.php');
+    exit();
+}
+
 $errors = [];
 $success = '';
 
@@ -44,8 +52,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-        $sql = "INSERT INTO admin (admin_id, user_name, email, password) 
-                VALUES ('$admin_id', '$user_name', '$email', '$hashed_password')";
+        $sql = "INSERT INTO admin (admin_id, user_name, email, password, role) 
+                VALUES ('$admin_id', '$user_name', '$email', '$hashed_password', 'admin')";
 
         if (mysqli_query($conn, $sql)) {
             $success = "ລົງທະບຽນສຳເລັດ, ກໍາລັງກັບໄປໜ້າເຂົ້າສູ່ລະບົບ...";
