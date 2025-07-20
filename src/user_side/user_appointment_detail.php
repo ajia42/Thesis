@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_appointment'])
             // Refresh the appointment data
             $result = mysqli_query($conn, $sql);
             $appointment = mysqli_fetch_assoc($result);
-            $success_message = "Appointment has been cancelled successfully.";
+            $success_message = "ຍົກເລິກການຈອງສຳເລັດ.";
         } else {
             $error_message = "Error cancelling appointment: " . mysqli_error($conn);
         }
@@ -64,9 +64,18 @@ $conn->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Appointment Details - Vision Care</title>
+    <link rel="icon" href="../images/logo.svg" type="image/svg+xml">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Phetsarath:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        * {
+            font-family: "Phetsarath", sans-serif;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            /* font-family: Arial, sans-serif; */
             margin: 0;
             padding: 0;
             background-color: #f5f5f5;
@@ -196,7 +205,7 @@ $conn->close();
 
 <body>
     <div class="container">
-        <h1>Appointment Details</h1>
+        <h1>ລາຍລະອຽດການຈອງ</h1>
 
         <?php if (isset($error_message)): ?>
             <div class="error-message"><?php echo htmlspecialchars($error_message); ?></div>
@@ -207,27 +216,27 @@ $conn->close();
         <?php endif; ?>
 
         <div class="detail-item">
-            <div class="detail-label">Appointment ID</div>
+            <div class="detail-label">ລະຫັດການຈອງ</div>
             <div class="detail-value"><?php echo htmlspecialchars($appointment['appointment_id']); ?></div>
         </div>
 
         <div class="detail-item">
-            <div class="detail-label">Service</div>
+            <div class="detail-label">ປະເພດບໍລິການ</div>
             <div class="detail-value"><?php echo htmlspecialchars($appointment['service_name']); ?></div>
         </div>
 
         <div class="detail-item">
-            <div class="detail-label">Date</div>
+            <div class="detail-label">ວັນທີຈອງ</div>
             <div class="detail-value"><?php echo htmlspecialchars(date('d/m/Y', strtotime($appointment['booking_date']))); ?></div>
         </div>
 
         <div class="detail-item">
-            <div class="detail-label">Time</div>
+            <div class="detail-label">ເວລາຈອງ</div>
             <div class="detail-value"><?php echo htmlspecialchars(date('H:i', strtotime($appointment['booking_time']))); ?></div>
         </div>
 
         <div class="detail-item">
-            <div class="detail-label">Status</div>
+            <div class="detail-label">ສະຖານະ</div>
             <div class="detail-value">
                 <span class="status status-<?php echo strtolower($appointment['status']); ?>">
                     <?php echo htmlspecialchars($appointment['status']); ?>
@@ -242,26 +251,26 @@ $conn->close();
 
         <?php if (!empty($appointment['symptoms'])): ?>
             <div class="detail-item">
-                <div class="detail-label">Symptoms</div>
+                <div class="detail-label">ອາການເບື້ອງຕົ້ນ</div>
                 <div class="detail-value"><?php echo htmlspecialchars($appointment['symptoms']); ?></div>
             </div>
         <?php endif; ?>
 
         <?php if (!empty($appointment['comment'])): ?>
             <div class="detail-item">
-                <div class="detail-label">Admin Comment</div>
+                <div class="detail-label">ການຕອບກັບຈາກແອັດມິນ</div>
                 <div class="detail-value"><?php echo htmlspecialchars($appointment['comment']); ?></div>
             </div>
         <?php endif; ?>
 
         <div class="action-buttons">
-            <a href="user_history.php" class="back-btn">Back to History</a>
+            <a href="user_history.php" class="back-btn">ກັບຄືນ</a>
 
             <?php if (in_array(strtolower($appointment['status']), ['pending', 'scheduled'])): ?>
                 <form method="POST" id="cancelForm" style="display: inline;">
                     <input type="hidden" name="cancel_appointment" value="1">
                     <button type="button" class="cancel-btn" id="cancelBtn">
-                        Cancel Appointment
+                        ຍົກເລິກການຈອງ
                     </button>
                 </form>
             <?php endif; ?>

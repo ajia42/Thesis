@@ -70,7 +70,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_profile'])) {
     $email_check = "SELECT * FROM user WHERE email = '$email' AND phone != '$user_phone'";
     $result = mysqli_query($conn, $email_check);
     if (mysqli_num_rows($result) > 0) {
-        $errors[] = "Email already registered";
+        $errors[] = "ອີເມວຖືກນໍາໃຊ້ແລ້ວ";
     }
 
     if (empty($errors)) {
@@ -90,7 +90,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_profile'])) {
                        WHERE phone = '$user_phone'";
 
         if (mysqli_query($conn, $user_sql) && mysqli_query($conn, $patient_sql)) {
-            $success = "Profile updated successfully!";
+            $success = "ອັບເດດໂປຣໄຟລ໌ສໍາເລັດແລ້ວ!";
             $edit_mode = false;
             // Refresh user data
             $result = mysqli_query($conn, "SELECT u.*, p.first_name, p.last_name, p.gender, p.dob, p.address 
@@ -112,10 +112,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['change_password'])) {
 
     // Verify current password
     if (!password_verify($current_password, $user['password'])) {
-        $password_errors[] = "Current password is incorrect";
+        $password_errors[] = "ລະຫັດຜ່ານປັດຈຸບັນບໍ່ຖືກຕ້ອງ";
     }
     if (strlen($new_password) < 8) {
-        $password_errors[] = "New password must be at least 8 characters";
+        $password_errors[] = "ລະຫັດຜ່ານໃໝ່ຕ້ອງມີຢ່າງໜ້ອຍ8ຕົວລວມມີຕົວອັກສອນແລະຕົວເລກຫຼືສັນຍະລັກ";
+    }
+    if (!preg_match('/[A-Za-z]/', $new_password) || !preg_match('/[0-9\W]/', $new_password)) {
+        $password_errors[] = "ລະຫັດຜ່ານຕ້ອງມີຕົວອັກສອນລວມທັງຕົວເລກຫຼືສັນຍະລັກ";
     }
     if ($new_password !== $confirm_password) {
         $password_errors[] = "New passwords do not match";
@@ -126,7 +129,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['change_password'])) {
         $sql = "UPDATE user SET password = '$hashed_password' WHERE phone = '$user_phone'";
 
         if (mysqli_query($conn, $sql)) {
-            $password_success = "Password changed successfully!";
+            $password_success = "ປ່ຽນລະຫັດສໍາເລັດແລ້ວ!";
         } else {
             $password_errors[] = "Error changing password: " . mysqli_error($conn);
         }
@@ -148,7 +151,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['change_phone'])) {
         $phone_check = "SELECT * FROM user WHERE phone = '$new_phone' AND phone != '$user_phone'";
         $result = mysqli_query($conn, $phone_check);
         if (mysqli_num_rows($result) > 0) {
-            $errors_phone[] = "Phone number already registered";
+            $errors_phone[] = "ເບີໂທຖືກນໍາໃຊ້ແລ້ວ";
         }
     }
 
@@ -188,6 +191,11 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Profile - Vision Care</title>
     <link rel="stylesheet" href="user_login.css">
+    <link rel="icon" href="../images/logo.svg" type="image/svg+xml">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Phetsarath:wght@400;700&display=swap" rel="stylesheet">
     <style>
         /* Base styles */
         body {
@@ -539,6 +547,17 @@ $conn->close();
             display: block;
             margin-top: 5px;
         }
+
+        .form-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .form-row .form-group {
+            margin-bottom: 0;
+            flex: 0 0 auto;
+        }
     </style>
 </head>
 
@@ -552,14 +571,14 @@ $conn->close();
                 <span>Vision Care</span>
             </div>
             <div class="auth-links">
-                <a href="user_history.php">Appointments</a>
-                <a href="user_logout.php">Logout</a>
+                <a href="user_history.php">ກັບຄືນ</a>
+                <a href="user_logout.php">ອອກຈາກລະບົບ</a>
             </div>
         </div>
     </header>
 
     <main class="container profile-container">
-        <h1>User Profile</h1>
+        <h1>ໂປຣໄຟລ໌ຜູ້ໃຊ້</h1>
 
         <?php if (!empty($errors)): ?>
             <div class="alert alert-error">
@@ -576,8 +595,8 @@ $conn->close();
         <!-- Personal Information Section -->
         <div class="profile-section">
             <div class="profile-header">
-                <h2>Personal Information</h2>
-                <button type="button" class="edit-btn" id="editBtn">Edit Profile</button>
+                <h2>ຂໍ້ມູນສ່ວນຕົວ</h2>
+                <button type="button" class="edit-btn" id="editBtn">ແກ້ໄຂໂປຣໄຟລ໌</button>
             </div>
 
             <form method="POST" action="user_profile.php" id="profileForm">
@@ -589,19 +608,19 @@ $conn->close();
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="first_name">First Name</label>
+                        <label for="first_name">ຊື່</label>
                         <input type="text" id="first_name" name="first_name" required disabled
                             value="<?php echo htmlspecialchars($user['first_name'] ?? ''); ?>">
                     </div>
                     <div class="form-group">
-                        <label for="last_name">Last Name</label>
+                        <label for="last_name">ນາມສະກຸນ</label>
                         <input type="text" id="last_name" name="last_name" required disabled
                             value="<?php echo htmlspecialchars($user['last_name'] ?? ''); ?>">
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label>Gender</label>
+                    <label>ເພດ</label>
                     <div class="gender-options">
                         <label class="gender-option">
                             <input type="radio" name="gender" value="Male" required
@@ -617,7 +636,7 @@ $conn->close();
                 </div>
 
                 <div class="form-group">
-                    <label for="dob">Date of Birth</label>
+                    <label for="dob">ວັນເດືອນປີເກີດ</label>
                     <input type="date" id="dob" name="dob" required disabled
                         min="<?php echo date('Y-m-d', strtotime('-120 years')); ?>"
                         max="<?php echo date('Y-m-d'); ?>"
@@ -625,32 +644,38 @@ $conn->close();
                 </div>
 
                 <div class="form-group">
-                    <label for="email">Email Address</label>
+                    <label for="email">ອີເມວ</label>
                     <input type="email" id="email" name="email" required disabled
                         value="<?php echo htmlspecialchars($user['email'] ?? ''); ?>">
                 </div>
 
                 <div class="form-group">
-                    <label for="phone">Phone Number</label>
+                    <label for="phone">ເບີໂທ</label>
                     <input type="text" id="phone" name="phone" required disabled
                         value="<?php echo htmlspecialchars($user['phone'] ?? ''); ?>">
                 </div>
 
                 <div class="form-group">
-                    <label for="address">Address</label>
+                    <label for="address">ທີ່ຢູ່</label>
                     <textarea id="address" name="address" disabled><?php echo htmlspecialchars($user['address'] ?? ''); ?></textarea>
                 </div>
 
                 <div class="form-group">
-                    <button type="submit" name="update_profile" class="btn btn-primary" id="update-btn" style="display:none;">Update Profile</button>
-                    <button type="button" class="btn btn-secondary" id="cancel-edit" style="display:none;" onclick="disableEditMode()">Cancel</button>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <button type="submit" name="update_profile" class="btn btn-primary" id="update-btn" style="display:none;">ອັບເດດໂປຣໄຟລ໌</button>
+                        </div>
+                        <div class="form-group">
+                            <button type="button" class="btn btn-secondary" id="cancel-edit" style="display:none;" onclick="disableEditMode()">ຍົກເລິກ</button>
+                        </div>
+                    </div>
                 </div>
             </form>
         </div>
 
         <!-- Change Password Section -->
         <div class="profile-section">
-            <h2>Change Password</h2>
+            <h2>ປ່ຽນລະຫັດຜ່ານ</h2>
 
             <?php if (!empty($password_errors)): ?>
                 <div class="alert alert-error">
@@ -688,10 +713,10 @@ $conn->close();
                             </svg>
                         </button>
                     </div>
-                    <div class="password-strength">
+                    <!-- <div class="password-strength">
                         <div class="password-strength-bar" id="password-strength-bar"></div>
-                    </div>
-                    <small>Use 8+ characters with numbers and symbols</small>
+                    </div> -->
+                    <small>ຕົວອັກສອນ8ໂຕລວມຕົວເລກຫຼືສັນຍະລັກ</small>
                 </div>
 
                 <div class="form-group">
@@ -708,13 +733,13 @@ $conn->close();
                     <p class="error-message" id="password-match-error" style="display:none;color:#e74c3c;">Passwords do not match</p>
                 </div>
 
-                <button type="submit" name="change_password" class="btn btn-primary">Change Password</button>
+                <button type="submit" name="change_password" class="btn btn-primary">ປ່ຽນລະຫັດຜ່ານ</button>
             </form>
         </div>
 
         <!-- Critical: Phone Number Change Section -->
         <div class="profile-section critical-section">
-            <h2 style="color: #e74c3c;">Change Phone Number</h2>
+            <h2 style="color: #e74c3c;">ປ່ຽນເບີໂທ</h2>
             <div class="critical-warning">
                 <strong>Important:</strong> Changing your phone number will require you to re-login.
                 This is a security-sensitive operation.
@@ -742,11 +767,11 @@ $conn->close();
                         title="Must start with 20 and be 10 digits (e.g., 2012345678)"
                         maxlength="10"
                         oninput="validatePhoneInput(this)">
-                    <small class="hint">Must start with 20 and be exactly 10 digits (e.g., 2012345678)</small>
+                    <small class="hint">20xxxxxxx</small>
                     <div id="phoneError" class="error-message" style="display:none;"></div>
                 </div>
 
-                <button type="button" class="btn btn-primary" id="changePhoneBtn">Change Phone Number</button>
+                <button type="button" class="btn btn-primary" id="changePhoneBtn">ປ່ຽນເບີໂທ</button>
                 <button type="submit" name="change_phone" id="phoneSubmitBtn" style="display:none;"></button>
             </form>
         </div>
@@ -754,12 +779,12 @@ $conn->close();
 
     <div id="phoneChangeModal" class="modal" style="display:none;">
         <div class="modal-content">
-            <h3>Confirm Phone Number Change</h3>
-            <p>⚠️ Are you sure you want to change your phone number?</p>
+            <h3>ຍືນຍັນການປ່ຽນເບີໂທ</h3>
+            <p>⚠️ ທ່ານຕ້ອງການຈະປ່ຽນເບີໂທແທ້ບໍ?</p>
             <p>You will be immediately logged out and must login again with your new phone number.</p>
             <div class="modal-actions">
-                <button type="button" class="btn btn-secondary" id="cancelPhoneChange">Cancel</button>
-                <button type="button" class="btn btn-danger" id="confirmPhoneChange">Yes, Change It</button>
+                <button type="button" class="btn btn-secondary" id="cancelPhoneChange">ຍົກເລິກ</button>
+                <button type="button" class="btn btn-danger" id="confirmPhoneChange">ຍືນຍັນ, ປ່ຽນເບີໂທ</button>
             </div>
         </div>
     </div>
@@ -779,32 +804,47 @@ $conn->close();
             }
         }
 
-        // Password strength indicator
         function checkPasswordStrength(password) {
             const strengthBar = document.getElementById('password-strength-bar');
+            const hint = document.querySelector('#new_password + small');
 
             // Reset
             strengthBar.style.width = '0%';
             strengthBar.style.backgroundColor = '#e74c3c';
+            if (hint) hint.style.color = '#7f8c8d';
 
-            if (password.length === 0) return;
+            if (password.length === 0) {
+                if (hint) hint.textContent = 'ຕົວອັກສອນ8ໂຕລວມຕົວເລກຫຼືສັນຍະລັກ';
+                return;
+            }
 
-            // Strength calculation
+            // Check requirements
+            const hasMinLength = password.length >= 8;
+            const hasLetter = /[A-Za-z]/.test(password);
+            const hasNumberOrSymbol = /[0-9\W]/.test(password);
+
+            // Calculate strength (0-3)
             let strength = 0;
-            if (password.length >= 8) strength += 1;
-            if (/[A-Z]/.test(password)) strength += 1;
-            if (/[0-9]/.test(password)) strength += 1;
-            if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+            if (hasMinLength) strength += 1;
+            if (hasLetter) strength += 1;
+            if (hasNumberOrSymbol) strength += 1;
 
             // Update UI
-            const width = (strength / 4) * 100;
-            strengthBar.style.width = `${width}%`;
+            const width = (strength / 3) * 100;
+            if (strengthBar) strengthBar.style.width = `${width}%`;
 
-            // Color coding
-            if (width >= 75) {
-                strengthBar.style.backgroundColor = '#2ecc71';
-            } else if (width >= 50) {
-                strengthBar.style.backgroundColor = '#f39c12';
+            // Color coding and messages
+            if (hasMinLength && hasLetter && hasNumberOrSymbol) {
+                if (strengthBar) strengthBar.style.backgroundColor = '#2ecc71';
+                if (hint) {
+                    hint.textContent = 'Strong password!';
+                    hint.style.color = '#2ecc71';
+                }
+            } else if (hasMinLength && (hasLetter || hasNumberOrSymbol)) {
+                if (strengthBar) strengthBar.style.backgroundColor = '#f39c12';
+                if (hint) hint.textContent = 'Password needs both letters and numbers/symbols';
+            } else {
+                if (hint) hint.textContent = 'Weak - must have letters and numbers/symbols';
             }
         }
 

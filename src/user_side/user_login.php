@@ -40,14 +40,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             exit();
         } else {
             // Incorrect password
-            $_SESSION['login_error'] = "Incorrect password.";
+            $_SESSION['login_error'] = "ອີເມວ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ..";
             $_SESSION['login_email'] = $email;
             header("Location: user_login.php");
             exit();
         }
     } else {
         // User not found
-        $_SESSION['login_error'] = "Incorrect email.";
+        $_SESSION['login_error'] = "ອີເມວ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ.";
         $_SESSION['login_email'] = $email;
         header("Location: user_login.php");
         exit();

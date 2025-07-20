@@ -70,6 +70,11 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Appointment History - Vision Care</title>
     <link rel="stylesheet" href="user_login.css">
+    <link rel="icon" href="../images/logo.svg" type="image/svg+xml">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Phetsarath:wght@400;700&display=swap" rel="stylesheet">
     <style>
         /* Base styles */
         body {
@@ -400,8 +405,8 @@ $conn->close();
                 <span>Vision Care</span>
             </div>
             <div class="auth-links">
-                <a href="user_profile.php">profile</a>
-                <a href="user_logout.php">Logout</a>
+                <a href="user_profile.php">ໂປຣໄຟລ໌</a>
+                <a href="user_logout.php">ອອກຈາກລະບົບ</a>
             </div>
         </div>
     </header>
@@ -409,21 +414,21 @@ $conn->close();
     <main class="container history-container">
         <div class="welcome-message">
             <div class="welcome-name">Welcome, <?php echo htmlspecialchars($patient_name); ?></div>
-            <h1>Appointment History</h1>
-            <p>View and manage your past and upcoming appointments.</p>
+            <h1>ປະຫວັດການຈອງ</h1>
+            <!-- <p>View and manage your past and upcoming appointments.</p> -->
         </div>
 
         <?php if (isset($delete_error)): ?>
             <div class="error-message"><?php echo htmlspecialchars($delete_error); ?></div>
         <?php endif; ?>
 
-        <a href="user_appointment.php" class="new-appointment-btn">New Appointment</a>
+        <a href="user_appointment.php" class="new-appointment-btn">ຈອງຄິວເຂົ້າພົບໃໝ່</a>
 
         <div class="history-section">
             <h2>History</h2>
             <div class="appointments-list">
                 <?php if (empty($appointments)): ?>
-                    <p>No appointments found.</p>
+                    <p>ບໍ່ທັນມີການຈອງ.</p>
                 <?php else: ?>
                     <?php foreach ($appointments as $index => $appointment): ?>
                         <div class="appointment-card <?php echo $index === 0 ? 'latest-appointment' : ''; ?>">
@@ -451,8 +456,8 @@ $conn->close();
                                 </div>
                             </div>
                             <div class="appointment-actions">
-                                <a href="user_appointment_detail.php?id=<?php echo htmlspecialchars($appointment['appointment_id']); ?>" class="detail-btn">Details</a>
-                                <button class="delete-btn" onclick="showDeleteModal('<?php echo htmlspecialchars($appointment['appointment_id']); ?>')">Delete</button>
+                                <a href="user_appointment_detail.php?id=<?php echo htmlspecialchars($appointment['appointment_id']); ?>" class="detail-btn">ລາຍລະອຽດ</a>
+                                <button class="delete-btn" onclick="showDeleteModal('<?php echo htmlspecialchars($appointment['appointment_id']); ?>')">ຍົກເລິກ</button>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -464,14 +469,14 @@ $conn->close();
     <!-- Delete Confirmation Modal -->
     <div id="deleteModal" class="modal">
         <div class="modal-content">
-            <div class="modal-title">Confirm Deletion</div>
-            <div class="modal-message">Are you sure you want to delete this appointment? This action cannot be undone.</div>
+            <div class="modal-title">ຍືນຍັນການລຶບອອກ</div>
+            <div class="modal-message">ທ່ານຕ້ອງການຈະລຶບການຈອງອອກແທ້ບໍ? ຫຼັງຈາກລຶບບໍ່ສາມາດຍ້ອນກັບໄດ້.</div>
             <form id="deleteForm" method="POST" action="user_history.php">
                 <input type="hidden" name="appointment_id" id="modalAppointmentId">
                 <input type="hidden" name="delete_appointment" value="1">
                 <div class="modal-actions">
-                    <button type="button" class="modal-btn modal-btn-cancel" onclick="hideDeleteModal()">Cancel</button>
-                    <button type="submit" class="modal-btn modal-btn-confirm">Delete</button>
+                    <button type="button" class="modal-btn modal-btn-cancel" onclick="hideDeleteModal()">ຍົກເລິກ</button>
+                    <button type="submit" class="modal-btn modal-btn-confirm">ລຶບອອກ</button>
                 </div>
             </form>
         </div>

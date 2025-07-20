@@ -27,12 +27,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Input validation
     if (empty($user_name)) $errors[] = "Username is required";
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = "Invalid email format";
-    if (strlen($password) < 8) $errors[] = "Password must be at least 8 characters";
-    if ($password !== $confirm_password) $errors[] = "Passwords do not match";
-
-    // Password character validation (server-side)
-    if (!preg_match('/^[A-Za-z0-9!@#$%^&*()_+\-=\[\]{};\':"\\\\|,.<>\/?]*$/', $password)) {
-        $errors[] = "ລະຫັດຜ່ານຕ້ອງມີພຽງຕົວອັກສອນອັງກິດ, ຕົວເລກ, ແລະ ສັນຍາລັກເທົ່ານັ້ນ.";
+    if (strlen($password) < 8) {
+        $errors[] = "Password must be at least 8 characters";
+    }
+    if (!preg_match('/[A-Za-z]/', $password) || !preg_match('/[0-9\W]/', $password)) {
+        $errors[] = "Password must contain both letters and numbers/symbols";
+    }
+    if ($password !== $confirm_password) {
+        $errors[] = "Passwords do not match";
     }
 
     // Check if email already exists
@@ -126,9 +128,8 @@ $conn->close();
     <header>
         <div class="container header-content">
             <div class="logo">
-                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
+                <svg viewBox="0 0 24 24" fill="currentColor" class="icon">
+                    <path d="M12 4a4 4 0 100 8 4 4 0 000-8zM2 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10S2 17.514 2 12z"></path>
                 </svg>
                 <span>Vision Care</span>
             </div>
@@ -142,9 +143,8 @@ $conn->close();
     <main class="container sign-in-container">
         <div class="sign-in-card">
             <div class="logo-center">
-                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-large">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
+                <svg viewBox="0 0 24 24" fill="currentColor" class="icon-large">
+                    <path d="M12 4a4 4 0 100 8 4 4 0 000-8zM2 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10S2 17.514 2 12z"></path>
                 </svg>
                 <h2>Vision Care</h2>
             </div>
@@ -189,9 +189,9 @@ $conn->close();
                             </svg>
                         </button>
                     </div>
-                    <div class="password-strength">
+                    <!-- <div class="password-strength">
                         <div class="password-strength-bar" id="password-strength-bar"></div>
-                    </div>
+                    </div> -->
                     <p class="password-hint" id="password-hint">ລະຫັດຕ້ອງມີ 8 ໂຕຂຶ້ນໄປ, ຢ່າງໜ້ອຍຕ້ອງມີ 1 ຕົວໜັງສື 1 ຕົວເລກ</p>
                     <!-- <p class="password-error" id="password-error">ລະຫັດຜ່ານສາມາດປ້ອນໄດ້ພຽງແຕ່ຕົວອັກສອນອັງກິດ, ຕົວເລກ, ແລະສັນຍາລັກ !@#$%^&*()_+-=[]{};':"\|,.<>/?</p> -->
                 </div>
@@ -261,6 +261,48 @@ $conn->close();
             return true;
         }
 
+        // function checkPasswordStrength(password) {
+        //     const strengthBar = document.getElementById('password-strength-bar');
+        //     const hint = document.getElementById('password-hint');
+
+        //     // Reset
+        //     if (strengthBar) strengthBar.style.width = '0%';
+        //     if (strengthBar) strengthBar.style.backgroundColor = '#e74c3c';
+        //     hint.style.color = '#7f8c8d';
+
+        //     if (password.length === 0) {
+        //         hint.textContent = 'ລະຫັດຕ້ອງມີ 8 ໂຕຂຶ້ນໄປ, ຢ່າງໜ້ອຍຕ້ອງມີ 1 ຕົວໜັງສື 1 ຕົວເລກ';
+        //         return;
+        //     }
+
+        //     // Check requirements
+        //     const hasMinLength = password.length >= 8;
+        //     const hasLetter = /[A-Za-z]/.test(password);
+        //     const hasNumberOrSymbol = /[0-9\W]/.test(password);
+
+        //     // Calculate strength (0-3)
+        //     let strength = 0;
+        //     if (hasMinLength) strength += 1;
+        //     if (hasLetter) strength += 1;
+        //     if (hasNumberOrSymbol) strength += 1;
+
+        //     // Update UI
+        //     const width = (strength / 3) * 100;
+        //     if (strengthBar) strengthBar.style.width = `${width}%`;
+
+        //     // Color coding and messages
+        //     if (hasMinLength && hasLetter && hasNumberOrSymbol) {
+        //         if (strengthBar) strengthBar.style.backgroundColor = '#2ecc71';
+        //         hint.textContent = 'Strong password!';
+        //         hint.style.color = '#2ecc71';
+        //     } else if (hasMinLength && (hasLetter || hasNumberOrSymbol)) {
+        //         if (strengthBar) strengthBar.style.backgroundColor = '#f39c12';
+        //         hint.textContent = 'Password needs both letters and numbers/symbols';
+        //     } else {
+        //         hint.textContent = 'Weak - must have letters and numbers/symbols';
+        //     }
+        // }
+
         function checkPasswordStrength(password) {
             const strengthBar = document.getElementById('password-strength-bar');
             const hint = document.getElementById('password-hint');
@@ -270,29 +312,36 @@ $conn->close();
             strengthBar.style.backgroundColor = '#e74c3c';
             hint.style.color = '#7f8c8d';
 
-            if (password.length === 0) return;
+            if (password.length === 0) {
+                hint.textContent = 'ລະຫັດຕ້ອງມີ 8 ໂຕຂຶ້ນໄປ (ລວມມີຕົວອັກສອນ ແລະ ຕົວເລກຫຼືສັນຍະລັກ)';
+                return;
+            }
 
-            // Strength calculation
+            // Check requirements
+            const hasMinLength = password.length >= 8;
+            const hasLetter = /[A-Za-z]/.test(password);
+            const hasNumberOrSymbol = /[0-9\W]/.test(password);
+
+            // Calculate strength (0-3)
             let strength = 0;
-            if (password.length >= 8) strength += 1;
-            if (/[A-Z]/.test(password)) strength += 1;
-            if (/[0-9]/.test(password)) strength += 1;
-            if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+            if (hasMinLength) strength += 1;
+            if (hasLetter) strength += 1;
+            if (hasNumberOrSymbol) strength += 1;
 
             // Update UI
-            const width = (strength / 4) * 100;
+            const width = (strength / 3) * 100;
             strengthBar.style.width = `${width}%`;
 
-            // Color coding
-            if (width >= 75) {
+            // Color coding and messages
+            if (hasMinLength && hasLetter && hasNumberOrSymbol) {
                 strengthBar.style.backgroundColor = '#2ecc71';
                 hint.textContent = 'Strong password!';
                 hint.style.color = '#2ecc71';
-            } else if (width >= 50) {
+            } else if (hasMinLength && (hasLetter || hasNumberOrSymbol)) {
                 strengthBar.style.backgroundColor = '#f39c12';
-                hint.textContent = 'Good, but could be stronger';
+                hint.textContent = 'Password needs both letters and numbers/symbols';
             } else {
-                hint.textContent = 'Weak - add numbers/symbols';
+                hint.textContent = 'Weak - must have letters and numbers/symbols';
             }
         }
 
