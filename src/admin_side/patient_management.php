@@ -183,31 +183,80 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id']);
         $phone = mysqli_real_escape_string($conn, $_POST['phone']);
 
-        // Start transaction
-        mysqli_begin_transaction($conn);
+        // List of all tables that reference patient with their actual column names
+        $related_tables = [
+            'appointment' => ['column' => 'patient_id', 'name' => 'appointments'],
+            'reception' => ['column' => 'patient_id', 'name' => 'reception records'],
+            'treatment' => ['column' => 'patient_id', 'name' => 'treatments'],
+            'eyes_check' => ['column' => 'patient_id', 'name' => 'eye check records'],
+            'general_checkup' => ['column' => 'patient_id', 'name' => 'general checkups'],
+            'receipt' => ['column' => 'patient_id', 'name' => 'receipts'],
+            // 'treatment_disease' => ['column' => 'patient_id', 'name' => 'treatment disease records']
+        ];
 
-        try {
-            // First delete the patient
-            $delete_patient = "DELETE FROM patient WHERE patient_id = '$patient_id'";
-            if (!mysqli_query($conn, $delete_patient)) {
-                throw new Exception("Error deleting patient: " . mysqli_error($conn));
+        $existing_records = [];
+
+        // Check each related table for records
+        foreach ($related_tables as $table => $info) {
+            try {
+                $check_query = "SELECT * FROM $table WHERE {$info['column']} = '$patient_id' LIMIT 1";
+                $result = mysqli_query($conn, $check_query);
+
+                if ($result === false) {
+                    // If query fails, check if the table exists
+                    $table_check = mysqli_query($conn, "SHOW TABLES LIKE '$table'");
+                    if (mysqli_num_rows($table_check) > 0) {
+                        // Table exists but query failed - likely wrong column name
+                        throw new Exception("Error checking $table table: " . mysqli_error($conn));
+                    }
+                    // Table doesn't exist - skip it
+                    continue;
+                }
+
+                if (mysqli_num_rows($result) > 0) {
+                    $existing_records[] = $info['name'];
+                }
+            } catch (Exception $e) {
+                // Log the error but continue checking other tables
+                error_log("Error checking $table table: " . $e->getMessage());
+                $existing_records[] = $info['name'] . " (check failed)";
             }
+        }
 
-            // Check if phone is used by any other patient
-            $patient_check = "SELECT * FROM patient WHERE phone = '$phone'";
-            $patient_result = mysqli_query($conn, $patient_check);
+        // If any related records exist, show error
+        if (!empty($existing_records)) {
+            $errors = "Cannot delete patient because they have existing: " .
+                implode(", ", $existing_records) . ". " .
+                "Please delete these records first or contact your system administrator.";
+        } else {
+            // Start transaction only if no related records exist
+            mysqli_begin_transaction($conn);
 
-            // If no other patient uses this phone, remove from user table
-            if (mysqli_num_rows($patient_result) == 0) {
-                $delete_user = "DELETE FROM user WHERE phone = '$phone'";
-                mysqli_query($conn, $delete_user);
+            try {
+                // First delete the patient
+                $delete_patient = "DELETE FROM patient WHERE patient_id = '$patient_id'";
+                if (!mysqli_query($conn, $delete_patient)) {
+                    throw new Exception("Error deleting patient: " . mysqli_error($conn));
+                }
+
+                // Check if phone is used by any other patient
+                $patient_check = "SELECT * FROM patient WHERE phone = '$phone'";
+                $patient_result = mysqli_query($conn, $patient_check);
+
+                // If no other patient uses this phone, remove from user table
+                if (mysqli_num_rows($patient_result) == 0) {
+                    $delete_user = "DELETE FROM user WHERE phone = '$phone'";
+                    if (!mysqli_query($conn, $delete_user)) {
+                        throw new Exception("Error removing phone from user table: " . mysqli_error($conn));
+                    }
+                }
+
+                mysqli_commit($conn);
+                $message = "Patient deleted successfully!";
+            } catch (Exception $e) {
+                mysqli_rollback($conn);
+                $errors = $e->getMessage();
             }
-
-            mysqli_commit($conn);
-            $message = "Patient deleted successfully!";
-        } catch (Exception $e) {
-            mysqli_rollback($conn);
-            $errors = $e->getMessage();
         }
     }
 }

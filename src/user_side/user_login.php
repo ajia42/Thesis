@@ -67,6 +67,12 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Patient Login - Vision Care</title>
     <link rel="stylesheet" href="user_login.css">
+    <link rel="icon" href="../images/logo.svg" type="image/svg+xml">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Phetsarath:wght@400;700&display=swap" rel="stylesheet">
+
 </head>
 
 <body>
@@ -79,8 +85,8 @@ $conn->close();
                 <span>Vision Care</span>
             </div>
             <div class="auth-links">
-                <a href="user_login.php">Login</a>
-                <a href="user_register.php">Register</a>
+                <a href="user_login.php">ເຂົ້າສູ່ລະບົບ</a>
+                <a href="user_register.php">ລົງທະບຽນ</a>
             </div>
         </div>
     </header>
@@ -92,8 +98,8 @@ $conn->close();
                 </svg>
                 <h2>Vision Care</h2>
             </div>
-            <h1>Patient Login</h1>
-            <p class="create-account">Don't have an account? <a href="user_register.php">Register here</a></p>
+            <h1>ເຂົ້າສູ່ລະບົບ</h1>
+            <p class="create-account">ບໍ່ທັນມີບັນຊີ? <a href="user_register.php">ລົງທະບຽນ</a></p>
             <?php
             // Display error message (if any)
             if (isset($_SESSION['login_error'])) {
@@ -121,11 +127,11 @@ $conn->close();
                     </div>
                 </div>
                 <div class="form-options">
-                    <label class="checkbox-label">
+                    <!-- <label class="checkbox-label">
                         <input type="checkbox" name="remember">
                         Remember me
                     </label>
-                    <a href="user_forgot_password.php" class="forgot-password">Forgot your password?</a>
+                    <a href="user_forgot_password.php" class="forgot-password">Forgot your password?</a> -->
                 </div>
                 <button type="submit" class="sign-in-button">
                     <svg viewBox="0 0 24 24" fill="currentColor" class="arrow-icon">
@@ -133,7 +139,7 @@ $conn->close();
                         <path
                             d="M19 12c0 4.14-3.36 7.5-7.5 7.5S4 16.14 4 12 7.36 4.5 12 4.5s7.5 3.36 7.5 7.5zM12 6.5c-3.04 0-5.5 2.46-5.5 5.5s2.46 5.5 5.5 5.5 5.5-2.46 5.5-5.5-2.46-5.5-5.5-5.5z"></path>
                     </svg>
-                    Login
+                    ເຂົ້າສູ່ລະບົບ
                 </button>
             </form>
         </div>

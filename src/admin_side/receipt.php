@@ -802,9 +802,9 @@ $services_result = mysqli_query($conn, $services_query);
                         <div class="total-amount-display" id="totalAmountDisplay">0 LAK</div>
                     </div>
                     <div class="form-actions">
-                        <button type="submit" class="save-button" name="save_button">Save</button>
-                        <button type="submit" class="update-button" name="update_button">Update</button>
-                        <button type="submit" class="delete-button" name="delete_button">Delete</button>
+                        <button type="submit" class="save-button" name="save_button" id="saveButton">Save</button>
+                        <button type="submit" class="update-button" name="update_button" id="updateButton">Update</button>
+                        <button type="submit" class="delete-button" name="delete_button" id="deleteButton">Delete</button>
                     </div>
                 </div>
             </form>
@@ -1323,6 +1323,10 @@ $services_result = mysqli_query($conn, $services_query);
         // }
 
         document.addEventListener('DOMContentLoaded', function() {
+
+            // Initially disable update and delete buttons
+            document.getElementById('updateButton').disabled = true;
+            document.getElementById('deleteButton').disabled = true;
 
             // Automatically expand submenu if current page is a submenu item
             const currentPage = window.location.pathname.split('/').pop();

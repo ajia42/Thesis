@@ -42,7 +42,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email_check = "SELECT * FROM user WHERE email = '$email' AND phone != '$phone'";
     $email_result = mysqli_query($conn, $email_check);
     if (mysqli_num_rows($email_result) > 0) {
-        $errors[] = "Email already registered with another account";
+        $errors[] = "ອີເມວຖືກໃຊ້ແລ້ວ";
     }
 
     if (empty($errors)) {
@@ -55,7 +55,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $user = mysqli_fetch_assoc($phone_result);
 
             if ($user['user_name'] !== NULL && $user['email'] !== NULL && $user['password'] !== NULL) {
-                $errors[] = "This phone number is already registered. Please login instead.";
+                $errors[] = "ເບີໂທຖືກໃຊ້ໄປແລ້ວ ກະລຸນາປ່ຽນເບີໂທໃໝ່";
             } else {
                 // Walk-in patient - update their record with registration details
                 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
@@ -73,7 +73,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                     if (mysqli_num_rows($patient_result) > 0) {
                         // Walk-in patient exists - redirect to login
-                        $success = "Registration completed successfully! You can now login.";
+                        $success = "ລົງທະບຽນສໍາເລັດ";
                         header("Refresh: 3; url=user_login.php");
                     } else {
                         // New patient - redirect to info page
@@ -114,6 +114,11 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Patient Registration - Vision Care</title>
     <link rel="stylesheet" href="user_login.css">
+    <link rel="icon" href="../images/logo.svg" type="image/svg+xml">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Phetsarath:wght@400;700&display=swap" rel="stylesheet">
     <style>
         .password-strength {
             height: 5px;
@@ -185,8 +190,8 @@ $conn->close();
                 <span>Vision Care</span>
             </div>
             <div class="auth-links">
-                <a href="user_login.php">Login</a>
-                <a href="user_register.php" class="active">Register</a>
+                <a href="user_login.php">ເຂົ້າສູ່ລະບົບ</a>
+                <a href="user_register.php" class="active">ລົງທະບຽນ</a>
             </div>
         </div>
     </header>
@@ -200,8 +205,8 @@ $conn->close();
                 <h2>Vision Care</h2>
             </div>
 
-            <h1>Patient Registration</h1>
-            <p class="create-account">Already have an account? <a href="user_login.php">Sign in here</a></p>
+            <h1>ລົງທະບຽນ</h1>
+            <p class="create-account">ມີບັນຊີແລ້ວ? <a href="user_login.php">ເຂົ້າສູ່ລະບົບ</a></p>
 
             <?php if (!empty($errors)): ?>
                 <div class="error-message">
@@ -217,27 +222,27 @@ $conn->close();
 
             <form method="POST" action="user_register.php">
                 <div class="input-group">
-                    <label for="user_name">Username</label>
+                    <label for="user_name">ຊື່ຜູ້ໃຊ້</label>
                     <input type="text" id="user_name" name="user_name" required
                         value="<?php echo htmlspecialchars($_POST['user_name'] ?? ''); ?>">
                 </div>
 
                 <div class="input-group">
-                    <label for="email">Email Address</label>
+                    <label for="email">ອີເມວ</label>
                     <input type="email" id="email" name="email" required
                         value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>">
                 </div>
 
                 <div class="input-group">
-                    <label for="phone">Phone Number</label>
+                    <label for="phone">ເບີໂທ</label>
                     <input type="text" id="phone" name="phone" required
                         placeholder="10 digits starting with 20" maxlength="10"
                         value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>">
-                    <small class="hint">Must start with 20 and be 10 digits (e.g., 2012345678)</small>
+                    <small class="hint">20xxxxxxxx</small>
                 </div>
 
                 <div class="input-group">
-                    <label for="password">Password</label>
+                    <label for="password">ລະຫັດຜ່ານ</label>
                     <div class="password-input">
                         <input type="password" id="password" name="password" required
                             oninput="checkPasswordStrength(this.value)">
@@ -250,11 +255,11 @@ $conn->close();
                     <div class="password-strength">
                         <div class="password-strength-bar" id="password-strength-bar"></div>
                     </div>
-                    <p class="password-hint" id="password-hint">Use 8+ characters with numbers and symbols</p>
+                    <p class="password-hint" id="password-hint">ລະຫັດຕ້ອງມີ 8 ໂຕຂຶ້ນໄປ (ລວມມີຕົວອັກສອນ ແລະ ຕົວເລກຫຼືສັນຍະລັກ)</p>
                 </div>
 
                 <div class="input-group">
-                    <label for="confirm_password">Confirm Password</label>
+                    <label for="confirm_password">ຍືນຍັນລະຫັດ</label>
                     <div class="password-input">
                         <input type="password" id="confirm_password" name="confirm_password" required
                             oninput="checkPasswordMatch()">
@@ -272,7 +277,7 @@ $conn->close();
                         <path d="M10 17l5-5-5-5v10z"></path>
                         <path d="M19 12c0 4.14-3.36 7.5-7.5 7.5S4 16.14 4 12 7.36 4.5 12 4.5s7.5 3.36 7.5 7.5zM12 6.5c-3.04 0-5.5 2.46-5.5 5.5s2.46 5.5 5.5 5.5 5.5-2.46 5.5-5.5-2.46-5.5-5.5-5.5z"></path>
                     </svg>
-                    Register
+                    ລົງທະບຽນ
                 </button>
             </form>
         </div>

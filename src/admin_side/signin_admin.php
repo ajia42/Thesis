@@ -106,7 +106,7 @@ $conn->close();
         </svg>
         <h2>Vision Care</h2>
       </div>
-      <h1>ເຂົ້າສູ່ລະບົບ</h1>
+      <h1>ເຂົ້າສູ່ລະບົບແອັດມິນ</h1>
       <p class="create-account">Or <a href="register_admin.php">ສ້າງບັນຊີໃໝ່</a></p>
       <?php
       // Display error message (if any)

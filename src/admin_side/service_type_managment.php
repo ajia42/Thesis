@@ -90,19 +90,60 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     }
 
-    // Delete functionality
+    // Delete functionality - UPDATED WITH RELATIONSHIP CHECKS
     if (isset($_POST['delete_button']) && !empty($_POST['patient_id'])) {
         $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id']);
 
-        // Prepare DELETE query
-        $delete_query = "DELETE FROM service_type WHERE service_type_id = '$patient_id'";
+        // List of all tables that reference service_type with their actual column names
+        $related_tables = [
+            'appointment' => ['column' => 'service_type_id', 'name' => 'appointments'],
+            'receipt_service_type' => ['column' => 'service_type_id', 'name' => 'receipt service type records']
+            // Add other tables that reference service_type if they exist
+        ];
 
-        if (mysqli_query($conn, $delete_query)) {
-            // echo "<script>alert('Patient deleted successfully!');</script>";
-            $message = "Service deleted successfully!";
+        $existing_records = [];
+
+        // Check each related table for records
+        foreach ($related_tables as $table => $info) {
+            try {
+                $check_query = "SELECT * FROM $table WHERE {$info['column']} = '$patient_id' LIMIT 1";
+                $result = mysqli_query($conn, $check_query);
+
+                if ($result === false) {
+                    // If query fails, check if the table exists
+                    $table_check = mysqli_query($conn, "SHOW TABLES LIKE '$table'");
+                    if (mysqli_num_rows($table_check) > 0) {
+                        // Table exists but query failed - likely wrong column name
+                        throw new Exception("Error checking $table table: " . mysqli_error($conn));
+                    }
+                    // Table doesn't exist - skip it
+                    continue;
+                }
+
+                if (mysqli_num_rows($result) > 0) {
+                    $existing_records[] = $info['name'];
+                }
+            } catch (Exception $e) {
+                // Log the error but continue checking other tables
+                error_log("Error checking $table table: " . $e->getMessage());
+                $existing_records[] = $info['name'] . " (check failed)";
+            }
+        }
+
+        // If any related records exist, show error
+        if (!empty($existing_records)) {
+            $errors = "Cannot delete service type because it has existing: " .
+                implode(", ", $existing_records) . ". " .
+                "Please delete these records first or contact your system administrator.";
         } else {
-            // echo "<script>alert('Error deleting patient: " . mysqli_error($conn) . "');</script>";
-            $errors = "Error deleting service: " . mysqli_error($conn);
+            // Prepare DELETE query
+            $delete_query = "DELETE FROM service_type WHERE service_type_id = '$patient_id'";
+
+            if (mysqli_query($conn, $delete_query)) {
+                $message = "Service deleted successfully!";
+            } else {
+                $errors = "Error deleting service: " . mysqli_error($conn);
+            }
         }
     }
 }
@@ -166,7 +207,7 @@ if (!$is_search && empty($search_results)) {
             <!-- Sidebar content remains the same as in the original HTML -->
             <!-- ... (previous sidebar code) ... -->
             <div class="logo">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
                     <path d="M12 4a4 4 0 100 8 4 4 0 000-8zM2 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10S2 17.514 2 12z"></path>
                 </svg>
                 Vision Care
@@ -356,20 +397,21 @@ if (!$is_search && empty($search_results)) {
                     </div>
                     <div class="form-group">
                         <label for="phone">Service Fee</label>
-                        <!-- <input type="number" id="phone" name="phone" required> -->
                         <input
                             type="text"
                             id="phone"
                             name="phone"
-                            maxlength="10"
+                            maxlength="15"
                             inputmode="numeric"
+                            pattern="[0-9]*"
+                            onkeypress="return event.charCode >= 48 && event.charCode <= 57"
                             required />
                         <div id="phoneError" class="error-message" style="display: none;"></div>
                     </div>
                     <div class="form-actions">
-                        <button type="submit" class="save-button" name="save_button">Save</button>
-                        <button type="submit" class="update-button" name="update_button">Update</button>
-                        <button type="submit" class="delete-button" name="delete_button">Delete</button>
+                        <button type="submit" class="save-button" name="save_button" id="saveButton">Save</button>
+                        <button type="submit" class="update-button" name="update_button" id="updateButton">Update</button>
+                        <button type="submit" class="delete-button" name="delete_button" id="deleteButton">Delete</button>
                     </div>
                 </div>
             </form>
@@ -424,6 +466,16 @@ if (!$is_search && empty($search_results)) {
             document.getElementById('patientID').value = patientId;
             document.getElementById('firstName').value = firstName;
             document.getElementById('phone').value = phone;
+
+            // Disable save button, enable update and delete
+            document.getElementById('saveButton').disabled = true;
+            document.getElementById('updateButton').disabled = false;
+            document.getElementById('deleteButton').disabled = false;
+
+            // Scroll to form
+            document.getElementById('patientForm').scrollIntoView({
+                behavior: 'smooth'
+            });
         }
 
         function clearForm() {
@@ -432,6 +484,11 @@ if (!$is_search && empty($search_results)) {
             document.getElementById('phone').value = ''; // Clear Phone
             // Focus on first name input
             document.getElementById('firstName').focus();
+
+            // Enable save button, disable update and delete
+            document.getElementById('saveButton').disabled = false;
+            document.getElementById('updateButton').disabled = true;
+            document.getElementById('deleteButton').disabled = true;
         }
 
         // Prevent form resubmission on page refresh
@@ -461,6 +518,10 @@ if (!$is_search && empty($search_results)) {
 
         document.addEventListener('DOMContentLoaded', function() {
 
+            // Initially disable update and delete buttons
+            document.getElementById('updateButton').disabled = true;
+            document.getElementById('deleteButton').disabled = true;
+
             // Automatically expand submenu if current page is a submenu item
             const currentPage = window.location.pathname.split('/').pop();
             const menuItems = document.querySelectorAll('.has-submenu');
@@ -481,6 +542,16 @@ if (!$is_search && empty($search_results)) {
                     toggleSubmenu(toggleLink, true);
                 }
             });
+        });
+
+        document.getElementById('phone').addEventListener('paste', function(e) {
+            e.preventDefault();
+            const pasteData = e.clipboardData.getData('text');
+            if (!/^\d+$/.test(pasteData)) {
+                alert('Only numbers are allowed');
+                return;
+            }
+            this.value = pasteData;
         });
     </script>
 </body>

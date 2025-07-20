@@ -36,8 +36,8 @@ $message = '';
 // Check if form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Sanitize and validate input
-    $first_name = mysqli_real_escape_string($conn, $_POST['first_name']);
-    $last_name = mysqli_real_escape_string($conn, $_POST['last_name']);
+    $first_name = preg_match('/^[A-Za-z\x{0E80}-\x{0EFF}\s]+$/u', $_POST['first_name']) ? mysqli_real_escape_string($conn, $_POST['first_name']) : '';
+    $last_name = preg_match('/^[A-Za-z\x{0E80}-\x{0EFF}\s]+$/u', $_POST['last_name']) ? mysqli_real_escape_string($conn, $_POST['last_name']) : '';
     $gender = mysqli_real_escape_string($conn, $_POST['gender']);
     $phone = mysqli_real_escape_string($conn, $_POST['phone']);
     $dob = mysqli_real_escape_string($conn, $_POST['dob']);
@@ -46,6 +46,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Action based on button click
     if (isset($_POST['save_button'])) {
+
+        if (empty($first_name)) {
+            $errors = "First name must contain only letters (English or Lao)";
+        }
+        if (empty($last_name)) {
+            $errors = "Last name must contain only letters (English or Lao)";
+        }
+
         // Check if phone exists in staff table
         $phone_check = "SELECT * FROM staff WHERE phone = '$phone'";
         $phone_result = mysqli_query($conn, $phone_check);
@@ -82,14 +90,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Handle update functionality
     if (isset($_POST['update_button']) && !empty($_POST['staff_id'])) {
         $staff_id = mysqli_real_escape_string($conn, $_POST['staff_id']);
-        $first_name = mysqli_real_escape_string($conn, $_POST['first_name']);
-        $last_name = mysqli_real_escape_string($conn, $_POST['last_name']);
+        $first_name = preg_match('/^[A-Za-z\x{0E80}-\x{0EFF}\s]+$/u', $_POST['first_name']) ? mysqli_real_escape_string($conn, $_POST['first_name']) : '';
+        $last_name = preg_match('/^[A-Za-z\x{0E80}-\x{0EFF}\s]+$/u', $_POST['last_name']) ? mysqli_real_escape_string($conn, $_POST['last_name']) : '';
         $gender = mysqli_real_escape_string($conn, $_POST['gender']);
         $new_phone = mysqli_real_escape_string($conn, $_POST['phone']);
         $original_phone = mysqli_real_escape_string($conn, $_POST['original_phone']);
         $dob = mysqli_real_escape_string($conn, $_POST['dob']);
         $address = mysqli_real_escape_string($conn, $_POST['address']);
         $position = mysqli_real_escape_string($conn, $_POST['position']);
+
+        if (empty($first_name)) {
+            $errors = "First name must contain only letters (English or Lao)";
+        }
+        if (empty($last_name)) {
+            $errors = "Last name must contain only letters (English or Lao)";
+        }
 
         // Validate phone number
         if (!preg_match('/^20\d{8}$/', $new_phone)) {
@@ -144,21 +159,67 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $staff_id = mysqli_real_escape_string($conn, $_POST['staff_id']);
         $phone = mysqli_real_escape_string($conn, $_POST['phone']);
 
-        // Start transaction
-        mysqli_begin_transaction($conn);
+        // List of all tables that reference staff with their actual column names
+        $related_tables = [
+            // 'appointment' => ['column' => 'staff_id', 'name' => 'appointments'],
+            'treatment' => ['column' => 'staff_id', 'name' => 'treatments'],
+            'eyes_check' => ['column' => 'staff_id', 'name' => 'eye check records'],
+            'general_checkup' => ['column' => 'staff_id', 'name' => 'general checkups'],
+            'receipt' => ['column' => 'staff_id', 'name' => 'receipts'],
+            // 'treatment_disease' => ['column' => 'staff_id', 'name' => 'treatment disease records']
+        ];
 
-        try {
-            // Delete the staff
-            $delete_staff = "DELETE FROM staff WHERE staff_id = '$staff_id'";
-            if (!mysqli_query($conn, $delete_staff)) {
-                throw new Exception("Error deleting staff: " . mysqli_error($conn));
+        $existing_records = [];
+
+        // Check each related table for records
+        foreach ($related_tables as $table => $info) {
+            try {
+                $check_query = "SELECT * FROM $table WHERE {$info['column']} = '$staff_id' LIMIT 1";
+                $result = mysqli_query($conn, $check_query);
+
+                if ($result === false) {
+                    // If query fails, check if the table exists
+                    $table_check = mysqli_query($conn, "SHOW TABLES LIKE '$table'");
+                    if (mysqli_num_rows($table_check) > 0) {
+                        // Table exists but query failed - likely wrong column name
+                        throw new Exception("Error checking $table table: " . mysqli_error($conn));
+                    }
+                    // Table doesn't exist - skip it
+                    continue;
+                }
+
+                if (mysqli_num_rows($result) > 0) {
+                    $existing_records[] = $info['name'];
+                }
+            } catch (Exception $e) {
+                // Log the error but continue checking other tables
+                error_log("Error checking $table table: " . $e->getMessage());
+                $existing_records[] = $info['name'] . " (check failed)";
             }
+        }
 
-            mysqli_commit($conn);
-            $message = "Staff deleted successfully!";
-        } catch (Exception $e) {
-            mysqli_rollback($conn);
-            $errors = $e->getMessage();
+        // If any related records exist, show error
+        if (!empty($existing_records)) {
+            $errors = "Cannot delete staff because they have existing: " .
+                implode(", ", $existing_records) . ". " .
+                "Please delete these records first or contact your system administrator.";
+        } else {
+            // Start transaction only if no related records exist
+            mysqli_begin_transaction($conn);
+
+            try {
+                // Delete the staff
+                $delete_staff = "DELETE FROM staff WHERE staff_id = '$staff_id'";
+                if (!mysqli_query($conn, $delete_staff)) {
+                    throw new Exception("Error deleting staff: " . mysqli_error($conn));
+                }
+
+                mysqli_commit($conn);
+                $message = "Staff deleted successfully!";
+            } catch (Exception $e) {
+                mysqli_rollback($conn);
+                $errors = $e->getMessage();
+            }
         }
     }
 }
@@ -222,7 +283,7 @@ if (!$is_search && empty($search_results)) {
             <!-- Sidebar content remains the same as in the original HTML -->
             <!-- ... (previous sidebar code) ... -->
             <div class="logo">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
                     <path d="M12 4a4 4 0 100 8 4 4 0 000-8zM2 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10S2 17.514 2 12z"></path>
                 </svg>
                 Vision Care
@@ -409,11 +470,17 @@ if (!$is_search && empty($search_results)) {
                     </div>
                     <div class="form-group">
                         <label for="firstName">First Name</label>
-                        <input type="text" id="firstName" name="first_name" required>
+                        <input type="text" id="firstName" name="first_name"
+                            pattern="[A-Za-z\u0E80-\u0EFF ]+"
+                            title="Only letters are allowed (English or Lao)"
+                            required>
                     </div>
                     <div class="form-group">
                         <label for="lastName">Last Name</label>
-                        <input type="text" id="lastName" name="last_name" required>
+                        <input type="text" id="lastName" name="last_name"
+                            pattern="[A-Za-z\u0E80-\u0EFF ]+"
+                            title="Only letters are allowed (English or Lao)"
+                            required>
                     </div>
                     <div class="form-group">
                         <label for="gender">Gender</label>
@@ -566,6 +633,9 @@ if (!$is_search && empty($search_results)) {
             // Initially disable update and delete buttons
             document.getElementById('updateButton').disabled = true;
             document.getElementById('deleteButton').disabled = true;
+
+            validateNameInput(document.getElementById('firstName'));
+            validateNameInput(document.getElementById('lastName'));
 
             // If there's a staff ID in the form (from form submission error), 
             // we should disable save and enable update/delete
@@ -823,6 +893,31 @@ if (!$is_search && empty($search_results)) {
             if (submenu.style.display === 'block') {
                 parent.classList.remove('active');
             }
+        }
+
+        // Add this function to validate name inputs
+        function isAllowedCharacter(char) {
+            // Allow English letters (A-Z, a-z), Lao characters, and space
+            return /^[A-Za-z\u0E80-\u0EFF ]$/.test(char);
+        }
+
+        function validateNameInput(inputElement) {
+            inputElement.addEventListener('keypress', function(e) {
+                if (!isAllowedCharacter(e.key) && e.key !== 'Backspace' && e.key !== 'Delete') {
+                    e.preventDefault();
+                }
+            });
+
+            inputElement.addEventListener('paste', function(e) {
+                e.preventDefault();
+                const pasteText = (e.clipboardData || window.clipboardData).getData('text');
+                const filteredText = pasteText.split('').filter(isAllowedCharacter).join('');
+                document.execCommand('insertText', false, filteredText);
+            });
+
+            inputElement.addEventListener('input', function() {
+                this.value = this.value.split('').filter(isAllowedCharacter).join('');
+            });
         }
 
         // function toggleSubmenu(element) {

@@ -95,15 +95,54 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (isset($_POST['delete_button']) && !empty($_POST['patient_id'])) {
         $patient_id = mysqli_real_escape_string($conn, $_POST['patient_id']);
 
-        // Prepare DELETE query
-        $delete_query = "DELETE FROM disease WHERE disease_id = '$patient_id'";
+        // List of all tables that reference disease with their actual column names
+        $related_tables = [
+            'treatment_disease' => ['column' => 'disease_id', 'name' => 'treatment disease records'],
+        ];
 
-        if (mysqli_query($conn, $delete_query)) {
-            // echo "<script>alert('Patient deleted successfully!');</script>";
-            $message = "Disease deleted successfully!";
+        $existing_records = [];
+
+        // Check each related table for records
+        foreach ($related_tables as $table => $info) {
+            try {
+                $check_query = "SELECT * FROM $table WHERE {$info['column']} = '$patient_id' LIMIT 1";
+                $result = mysqli_query($conn, $check_query);
+
+                if ($result === false) {
+                    // If query fails, check if the table exists
+                    $table_check = mysqli_query($conn, "SHOW TABLES LIKE '$table'");
+                    if (mysqli_num_rows($table_check) > 0) {
+                        // Table exists but query failed - likely wrong column name
+                        throw new Exception("Error checking $table table: " . mysqli_error($conn));
+                    }
+                    // Table doesn't exist - skip it
+                    continue;
+                }
+
+                if (mysqli_num_rows($result) > 0) {
+                    $existing_records[] = $info['name'];
+                }
+            } catch (Exception $e) {
+                // Log the error but continue checking other tables
+                error_log("Error checking $table table: " . $e->getMessage());
+                $existing_records[] = $info['name'] . " (check failed)";
+            }
+        }
+
+        // If any related records exist, show error
+        if (!empty($existing_records)) {
+            $errors = "Cannot delete disease because it has existing: " .
+                implode(", ", $existing_records) . ". " .
+                "Please delete these records first or contact your system administrator.";
         } else {
-            // echo "<script>alert('Error deleting patient: " . mysqli_error($conn) . "');</script>";
-            $errors = "Error adding disease: " . mysqli_error($conn);
+            // Prepare DELETE query
+            $delete_query = "DELETE FROM disease WHERE disease_id = '$patient_id'";
+
+            if (mysqli_query($conn, $delete_query)) {
+                $message = "Disease deleted successfully!";
+            } else {
+                $errors = "Error deleting disease: " . mysqli_error($conn);
+            }
         }
     }
 }
@@ -365,9 +404,9 @@ if (!$is_search && empty($search_results)) {
                             placeholder="optional" />
                     </div>
                     <div class="form-actions">
-                        <button type="submit" class="save-button" name="save_button">Save</button>
-                        <button type="submit" class="update-button" name="update_button">Update</button>
-                        <button type="submit" class="delete-button" name="delete_button">Delete</button>
+                        <button type="submit" class="save-button" name="save_button" id="saveButton">Save</button>
+                        <button type="submit" class="update-button" name="update_button" id="updateButton">Update</button>
+                        <button type="submit" class="delete-button" name="delete_button" id="deleteButton">Delete</button>
                     </div>
                 </div>
             </form>
@@ -422,6 +461,16 @@ if (!$is_search && empty($search_results)) {
             document.getElementById('patientID').value = patientId;
             document.getElementById('firstName').value = firstName;
             document.getElementById('phone').value = phone;
+
+            // Disable save button, enable update and delete
+            document.getElementById('saveButton').disabled = true;
+            document.getElementById('updateButton').disabled = false;
+            document.getElementById('deleteButton').disabled = false;
+
+            // Scroll to form
+            document.getElementById('patientForm').scrollIntoView({
+                behavior: 'smooth'
+            });
         }
 
         function clearForm() {
@@ -430,6 +479,11 @@ if (!$is_search && empty($search_results)) {
             document.getElementById('phone').value = ''; // Clear Phone
             // Focus on first name input
             document.getElementById('firstName').focus();
+
+            // Enable save button, disable update and delete
+            document.getElementById('saveButton').disabled = false;
+            document.getElementById('updateButton').disabled = true;
+            document.getElementById('deleteButton').disabled = true;
         }
 
         // Prevent form resubmission on page refresh
@@ -458,6 +512,10 @@ if (!$is_search && empty($search_results)) {
         // }
 
         document.addEventListener('DOMContentLoaded', function() {
+
+            // Initially disable update and delete buttons
+            document.getElementById('updateButton').disabled = true;
+            document.getElementById('deleteButton').disabled = true;
 
             // Automatically expand submenu if current page is a submenu item
             const currentPage = window.location.pathname.split('/').pop();
