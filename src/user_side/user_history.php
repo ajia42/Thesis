@@ -15,6 +15,32 @@ if (!isset($_SESSION['user_name'])) {
     exit();
 }
 
+// Handle delete request
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete_appointment'])) {
+    $appointment_id = $_POST['appointment_id'];
+    $patient_id = $_SESSION['registered_phone'];
+
+    // Verify the appointment belongs to the patient before deleting
+    $verify_sql = "SELECT a.appointment_id 
+                   FROM appointment a
+                   JOIN patient p ON a.patient_id = p.patient_id
+                   WHERE p.phone = '$patient_id' AND a.appointment_id = '$appointment_id'";
+    $verify_result = mysqli_query($conn, $verify_sql);
+
+    if (mysqli_num_rows($verify_result) > 0) {
+        $delete_sql = "DELETE FROM appointment WHERE appointment_id = '$appointment_id'";
+        if (mysqli_query($conn, $delete_sql)) {
+            // Refresh the page to show updated list
+            header("Location: user_history.php");
+            exit();
+        } else {
+            $delete_error = "Error deleting appointment: " . mysqli_error($conn);
+        }
+    } else {
+        $delete_error = "Appointment not found or you don't have permission to delete it.";
+    }
+}
+
 $patient_id = $_SESSION['registered_phone'];
 $patient_name = $_SESSION['user_name'];
 
@@ -265,6 +291,102 @@ $conn->close();
                 gap: 5px;
             }
         }
+
+        .appointment-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .delete-btn {
+            background-color: #f8f9fa;
+            color: #dc3545;
+            border: 1px solid #dc3545;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .delete-btn:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-title {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .modal-message {
+            margin-bottom: 20px;
+            color: #555;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .modal-btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .modal-btn-cancel {
+            background-color: #f8f9fa;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        .modal-btn-cancel:hover {
+            background-color: #e2e6ea;
+        }
+
+        .modal-btn-confirm {
+            background-color: #dc3545;
+            color: white;
+            border: 1px solid #dc3545;
+        }
+
+        .modal-btn-confirm:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
+        }
+
+        .error-message {
+            color: #dc3545;
+            margin: 10px 0;
+            text-align: center;
+        }
     </style>
 </head>
 
@@ -290,6 +412,10 @@ $conn->close();
             <h1>Appointment History</h1>
             <p>View and manage your past and upcoming appointments.</p>
         </div>
+
+        <?php if (isset($delete_error)): ?>
+            <div class="error-message"><?php echo htmlspecialchars($delete_error); ?></div>
+        <?php endif; ?>
 
         <a href="user_appointment.php" class="new-appointment-btn">New Appointment</a>
 
@@ -324,13 +450,53 @@ $conn->close();
                                     </div>
                                 </div>
                             </div>
-                            <a href="user_appointment_detail.php?id=<?php echo htmlspecialchars($appointment['appointment_id']); ?>" class="detail-btn">Details</a>
+                            <div class="appointment-actions">
+                                <a href="user_appointment_detail.php?id=<?php echo htmlspecialchars($appointment['appointment_id']); ?>" class="detail-btn">Details</a>
+                                <button class="delete-btn" onclick="showDeleteModal('<?php echo htmlspecialchars($appointment['appointment_id']); ?>')">Delete</button>
+                            </div>
                         </div>
                     <?php endforeach; ?>
                 <?php endif; ?>
             </div>
         </div>
     </main>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">Confirm Deletion</div>
+            <div class="modal-message">Are you sure you want to delete this appointment? This action cannot be undone.</div>
+            <form id="deleteForm" method="POST" action="user_history.php">
+                <input type="hidden" name="appointment_id" id="modalAppointmentId">
+                <input type="hidden" name="delete_appointment" value="1">
+                <div class="modal-actions">
+                    <button type="button" class="modal-btn modal-btn-cancel" onclick="hideDeleteModal()">Cancel</button>
+                    <button type="submit" class="modal-btn modal-btn-confirm">Delete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Show the delete confirmation modal
+        function showDeleteModal(appointmentId) {
+            document.getElementById('modalAppointmentId').value = appointmentId;
+            document.getElementById('deleteModal').style.display = 'flex';
+        }
+
+        // Hide the delete confirmation modal
+        function hideDeleteModal() {
+            document.getElementById('deleteModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside of it
+        window.onclick = function(event) {
+            const modal = document.getElementById('deleteModal');
+            if (event.target === modal) {
+                hideDeleteModal();
+            }
+        }
+    </script>
 </body>
 
 </html>

@@ -2,16 +2,14 @@
 session_start();
 include("../db_config.php");
 
-if (isset($_SESSION['admin_id'])) {
-    header('Location: patient_management.php');
-    exit();
-}
+// Check if a superadmin already exists in the database
+$superadmin_check = "SELECT * FROM admin WHERE role = 'superadmin'";
+$result = mysqli_query($conn, $superadmin_check);
 
-// Check if an admin already exists in the database
-$admin_check = "SELECT * FROM admin WHERE role = 'admin' LIMIT 1";
-$admin_result = mysqli_query($conn, $admin_check);
-if (mysqli_num_rows($admin_result) > 0) {
-    header('Location: signin_admin.php');
+// If a superadmin exists and user is not logged in as superadmin, redirect to login
+if (mysqli_num_rows($result) > 0 && !(isset($_SESSION['superadmin_id']) && $_SESSION['admin_role'] === 'superadmin')) {
+    $_SESSION['error'] = "ມີ Super Admin ໃນລະບົບແລ້ວ, ບໍ່ອະນຸຍາດໃຫ້ລົງທະບຽນ Super Admin ໃໝ່";
+    header('Location: login.php');
     exit();
 }
 
@@ -42,6 +40,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $errors[] = "ອີເມວຖືກໃຊ້ໄປແລ້ວ";
     }
 
+    // Double check that no superadmin exists (in case someone bypasses the initial check)
+    $superadmin_check = "SELECT * FROM admin WHERE role = 'superadmin'";
+    $result = mysqli_query($conn, $superadmin_check);
+    if (mysqli_num_rows($result) > 0) {
+        $errors[] = "ມີ Super Admin ໃນລະບົບແລ້ວ, ບໍ່ອະນຸຍາດໃຫ້ລົງທະບຽນ Super Admin ໃໝ່";
+    }
+
     if (empty($errors)) {
         // Get the highest existing admin_id and increment it
         $id_query = "SELECT MAX(CAST(SUBSTRING(admin_id, 2) AS UNSIGNED)) as max_id FROM admin";
@@ -52,11 +57,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
-        $sql = "INSERT INTO admin (admin_id, user_name, email, password, role) 
-                VALUES ('$admin_id', '$user_name', '$email', '$hashed_password', 'admin')";
+        // Insert with role set to 'superadmin'
+        $sql = "INSERT INTO admin (admin_id, user_name, email, role, password) 
+                VALUES ('$admin_id', '$user_name', '$email', 'superadmin', '$hashed_password')";
 
         if (mysqli_query($conn, $sql)) {
-            $success = "ລົງທະບຽນສຳເລັດ, ກໍາລັງກັບໄປໜ້າເຂົ້າສູ່ລະບົບ...";
+            $success = "ລົງທະບຽນ Super Admin ສຳເລັດ, ກໍາລັງກັບໄປໜ້າເຂົ້າສູ່ລະບົບ...";
             header("Refresh: 3; url=signin_admin.php");
         } else {
             $errors[] = "Error: " . mysqli_error($conn);
@@ -73,9 +79,8 @@ $conn->close();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register Admin - Vision Care</title>
-    <link rel="stylesheet" href="signin_admin.css">
-    <link rel="icon" href="../images/logo.svg" type="image/svg+xml">
+    <title>Register Super Admin - Vision Care</title>
+    <link rel="stylesheet" href="style.css">
     <style>
         .password-strength {
             height: 5px;
@@ -133,8 +138,8 @@ $conn->close();
                 <span>Vision Care</span>
             </div>
             <div class="auth-links">
-                <a href="signin_admin.php">ເຂົ້າສູ່ລະບົບ</a>
-                <a href="register_admin.php" class="active">ລົງທະບຽນ</a>
+                <a href="login.php">ເຂົ້າສູ່ລະບົບ Super Admin</a>
+                <a href="register.php" class="active">ລົງທະບຽນ Super Admin</a>
             </div>
         </div>
     </header>
@@ -149,8 +154,7 @@ $conn->close();
                 <h2>Vision Care</h2>
             </div>
 
-            <h1>ລົງທະບຽນໃໝ່</h1>
-            <p class="create-account">Or <a href="signin_admin.php">ມີບັນຊີແລ້ວ? ເຂົ້າສູ່ລະບົບ</a></p>
+            <h1>ລົງທະບຽນ Super Admin</h1>
 
             <?php if (!empty($errors)): ?>
                 <div class="error-message">
@@ -164,7 +168,7 @@ $conn->close();
                 <div class="success-message"><?php echo htmlspecialchars($success); ?></div>
             <?php endif; ?>
 
-            <form method="POST" action="register_admin.php" onsubmit="return validatePassword()">
+            <form method="POST" action="register.php" onsubmit="return validatePassword()">
                 <div class="input-group">
                     <label for="user_name">ຊື່ຜູ້ໃຊ້</label>
                     <input type="text" id="user_name" name="user_name" required
@@ -193,7 +197,6 @@ $conn->close();
                         <div class="password-strength-bar" id="password-strength-bar"></div>
                     </div>
                     <p class="password-hint" id="password-hint">ລະຫັດຕ້ອງມີ 8 ໂຕຂຶ້ນໄປ, ຢ່າງໜ້ອຍຕ້ອງມີ 1 ຕົວໜັງສື 1 ຕົວເລກ</p>
-                    <!-- <p class="password-error" id="password-error">ລະຫັດຜ່ານສາມາດປ້ອນໄດ້ພຽງແຕ່ຕົວອັກສອນອັງກິດ, ຕົວເລກ, ແລະສັນຍາລັກ !@#$%^&*()_+-=[]{};':"\|,.<>/?</p> -->
                 </div>
 
                 <div class="input-group">
@@ -216,7 +219,7 @@ $conn->close();
                         <path d="M10 17l5-5-5-5v10z"></path>
                         <path d="M19 12c0 4.14-3.36 7.5-7.5 7.5S4 16.14 4 12 7.36 4.5 12 4.5s7.5 3.36 7.5 7.5zM12 6.5c-3.04 0-5.5 2.46-5.5 5.5s2.46 5.5 5.5 5.5 5.5-2.46 5.5-5.5-2.46-5.5-5.5-5.5z"></path>
                     </svg>
-                    ລົງທະບຽນ
+                    ລົງທະບຽນ Super Admin
                 </button>
             </form>
         </div>
@@ -237,10 +240,8 @@ $conn->close();
         }
 
         function validatePasswordInput(event) {
-            // Only allow English letters, numbers, and common symbols
             const allowedChars = /^[A-Za-z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]*$/;
 
-            // Check if the pressed key is allowed
             if (!allowedChars.test(event.key)) {
                 event.preventDefault();
                 document.getElementById('password-error').style.display = 'block';
@@ -265,25 +266,21 @@ $conn->close();
             const strengthBar = document.getElementById('password-strength-bar');
             const hint = document.getElementById('password-hint');
 
-            // Reset
             strengthBar.style.width = '0%';
             strengthBar.style.backgroundColor = '#e74c3c';
             hint.style.color = '#7f8c8d';
 
             if (password.length === 0) return;
 
-            // Strength calculation
             let strength = 0;
             if (password.length >= 8) strength += 1;
             if (/[A-Z]/.test(password)) strength += 1;
             if (/[0-9]/.test(password)) strength += 1;
             if (/[^A-Za-z0-9]/.test(password)) strength += 1;
 
-            // Update UI
             const width = (strength / 4) * 100;
             strengthBar.style.width = `${width}%`;
 
-            // Color coding
             if (width >= 75) {
                 strengthBar.style.backgroundColor = '#2ecc71';
                 hint.textContent = 'Strong password!';

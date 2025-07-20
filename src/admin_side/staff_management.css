@@ -1,9 +1,14 @@
+* {
+  font-family: "Phetsarath", sans-serif;
+}
+
 body {
-  font-family: sans-serif;
+  /* font-family: "Phetsarath", sans-serif; */
   margin: 0;
   padding: 0;
   background-color: #f4f6f8;
   display: flex;
+  /* overflow: hidden; */
 }
 
 .container {
@@ -12,14 +17,33 @@ body {
 }
 
 .sidebar {
-  background-color: #3f51b5; /* Example theme color */
+  background-color: #3f51b5;
   color: white;
   width: 200px;
-  height: 100%;
+  height: 100vh; /* Use viewport height */
+  position: fixed; /* Make it fixed */
+  top: 0; /* Stick to top */
+  left: 0; /* Stick to left */
   padding: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  overflow-y: auto; /* Add scroll if content is too long */
+  scrollbar-gutter: stable;
+}
+
+/* Optional: Style the scrollbar for better appearance */
+.sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
 }
 
 .sidebar .logo {
@@ -55,6 +79,7 @@ body {
 .main-content {
   flex-grow: 1;
   padding: 20px;
+  margin-left: 240px; /* Add margin to account for fixed sidebar width + padding */
 }
 
 .header {
@@ -106,6 +131,11 @@ body {
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 3px;
+  /* font-family: "Phetsarath", sans-serif; */
+}
+
+::placeholder {
+  /* font-family: "Phetsarath", sans-serif; */
 }
 
 .staff-form .address {
@@ -244,16 +274,31 @@ button:disabled {
 .submenu {
   display: none;
   padding-left: 20px;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: transparent;
+  margin-top: 5px;
 }
 
 .submenu li a {
   padding: 8px 15px;
   font-size: 14px;
+  background-color: transparent; /* Make links transparent */
+  border-radius: 5px;
+  transition: background-color 0.2s ease;
+  color: white;
+}
+
+/* Only highlight the current active submenu item */
+.submenu li.active a {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .submenu li a:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.1); /* Lighter hover effect */
+}
+
+/* Parent menu item when submenu is open */
+.has-submenu.active > a {
+  background-color: rgba(255, 255, 255, 0.1); /* Light background when open */
 }
 
 .has-submenu > a .chevron {
@@ -267,4 +312,9 @@ button:disabled {
 
 .has-submenu.active .submenu {
   display: block;
+}
+
+/* Remove the active styling from submenu items by default */
+.submenu li {
+  background-color: transparent;
 }
