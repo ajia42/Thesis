@@ -241,7 +241,7 @@ if (!$is_search && empty($search_results)) {
             <!-- Sidebar content remains the same as in the original HTML -->
             <!-- ... (previous sidebar code) ... -->
             <div class="logo">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
                     <path d="M12 4a4 4 0 100 8 4 4 0 000-8zM2 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10S2 17.514 2 12z"></path>
                 </svg>
                 Vision Care
@@ -407,8 +407,8 @@ if (!$is_search && empty($search_results)) {
         </aside>
         <main class="main-content">
             <div class="header">
-                <h1>Reception Management</h1>
-                <button class="new-patient-button" name="new_reception" onclick="clearForm()">+ New Reception</button>
+                <h1>ຕ້ອນຮັບ</h1>
+                <button class="new-patient-button" name="new_reception" onclick="clearForm()">+ ເພີ່ມຕ້ອນຮັບ</button>
             </div>
 
             <?php if ($message): ?>
@@ -422,12 +422,12 @@ if (!$is_search && empty($search_results)) {
             <form method="POST" action="" id="receptionForm">
                 <div class="patient-form">
                     <div class="form-group">
-                        <label for="receptionID">Reception ID</label>
+                        <label for="receptionID">ລະຫັດຕ້ອນຮັບ</label>
                         <input type="text" id="receptionID" name="reception_id" readonly>
                     </div>
 
                     <div class="form-group">
-                        <label for="patient_id">Patient</label>
+                        <label for="patient_id">ຄົນເຈັບ</label>
                         <div class="custom-dropdown">
                             <input type="text" id="patient_search" class="dropdown-input" placeholder="Type a name..." autocomplete="off">
                             <select id="patient_id" name="patient_id" class="hidden-select" required>
@@ -445,7 +445,7 @@ if (!$is_search && empty($search_results)) {
                     </div>
 
                     <div class="form-group">
-                        <label for="patient_type">Patient Type</label>
+                        <label for="patient_type">ປະເພດເຂົ້າມາ</label>
                         <select id="patient_type" name="patient_type" required>
                             <option value="walk-in">Walk-in</option>
                             <option value="online">Online</option>
@@ -453,14 +453,14 @@ if (!$is_search && empty($search_results)) {
                     </div>
 
                     <div class="form-group">
-                        <label for="create_at">Created At</label>
+                        <label for="create_at">ເວລາທີ່ເຂົ້າມາ</label>
                         <input type="text" id="create_at" name="create_at" class="readonly-field" readonly>
                     </div>
 
                     <div class="form-actions">
-                        <button type="submit" class="save-button" name="save_button" id="saveButton">Save</button>
-                        <button type="submit" class="update-button" name="update_button" id="updateButton">Update</button>
-                        <button type="submit" class="delete-button" name="delete_button" id="deleteButton">Delete</button>
+                        <button type="submit" class="save-button" name="save_button" id="saveButton">ບັນທຶກ</button>
+                        <button type="submit" class="update-button" name="update_button" id="updateButton">ແກ້ໄຂ</button>
+                        <button type="submit" class="delete-button" name="delete_button" id="deleteButton">ລຶບອອກ</button>
                     </div>
                 </div>
             </form>
@@ -470,7 +470,7 @@ if (!$is_search && empty($search_results)) {
                 <form method="GET" action="">
                     <input type="search" name="search" placeholder="Search reception records by patient, type or date..."
                         value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
-                    <button type="submit">Search</button>
+                    <button type="submit">ຄົ້ນຫາ</button>
                 </form>
             </div>
 
@@ -485,11 +485,11 @@ if (!$is_search && empty($search_results)) {
                 <?php if (!empty($search_results)): ?>
                     <thead>
                         <tr>
-                            <th>RECEPTION ID</th>
-                            <th>PATIENT</th>
-                            <th>PATIENT TYPE</th>
-                            <th>CREATED AT</th>
-                            <th>ACTIONS</th>
+                            <th>ລະຫັດຕ້ອນຮັບ</th>
+                            <th>ຊື່ຄົນເຈັບ</th>
+                            <th>ປະເພດເຂົ້າມາ</th>
+                            <th>ເວລາທີ່ເຂົ້າມາ</th>
+                            <th>ສະແດງຂໍ້ມູນ</th>
                         </tr>
                     </thead>
                     <tbody>

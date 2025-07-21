@@ -372,8 +372,8 @@ if (!$is_search && empty($search_results)) {
         </aside>
         <main class="main-content">
             <div class="header">
-                <h1>Disease Management</h1>
-                <button class="new-patient-button" name="new_patient" onclick="clearForm()">+ New disease</button>
+                <h1>ຈັດການຂໍ້ມູນພະຍາດ</h1>
+                <button class="new-patient-button" name="new_patient" onclick="clearForm()">+ ເພີ່ມພະຍາດ</button>
             </div>
 
             <?php if ($message): ?>
@@ -387,15 +387,15 @@ if (!$is_search && empty($search_results)) {
             <form method="POST" action="" id="patientForm">
                 <div class="patient-form">
                     <div class="form-group">
-                        <label for="patientID">Disease ID</label>
+                        <label for="patientID">ລະຫັດພະຍາດ</label>
                         <input type="text" id="patientID" name="patient_id" readonly>
                     </div>
                     <div class="form-group">
-                        <label for="firstName">Disease name</label>
+                        <label for="firstName">ຊື່ພະຍາດ</label>
                         <input type="text" id="firstName" name="first_name" required>
                     </div>
                     <div class="form-group">
-                        <label for="phone">Description</label>
+                        <label for="phone">ຄໍາອະທິບາຍ</label>
                         <!-- <input type="number" id="phone" name="phone" required> -->
                         <input
                             type="text"
@@ -404,9 +404,9 @@ if (!$is_search && empty($search_results)) {
                             placeholder="optional" />
                     </div>
                     <div class="form-actions">
-                        <button type="submit" class="save-button" name="save_button" id="saveButton">Save</button>
-                        <button type="submit" class="update-button" name="update_button" id="updateButton">Update</button>
-                        <button type="submit" class="delete-button" name="delete_button" id="deleteButton">Delete</button>
+                        <button type="submit" class="save-button" name="save_button" id="saveButton">ບັນທຶກ</button>
+                        <button type="submit" class="update-button" name="update_button" id="updateButton">ແກ້ໄຂ</button>
+                        <button type="submit" class="delete-button" name="delete_button" id="deleteButton">ລຶບອອກ</button>
                     </div>
                 </div>
             </form>
@@ -431,10 +431,10 @@ if (!$is_search && empty($search_results)) {
                 <?php if (!empty($search_results)): ?>
                     <thead>
                         <tr>
-                            <th>DISEASE</th>
-                            <th>DISEASE NAME</th>
-                            <th>DESCRIPTION</th>
-                            <th>ACTIONS</th>
+                            <th>ລະຫັດພະຍາດ</th>
+                            <th>ຊື່ພະຍາດ</th>
+                            <th>ຄໍາອະທິບາຍ</th>
+                            <th>ສະແດງຂໍ້ມູນ</th>
                         </tr>
                     </thead>
                     <tbody>

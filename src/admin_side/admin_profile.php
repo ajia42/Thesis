@@ -53,8 +53,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (!password_verify($current_password, $admin['password'])) {
             $errors[] = "Current password is incorrect";
         }
-        if (strlen($new_password) < 8) $errors[] = "New password must be at least 8 characters";
-        if ($new_password !== $confirm_password) $errors[] = "New passwords do not match";
+        if (strlen($new_password) < 8) {
+            $errors[] = "New password must be at least 8 characters";
+        }
+        if (!preg_match('/[A-Za-z]/', $new_password) || !preg_match('/[0-9\W]/', $new_password)) {
+            $errors[] = "Password must contain both letters and numbers/symbols";
+        }
+        if ($new_password !== $confirm_password) {
+            $errors[] = "New passwords do not match";
+        }
         $password_changed = true;
     }
 
@@ -166,6 +173,34 @@ $conn->close();
         .back-link:hover {
             background-color: #e0e0e0;
         }
+
+        .password-strength {
+            height: 5px;
+            margin-top: 5px;
+            background: #eee;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s;
+            background: #e74c3c;
+        }
+
+        .password-hint {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            margin-top: 0.3rem;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            font-weight: bold;
+        }
     </style>
 </head>
 
@@ -251,9 +286,9 @@ $conn->close();
                                 </svg>
                             </button>
                         </div>
-                        <div class="password-strength">
+                        <!-- <div class="password-strength">
                             <div class="password-strength-bar" id="password-strength-bar"></div>
-                        </div>
+                        </div> -->
                         <p class="password-hint" id="password-hint">Leave blank to keep current password</p>
                     </div>
 
@@ -315,27 +350,31 @@ $conn->close();
                 return;
             }
 
-            // Strength calculation
+            // Check requirements
+            const hasMinLength = password.length >= 8;
+            const hasLetter = /[A-Za-z]/.test(password);
+            const hasNumberOrSymbol = /[0-9\W]/.test(password);
+
+            // Calculate strength (0-3)
             let strength = 0;
-            if (password.length >= 8) strength += 1;
-            if (/[A-Z]/.test(password)) strength += 1;
-            if (/[0-9]/.test(password)) strength += 1;
-            if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+            if (hasMinLength) strength += 1;
+            if (hasLetter) strength += 1;
+            if (hasNumberOrSymbol) strength += 1;
 
             // Update UI
-            const width = (strength / 4) * 100;
+            const width = (strength / 3) * 100;
             strengthBar.style.width = `${width}%`;
 
-            // Color coding
-            if (width >= 75) {
+            // Color coding and messages
+            if (hasMinLength && hasLetter && hasNumberOrSymbol) {
                 strengthBar.style.backgroundColor = '#2ecc71';
                 hint.textContent = 'Strong password!';
                 hint.style.color = '#2ecc71';
-            } else if (width >= 50) {
+            } else if (hasMinLength && (hasLetter || hasNumberOrSymbol)) {
                 strengthBar.style.backgroundColor = '#f39c12';
-                hint.textContent = 'Good, but could be stronger';
+                hint.textContent = 'Password needs both letters and numbers/symbols';
             } else {
-                hint.textContent = 'Weak - add numbers/symbols';
+                hint.textContent = 'Weak - must have letters and numbers/symbols';
             }
         }
 

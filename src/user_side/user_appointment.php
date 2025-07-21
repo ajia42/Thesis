@@ -123,6 +123,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Book Appointment - Vision Care</title>
     <link rel="stylesheet" href="user_login.css">
+    <link rel="icon" href="../images/logo.svg" type="image/svg+xml">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Phetsarath:wght@400;700&display=swap" rel="stylesheet">
     <style>
         /* Base styles */
         body {
@@ -390,11 +395,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <svg viewBox="0 0 24 24" fill="currentColor">
                 <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"></path>
             </svg>
-            Back to History
+            ກັບຄືນ
         </a>
         <div class="welcome-message">
             <h1>Book an Appointment</h1>
-            <p>Please fill in the details below to schedule your appointment.</p>
+            <p>ກະລຸນາປ້ອນລາຍລະອຽດຂ້າງລຸ່ມເພື່ອຈອງຄິວ.</p>
+            <!-- <p>Please fill in the details below to schedule your appointment.</p> -->
         </div>
 
         <?php if (!empty($errors)): ?>
@@ -408,9 +414,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <div class="appointment-card">
             <form method="POST" action="user_appointment.php">
                 <div class="form-group">
-                    <label for="service_type_id">Service</label>
+                    <label for="service_type_id">ເລືອກປະເພດບໍລິການ</label>
                     <select id="service_type_id" name="service_type_id" required>
-                        <option value="">-- Select a service --</option>
+                        <option value="">-- ເລືອກປະເພດບໍລິການ --</option>
                         <?php foreach ($services as $id => $name): ?>
                             <option value="<?php echo htmlspecialchars($id); ?>"
                                 <?php echo (isset($_POST['service_type_id']) && $_POST['service_type_id'] == $id) ? 'selected' : ''; ?>>
@@ -421,14 +427,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
 
                 <div class="form-group">
-                    <label for="booking_date">Booking Date</label>
+                    <label for="booking_date">ເລືອກວັນທີຈອງ</label>
                     <input type="date" id="booking_date" name="booking_date"
                         min="<?php echo date('Y-m-d'); ?>"
                         value="<?php echo htmlspecialchars($_POST['booking_date'] ?? ''); ?>" required>
                 </div>
 
                 <div class="form-group">
-                    <label>Booking Time</label>
+                    <label>ເລືອກເວລາ</label>
                     <div class="time-slots">
                         <label class="time-slot <?php echo (isset($_POST['booking_time']) && $_POST['booking_time'] == '08:00:00') ? 'selected' : ''; ?>" data-hour="8" data-minute="0">
                             <input type="radio" name="booking_time" value="08:00:00"
@@ -494,12 +500,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
 
                 <div class="form-group">
-                    <label for="symptoms">Symptoms (Optional)</label>
+                    <label for="symptoms">ອາການເບື້ອງຕົ້ນ(ຖ້າມີ)</label>
                     <textarea id="symptoms" name="symptoms" maxlength="30"
                         placeholder="Briefly describe your symptoms (max 30 characters)"><?php echo htmlspecialchars($_POST['symptoms'] ?? ''); ?></textarea>
                 </div>
 
-                <button type="submit" class="submit-btn">Book Appointment</button>
+                <button type="submit" class="submit-btn">ຈອງຄິວ</button>
             </form>
         </div>
     </main>

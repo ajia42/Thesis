@@ -30,6 +30,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($last_name)) $errors[] = "Last name is required";
     if (empty($gender)) $errors[] = "Gender is required";
 
+    // Validate names contain only letters (English or Lao)
+    if (!empty($first_name) && !preg_match('/^[A-Za-z\x{0E80}-\x{0EFF}\s]+$/u', $first_name)) {
+        $errors[] = "First name must contain only letters (English or Lao)";
+    }
+    if (!empty($last_name) && !preg_match('/^[A-Za-z\x{0E80}-\x{0EFF}\s]+$/u', $last_name)) {
+        $errors[] = "Last name must contain only letters (English or Lao)";
+    }
+
     // Enhanced DOB validation
     if (empty($dob)) {
         $errors[] = "Date of birth is required";
@@ -63,7 +71,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         if (mysqli_query($conn, $sql)) {
             unset($_SESSION['registered_phone']); // Clear session
-            $success = "Patient information saved successfully! Redirecting to login...";
+            $success = "ບັນທຶກຂໍ້ມູນສ່ວນຕົວສຳເລັດ! ທ່ານສາມາດເຂົ້າສູ່ລະບົບໄດ້...";
             header("Refresh: 3; url=user_login.php");
         } else {
             $errors[] = "Error: " . mysqli_error($conn);
@@ -80,6 +88,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Complete Patient Information - Vision Care</title>
     <link rel="stylesheet" href="user_login.css">
+    <link rel="icon" href="../images/logo.svg" type="image/svg+xml">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Phetsarath:wght@400;700&display=swap" rel="stylesheet">
     <style>
         .form-row {
             display: flex;
@@ -126,6 +139,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             font-size: 0.95rem;
             text-align: center;
         }
+
+        /* New style for name validation */
+        .name-error {
+            color: #e74c3c;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            display: none;
+        }
     </style>
 </head>
 
@@ -150,8 +171,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <h2>Vision Care</h2>
             </div>
 
-            <h1>Complete Your Information</h1>
-            <p>Please provide your personal details to complete registration</p>
+            <h1>ປ້ອນຂໍ້ມູນສ່ວນຕົວ</h1>
+            <p>ກະລຸນາປ້ອນຂໍ້ມູນສ່ວນຕົວເພື່ອສໍາເລັດການລົງທະບຽນ</p>
 
             <?php if (!empty($errors)): ?>
                 <div class="error-message">
@@ -165,36 +186,42 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <div class="success-message"><?php echo htmlspecialchars($success); ?></div>
             <?php endif; ?>
 
-            <form method="POST" action="user_info.php">
+            <form method="POST" action="user_info.php" id="infoForm">
                 <div class="form-row">
                     <div class="input-group">
-                        <label for="first_name">First Name</label>
+                        <label for="first_name">ຊື່</label>
                         <input type="text" id="first_name" name="first_name" required
-                            value="<?php echo htmlspecialchars($_POST['first_name'] ?? ''); ?>">
+                            value="<?php echo htmlspecialchars($_POST['first_name'] ?? ''); ?>"
+                            pattern="[A-Za-z\u0E80-\u0EFF ]+"
+                            title="Only letters are allowed (English or Lao)">
+                        <!-- <div id="first_name_error" class="name-error">Only letters are allowed (English or Lao)</div> -->
                     </div>
                     <div class="input-group">
-                        <label for="last_name">Last Name</label>
+                        <label for="last_name">ນາມສະກຸນ</label>
                         <input type="text" id="last_name" name="last_name" required
-                            value="<?php echo htmlspecialchars($_POST['last_name'] ?? ''); ?>">
+                            value="<?php echo htmlspecialchars($_POST['last_name'] ?? ''); ?>"
+                            pattern="[A-Za-z\u0E80-\u0EFF ]+"
+                            title="Only letters are allowed (English or Lao)">
+                        <!-- <div id="last_name_error" class="name-error">Only letters are allowed (English or Lao)</div> -->
                     </div>
                 </div>
 
                 <div class="input-group">
-                    <label>Gender</label>
+                    <label>ເພດ</label>
                     <div class="gender-options">
                         <label class="gender-option">
                             <input type="radio" name="gender" value="Male" required
-                                <?php echo (isset($_POST['gender']) && $_POST['gender'] == 'Male') ? 'checked' : ''; ?>> Male
+                                <?php echo (isset($_POST['gender']) && $_POST['gender'] == 'Male') ? 'checked' : ''; ?>> ຊາຍ
                         </label>
                         <label class="gender-option">
                             <input type="radio" name="gender" value="Female"
-                                <?php echo (isset($_POST['gender']) && $_POST['gender'] == 'Female') ? 'checked' : ''; ?>> Female
+                                <?php echo (isset($_POST['gender']) && $_POST['gender'] == 'Female') ? 'checked' : ''; ?>> ຍິງ
                         </label>
                     </div>
                 </div>
 
                 <div class="input-group">
-                    <label for="dob">Date of Birth</label>
+                    <label for="dob">ວັນເດືອນປີເກີດ</label>
                     <input type="date" id="dob" name="dob" required
                         min="<?php echo date('Y-m-d', strtotime('-120 years')); ?>"
                         max="<?php echo date('Y-m-d'); ?>"
@@ -202,13 +229,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
 
                 <div class="input-group">
-                    <label for="phone">Phone Number</label>
+                    <label for="phone">ເບີໂທ</label>
                     <input type="text" id="phone" name="phone" class="disabled-input"
                         value="<?php echo htmlspecialchars($_SESSION['registered_phone'] ?? ''); ?>" readonly>
                 </div>
 
                 <div class="input-group">
-                    <label for="address">Address (Optional)</label>
+                    <label for="address">ທີ່ຢູ່ (Optional)</label>
                     <input type="text" id="address" name="address"
                         value="<?php echo htmlspecialchars($_POST['address'] ?? ''); ?>">
                 </div>
@@ -218,7 +245,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <path d="M10 17l5-5-5-5v10z"></path>
                         <path d="M19 12c0 4.14-3.36 7.5-7.5 7.5S4 16.14 4 12 7.36 4.5 12 4.5s7.5 3.36 7.5 7.5zM12 6.5c-3.04 0-5.5 2.46-5.5 5.5s2.46 5.5 5.5 5.5 5.5-2.46 5.5-5.5-2.46-5.5-5.5-5.5z"></path>
                     </svg>
-                    Complete Registration
+                    ບັນທຶກ
                 </button>
             </form>
         </div>
@@ -254,6 +281,83 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             } else {
                 dobInput.setCustomValidity('');
             }
+        });
+
+        // Name validation - prevent numbers and symbols
+        function isAllowedCharacter(char) {
+            // Allow English letters (A-Z, a-z), Lao characters, and space
+            return /^[A-Za-z\u0E80-\u0EFF ]$/.test(char);
+        }
+
+        function validateNameInput(inputElement, errorElement) {
+            inputElement.addEventListener('keypress', function(e) {
+                if (!isAllowedCharacter(e.key) && e.key !== 'Backspace' && e.key !== 'Delete') {
+                    e.preventDefault();
+                    errorElement.style.display = 'block';
+                } else {
+                    errorElement.style.display = 'none';
+                }
+            });
+
+            inputElement.addEventListener('paste', function(e) {
+                e.preventDefault();
+                const pasteText = (e.clipboardData || window.clipboardData).getData('text');
+                const filteredText = pasteText.split('').filter(isAllowedCharacter).join('');
+                document.execCommand('insertText', false, filteredText);
+            });
+
+            inputElement.addEventListener('input', function() {
+                this.value = this.value.split('').filter(isAllowedCharacter).join('');
+
+                // Check if the current value contains any invalid characters
+                if (/[^A-Za-z\u0E80-\u0EFF ]/.test(this.value)) {
+                    errorElement.style.display = 'block';
+                } else {
+                    errorElement.style.display = 'none';
+                }
+            });
+
+            // Validate on blur
+            inputElement.addEventListener('blur', function() {
+                if (/[^A-Za-z\u0E80-\u0EFF ]/.test(this.value)) {
+                    errorElement.style.display = 'block';
+                } else {
+                    errorElement.style.display = 'none';
+                }
+            });
+        }
+
+        // Initialize name validation
+        document.addEventListener('DOMContentLoaded', function() {
+            validateNameInput(
+                document.getElementById('first_name'),
+                document.getElementById('first_name_error')
+            );
+
+            validateNameInput(
+                document.getElementById('last_name'),
+                document.getElementById('last_name_error')
+            );
+
+            // Form submission validation for names
+            document.getElementById('infoForm').addEventListener('submit', function(e) {
+                const firstName = document.getElementById('first_name').value;
+                const lastName = document.getElementById('last_name').value;
+
+                if (/[^A-Za-z\u0E80-\u0EFF ]/.test(firstName)) {
+                    e.preventDefault();
+                    document.getElementById('first_name_error').style.display = 'block';
+                    document.getElementById('first_name').focus();
+                    return;
+                }
+
+                if (/[^A-Za-z\u0E80-\u0EFF ]/.test(lastName)) {
+                    e.preventDefault();
+                    document.getElementById('last_name_error').style.display = 'block';
+                    document.getElementById('last_name').focus();
+                    return;
+                }
+            });
         });
     </script>
 </body>

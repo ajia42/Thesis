@@ -373,8 +373,8 @@ if (!$is_search && empty($search_results)) {
         </aside>
         <main class="main-content">
             <div class="header">
-                <h1>Service Type Management</h1>
-                <button class="new-patient-button" name="new_patient" onclick="clearForm()">+ New Service</button>
+                <h1>ຈັດການຂໍ້ມູນປະເພດບໍລິການ</h1>
+                <button class="new-patient-button" name="new_patient" onclick="clearForm()">+ ເພີ່ມປະເພດບໍລິການ</button>
             </div>
 
             <?php if ($message): ?>
@@ -388,15 +388,15 @@ if (!$is_search && empty($search_results)) {
             <form method="POST" action="" id="patientForm">
                 <div class="patient-form">
                     <div class="form-group">
-                        <label for="patientID">Service Type ID</label>
+                        <label for="patientID">ລະຫັດປະເພດບໍລິການ</label>
                         <input type="text" id="patientID" name="patient_id" readonly>
                     </div>
                     <div class="form-group">
-                        <label for="firstName">Service Name</label>
+                        <label for="firstName">ຊື່ບໍລິການ</label>
                         <input type="text" id="firstName" name="first_name" required>
                     </div>
                     <div class="form-group">
-                        <label for="phone">Service Fee</label>
+                        <label for="phone">ຄ່າບໍລິການ</label>
                         <input
                             type="text"
                             id="phone"
@@ -409,9 +409,9 @@ if (!$is_search && empty($search_results)) {
                         <div id="phoneError" class="error-message" style="display: none;"></div>
                     </div>
                     <div class="form-actions">
-                        <button type="submit" class="save-button" name="save_button" id="saveButton">Save</button>
-                        <button type="submit" class="update-button" name="update_button" id="updateButton">Update</button>
-                        <button type="submit" class="delete-button" name="delete_button" id="deleteButton">Delete</button>
+                        <button type="submit" class="save-button" name="save_button" id="saveButton">ບັນທຶກ</button>
+                        <button type="submit" class="update-button" name="update_button" id="updateButton">ແກ້ໄຂ</button>
+                        <button type="submit" class="delete-button" name="delete_button" id="deleteButton">ລຶບອອກ</button>
                     </div>
                 </div>
             </form>
@@ -421,7 +421,7 @@ if (!$is_search && empty($search_results)) {
                 <form method="GET" action="">
                     <input type="search" name="search" placeholder="Search services by name or id..."
                         value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
-                    <button type="submit">Search</button>
+                    <button type="submit">ຄົ້ນຫາ</button>
                 </form>
             </div>
 
@@ -436,10 +436,10 @@ if (!$is_search && empty($search_results)) {
                 <?php if (!empty($search_results)): ?>
                     <thead>
                         <tr>
-                            <th>SERVICE TYPE ID</th>
-                            <th>SERVICE NAME</th>
-                            <th>SERVICE FEE</th>
-                            <th>ACTIONS</th>
+                            <th>ລະຫັດປະເພດບໍລິການ</th>
+                            <th>ຊື່ບໍລິການ</th>
+                            <th>ຄ່າບໍລິການ</th>
+                            <th>ສະແດງຂໍ້ມູນ</th>
                         </tr>
                     </thead>
                     <tbody>

@@ -449,8 +449,8 @@ if (!$is_search && empty($search_results)) {
         </aside>
         <main class="main-content">
             <div class="header">
-                <h1>Staff Management</h1>
-                <button class="new-staff-button" name="new_staff" onclick="clearForm()">+ New Staff</button>
+                <h1>ຈັດການຂໍ້ມູນພະນັກງານ</h1>
+                <button class="new-staff-button" name="new_staff" onclick="clearForm()">+ ເພີ່ມພະນັກງານ</button>
             </div>
 
             <?php if ($message): ?>
@@ -465,41 +465,40 @@ if (!$is_search && empty($search_results)) {
                 <input type="hidden" id="original_phone" name="original_phone">
                 <div class="staff-form">
                     <div class="form-group">
-                        <label for="staffID">Staff ID</label>
+                        <label for="staffID">ລະຫັດພະນັກງານ</label>
                         <input type="text" id="staffID" name="staff_id" readonly>
                     </div>
                     <div class="form-group">
-                        <label for="firstName">First Name</label>
+                        <label for="firstName">ຊື່</label>
                         <input type="text" id="firstName" name="first_name"
                             pattern="[A-Za-z\u0E80-\u0EFF ]+"
                             title="Only letters are allowed (English or Lao)"
                             required>
                     </div>
                     <div class="form-group">
-                        <label for="lastName">Last Name</label>
+                        <label for="lastName">ນາມສະກຸນ</label>
                         <input type="text" id="lastName" name="last_name"
                             pattern="[A-Za-z\u0E80-\u0EFF ]+"
                             title="Only letters are allowed (English or Lao)"
                             required>
                     </div>
                     <div class="form-group">
-                        <label for="gender">Gender</label>
+                        <label for="gender">ເພດ</label>
                         <select id="gender" name="gender">
                             <option value="Male" selected>Male</option>
                             <option value="Female">Female</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="position">Position</label>
+                        <label for="position">ຕໍາແໜ່ງ</label>
                         <select id="position" name="position" required>
                             <option value="admin">Admin</option>
                             <option value="doctor">Doctor</option>
                             <option value="nurse">Nurse</option>
-                            <option value="manager">Manager</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="phone">Phone</label>
+                        <label for="phone">ເບີໂທ</label>
                         <input
                             type="text"
                             id="phone"
@@ -511,18 +510,18 @@ if (!$is_search && empty($search_results)) {
                         <div id="phoneError" class="error-message" style="display: none;"></div>
                     </div>
                     <div class="form-group">
-                        <label for="dob">Date of Birth</label>
+                        <label for="dob">ວັນເດືອນປີເກີດ</label>
                         <input type="date" id="dob" name="dob" required>
                         <div id="dobError" class="error-message" style="display: none;"></div>
                     </div>
                     <div class="form-group">
-                        <label for="address">Address</label>
+                        <label for="address">ທີ່ຢູ່</label>
                         <input type="text" id="address" name="address">
                     </div>
                     <div class="form-actions">
-                        <button type="submit" class="save-button" name="save_button" id="saveButton">Save</button>
-                        <button type="submit" class="update-button" name="update_button" id="updateButton">Update</button>
-                        <button type="submit" class="delete-button" name="delete_button" id="deleteButton">Delete</button>
+                        <button type="submit" class="save-button" name="save_button" id="saveButton">ບັນທຶກ</button>
+                        <button type="submit" class="update-button" name="update_button" id="updateButton">ແກ້ໄຂ</button>
+                        <button type="submit" class="delete-button" name="delete_button" id="deleteButton">ລຶບອອກ</button>
                     </div>
                 </div>
             </form>
@@ -532,7 +531,7 @@ if (!$is_search && empty($search_results)) {
                 <form method="GET" action="">
                     <input type="search" name="search" placeholder="Search staff by name or phone..."
                         value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
-                    <button type="submit">Search</button>
+                    <button type="submit">ຄົ້ນຫາ</button>
                 </form>
             </div>
 
@@ -547,15 +546,15 @@ if (!$is_search && empty($search_results)) {
                 <?php if (!empty($search_results)): ?>
                     <thead>
                         <tr>
-                            <th>STAFF ID</th>
-                            <th>FIRST NAME</th>
-                            <th>LAST NAME</th>
-                            <th>GENDER</th>
-                            <th>POSITION</th>
-                            <th>PHONE</th>
-                            <th>DATE OF BIRTH</th>
-                            <th>ADDRESS</th>
-                            <th>ACTIONS</th>
+                            <th>ລະຫັດພະນັກງານ</th>
+                            <th>ຊື່</th>
+                            <th>ນາມສະກຸນ</th>
+                            <th>ເພດ</th>
+                            <th>ຕໍາແໜ່ງ</th>
+                            <th>ເບີໂທ</th>
+                            <th>ວັນເດືອນປີເກີດ</th>
+                            <th>ທີ່ຢູ່</th>
+                            <th>ສະແດງຂໍ້ມູນ</th>
                         </tr>
                     </thead>
                     <tbody>
