@@ -353,7 +353,7 @@ $current_date = date('Y-m-d');
             <!-- Sidebar content remains the same as in the original HTML -->
             <!-- ... (previous sidebar code) ... -->
             <div class="logo">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
                     <path d="M12 4a4 4 0 100 8 4 4 0 000-8zM2 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10S2 17.514 2 12z"></path>
                 </svg>
                 Vision Care
@@ -519,8 +519,8 @@ $current_date = date('Y-m-d');
         </aside>
         <main class="main-content">
             <div class="header">
-                <h1>General Checkup Management</h1>
-                <button class="new-patient-button" name="new_checkup" onclick="clearForm()">+ New Checkup</button>
+                <h1>ກວດເບື້ອງຕົ້ນ</h1>
+                <button class="new-patient-button" name="new_checkup" onclick="clearForm()">+ ເພີ່ມກວດເບື້ອງຕົ້ນ</button>
             </div>
 
             <?php if ($message): ?>
@@ -534,12 +534,12 @@ $current_date = date('Y-m-d');
             <form method="POST" action="" id="checkupForm">
                 <div class="patient-form">
                     <div class="form-group">
-                        <label for="checkupID">Checkup ID</label>
+                        <label for="checkupID">ລະຫັດກວດເບື້ອງຕົ້ນ</label>
                         <input type="text" id="checkupID" name="checkup_id" readonly>
                     </div>
 
                     <div class="form-group">
-                        <label for="patient_id">Patient</label>
+                        <label for="patient_id">ຄົນເຈັບ</label>
                         <div class="custom-dropdown">
                             <input type="text" id="patient_search" class="dropdown-input" placeholder="Type a name..." autocomplete="off">
                             <select id="patient_id" name="patient_id" class="hidden-select" required>

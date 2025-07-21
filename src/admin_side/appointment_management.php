@@ -489,9 +489,9 @@ error_log("POST data: " . print_r($_POST, true));
         <!-- Sidebar content remains the same as in the original HTML -->
         <!-- ... (previous sidebar code) ... -->
         <div class="logo">
-        <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
-                    <path d="M12 4a4 4 0 100 8 4 4 0 000-8zM2 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10S2 17.514 2 12z"></path>
-                </svg>
+            <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                <path d="M12 4a4 4 0 100 8 4 4 0 000-8zM2 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10S2 17.514 2 12z"></path>
+            </svg>
             Vision Care
         </div>
 
@@ -654,8 +654,8 @@ error_log("POST data: " . print_r($_POST, true));
 
     <main class="main-content">
         <div class="header">
-            <h1>Appointment Management</h1>
-            <button class="new-patient-button" name="new_appointment" onclick="clearForm()">+ New Appointment</button>
+            <h1>ຈັດການຈອງຄິວ</h1>
+            <button class="new-patient-button" name="new_appointment" onclick="clearForm()">+ ເພີ່ມການຈອງ</button>
         </div>
 
         <?php if ($message): ?>
@@ -669,12 +669,12 @@ error_log("POST data: " . print_r($_POST, true));
         <form method="POST" action="" id="appointmentForm">
             <div class="patient-form">
                 <div class="form-group">
-                    <label for="appointmentID">Appointment ID</label>
+                    <label for="appointmentID">ລະຫັດການຈອງ</label>
                     <input type="text" id="appointmentID" name="appointment_id" readonly>
                 </div>
 
                 <div class="form-group">
-                    <label for="patient_id">Patient</label>
+                    <label for="patient_id">ຊື່ຄົນເຈັບ</label>
                     <div class="custom-dropdown">
                         <input type="text" id="patient_search" class="dropdown-input" placeholder="Type a name..." autocomplete="off">
                         <select id="patient_id" name="patient_id" class="hidden-select" required>
@@ -692,9 +692,9 @@ error_log("POST data: " . print_r($_POST, true));
                 </div>
 
                 <div class="form-group">
-                    <label for="service_type_id">Service Type</label>
+                    <label for="service_type_id">ປະເພດບໍລິການ</label>
                     <select id="service_type_id" name="service_type_id" required>
-                        <option value="">Select Service</option>
+                        <option value="">ເລືອກປະເພດບໍລິການ</option>
                         <?php foreach ($service_types as $id => $name): ?>
                             <option value="<?php echo htmlspecialchars($id); ?>"><?php echo htmlspecialchars($name); ?></option>
                         <?php endforeach; ?>
@@ -702,15 +702,15 @@ error_log("POST data: " . print_r($_POST, true));
                 </div>
 
                 <div class="form-group">
-                    <label for="booking_date">Date</label>
+                    <label for="booking_date">ວັນທີຈອງ</label>
                     <input type="date" id="booking_date" name="booking_date" required>
                     <div id="dateError" class="error-message" style="display: none;"></div>
                 </div>
 
                 <div class="form-group">
-                    <label for="booking_time">Time</label>
+                    <label for="booking_time">ເວລາຈອງ</label>
                     <select id="booking_time" name="booking_time" required>
-                        <option value="">Select Time</option>
+                        <option value="">ເລືອກເວລາ</option>
                         <?php foreach ($time_slots as $time): ?>
                             <option value="<?php echo htmlspecialchars($time); ?>"><?php echo htmlspecialchars(substr($time, 0, 5)); ?></option>
                         <?php endforeach; ?>
@@ -718,17 +718,17 @@ error_log("POST data: " . print_r($_POST, true));
                 </div>
 
                 <div class="form-group">
-                    <label for="symptoms">Symptoms (max 30 chars)</label>
+                    <label for="symptoms">ອາການເບື້ອງຕົ້ນ (ຖ້າມີ)</label>
                     <textarea id="symptoms" name="symptoms" rows="3" maxlength="30"></textarea>
                 </div>
 
                 <div class="form-group">
-                    <label for="comment">Comment (max 30 chars)</label>
+                    <label for="comment">ຄໍາເຫັນຈາກແອັດມິນ</label>
                     <textarea id="comment" name="comment" rows="3" maxlength="30"></textarea>
                 </div>
 
                 <div class="form-group">
-                    <label for="status">Status</label>
+                    <label for="status">ສະຖານະ</label>
                     <select id="status" name="status" required>
                         <option value="scheduled" selected>Scheduled</option>
                         <option value="completed">Completed</option>
@@ -743,9 +743,9 @@ error_log("POST data: " . print_r($_POST, true));
                 </div>
 
                 <div class="form-actions">
-                    <button type="submit" class="save-button" name="save_button" id="saveButton">Save</button>
-                    <button type="submit" class="update-button" name="update_button" id="updateButton">Update</button>
-                    <button type="submit" class="delete-button" name="delete_button" id="deleteButton">Delete</button>
+                    <button type="submit" class="save-button" name="save_button" id="saveButton">ບັນທຶກ</button>
+                    <button type="submit" class="update-button" name="update_button" id="updateButton">ແກ້ໄຂ</button>
+                    <button type="submit" class="delete-button" name="delete_button" id="deleteButton">ລຶບອອກ</button>
                 </div>
             </div>
         </form>
@@ -798,15 +798,15 @@ error_log("POST data: " . print_r($_POST, true));
             <?php if (!empty($search_results)): ?>
                 <thead>
                     <tr>
-                        <th>APPOINTMENT ID</th>
-                        <th>PATIENT</th>
-                        <th>SERVICE</th>
-                        <th>DATE</th>
-                        <th>TIME</th>
-                        <th>STATUS</th>
+                        <th>ລະຫັດການຈອງ</th>
+                        <th>ຊື່ຄົນເຈັບ</th>
+                        <th>ປະເພດບໍລິການ</th>
+                        <th>ວັນທີຈອງ</th>
+                        <th>ເວລາຈອງ</th>
+                        <th>ສະຖານະ</th>
                         <th>CREATED AT</th>
-                        <th>ACTIONS</th>
-                        <th>DELETE</th>
+                        <th>ສະແດງຂໍ້ມູນ</th>
+                        <th>ລຶບອອກ</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -832,7 +832,7 @@ error_log("POST data: " . print_r($_POST, true));
                                     )">Edit</a>
                             </td>
                             <td>
-                                <a href="#" class="delete-link" onclick="confirmDelete('<?php echo htmlspecialchars($appointment['appointment_id']); ?>')">Delete</a>
+                                <a href="#" class="delete-link" onclick="confirmDelete('<?php echo htmlspecialchars($appointment['appointment_id']); ?>')">ລຶບອອກ</a>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -845,7 +845,7 @@ error_log("POST data: " . print_r($_POST, true));
     <!-- Edit Modal -->
     <div id="editModal" class="modal">
         <div class="modal-content">
-            <h2>Appointment Feedback</h2>
+            <h2>ລາຍລະອຽດການຈອງ</h2>
             <!-- <form id="editForm" method="POST" action="appointment_management.php"> -->
             <!-- In your edit modal form, change the action to include current filters -->
             <form id="editForm" method="POST" action="appointment_management.php?<?php echo isset($_GET['status']) ? 'status=' . htmlspecialchars($_GET['status']) : ''; ?><?php echo isset($_GET['filter_date']) ? '&filter_date=' . htmlspecialchars($_GET['filter_date']) : ''; ?><?php echo isset($_GET['search']) ? '&search=' . htmlspecialchars($_GET['search']) : ''; ?>">
@@ -854,13 +854,13 @@ error_log("POST data: " . print_r($_POST, true));
                 <div class="patient-form">
                     <!-- Appointment ID field (readonly) -->
                     <div class="form-group">
-                        <label for="display_appointment_id">Appointment ID</label>
+                        <label for="display_appointment_id">ລະຫັດການຈອງ</label>
                         <input type="text" id="display_appointment_id" name="display_appointment_id" readonly class="readonly-field">
                     </div>
 
                     <!-- Patient field (readonly) -->
                     <div class="form-group">
-                        <label for="modal_patient_id">Patient</label>
+                        <label for="modal_patient_id">ຊື່ຄົນເຈັບ</label>
                         <input type="text" id="modal_patient_display" class="readonly-field" readonly>
                         <select id="modal_patient_id" name="patient_id" class="hidden-select" disabled>
                             <option value="">Select Patient</option>
@@ -872,7 +872,7 @@ error_log("POST data: " . print_r($_POST, true));
 
                     <!-- Service Type (readonly) -->
                     <div class="form-group">
-                        <label for="modal_service_type_display">Service Type</label>
+                        <label for="modal_service_type_display">ປະເພດບໍລິການ</label>
                         <input type="text" id="modal_service_type_display" class="readonly-field" readonly>
                         <select id="modal_service_type_id" name="service_type_id" class="hidden-select" disabled>
                             <option value="">Select Service</option>
@@ -884,14 +884,14 @@ error_log("POST data: " . print_r($_POST, true));
 
                     <!-- Date (readonly) -->
                     <div class="form-group">
-                        <label for="modal_booking_date_display">Date</label>
+                        <label for="modal_booking_date_display">ວັນທີຈອງ</label>
                         <input type="text" id="modal_booking_date_display" class="readonly-field" readonly>
                         <input type="date" id="modal_booking_date" name="booking_date" class="hidden-select" disabled>
                     </div>
 
                     <!-- Time (readonly) -->
                     <div class="form-group">
-                        <label for="modal_booking_time_display">Time</label>
+                        <label for="modal_booking_time_display">ເວລາຈອງ</label>
                         <input type="text" id="modal_booking_time_display" class="readonly-field" readonly>
                         <select id="modal_booking_time" name="booking_time" class="hidden-select" disabled>
                             <option value="">Select Time</option>
@@ -903,20 +903,20 @@ error_log("POST data: " . print_r($_POST, true));
 
                     <!-- Symptoms (readonly) -->
                     <div class="form-group">
-                        <label for="modal_symptoms_display">Symptoms</label>
+                        <label for="modal_symptoms_display">ອາການເບື້ອງຕົ້ນ (ຖ້າມີ)</label>
                         <textarea id="modal_symptoms_display" class="readonly-field" rows="3" readonly></textarea>
                         <textarea id="modal_symptoms" name="symptoms" class="hidden-select" rows="3" maxlength="30" disabled></textarea>
                     </div>
 
                     <!-- Comment (editable) -->
                     <div class="form-group">
-                        <label for="modal_comment">Comment (max 30 chars)</label>
+                        <label for="modal_comment">ຄຳເຫັນຈາກແອັດມິນ</label>
                         <textarea id="modal_comment" name="comment" rows="3" maxlength="30"></textarea>
                     </div>
 
                     <!-- Status (editable) -->
                     <div class="form-group">
-                        <label for="modal_status">Status</label>
+                        <label for="modal_status">ສະຖານະ</label>
                         <select id="modal_status" name="status" required>
                             <option value="scheduled">Scheduled</option>
                             <option value="completed">Completed</option>
@@ -926,8 +926,8 @@ error_log("POST data: " . print_r($_POST, true));
                     </div>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="cancel-button" onclick="closeModal()">Cancel</button>
-                    <button type="submit" class="update-button" name="update_button">Update Feedback</button>
+                    <button type="button" class="cancel-button" onclick="closeModal()">ຍົກເລິກ</button>
+                    <button type="submit" class="update-button" name="update_button">ອັບເດດ</button>
                 </div>
             </form>
         </div>
@@ -936,13 +936,13 @@ error_log("POST data: " . print_r($_POST, true));
     <!-- Delete Confirmation Modal -->
     <div id="deleteModal" class="modal">
         <div class="modal-content" style="width: 40%;">
-            <h2>Confirm Delete</h2>
-            <p>Are you sure you want to delete this appointment?</p>
+            <h2>ຍືນຍັນການລຶບອອກ</h2>
+            <p>ທ່ານຕ້ອງການຈະລຶບຂໍ້ມູນນີ້ອອກແທ້ບໍ?</p>
             <form id="deleteForm" method="POST" action="">
                 <input type="hidden" id="delete_appointment_id" name="appointment_id">
                 <div class="modal-actions">
-                    <button type="button" class="cancel-button" onclick="closeDeleteModal()">Cancel</button>
-                    <button type="submit" class="delete-button" name="delete_button">Delete</button>
+                    <button type="button" class="cancel-button" onclick="closeDeleteModal()">ຍົກເລິກ</button>
+                    <button type="submit" class="delete-button" name="delete_button">ລຶບອອກ</button>
                 </div>
             </form>
         </div>
